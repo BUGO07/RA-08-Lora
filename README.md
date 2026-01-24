@@ -4,7 +4,7 @@
 git clone https://github.com/BUGO07/RA-08-Lora
 cd RA-08-Lora
 
-sudo apt-get install clang gcc-arm-none-eabi git vim python python-pip
+sudo apt-get install clang gcc-arm-none-eabi newlib-arm-none-eabi git vim python python-pip
 python3 -m pip config set global.break-system-packages true
 pip install pyserial configparser
 
