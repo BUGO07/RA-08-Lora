@@ -9,7 +9,9 @@ $(PROJECT)_SOURCE := $(wildcard src/*.c)  \
     $(wildcard $(TREMO_SDK_PATH)/lora/system/*.c)  \
     $(wildcard $(TREMO_SDK_PATH)/lora/system/crypto/*.c)  \
     $(wildcard $(TREMO_SDK_PATH)/lora/radio/sx126x/*.c)  \
-    $(wildcard $(TREMO_SDK_PATH)/lora/driver/*.c)
+    $(wildcard $(TREMO_SDK_PATH)/lora/driver/*.c)  \
+    $(wildcard $(TREMO_SDK_PATH)/lora/mac/*.c)  \
+    $(wildcard $(TREMO_SDK_PATH)/lora/mac/region/*.c)
 
 $(PROJECT)_INC_PATH := inc \
     $(TREMO_SDK_PATH)/platform/CMSIS \
@@ -18,7 +20,10 @@ $(PROJECT)_INC_PATH := inc \
     $(TREMO_SDK_PATH)/drivers/crypto/inc \
     $(TREMO_SDK_PATH)/drivers/peripheral/inc \
     $(TREMO_SDK_PATH)/lora/driver/ \
+    $(TREMO_SDK_PATH)/lora/mac/ \
+    $(TREMO_SDK_PATH)/lora/mac/region \
     $(TREMO_SDK_PATH)/lora/system/ \
+    $(TREMO_SDK_PATH)/lora/system/crypto/ \
     $(TREMO_SDK_PATH)/lora/radio/ \
     $(TREMO_SDK_PATH)/lora/radio/sx126x/
 

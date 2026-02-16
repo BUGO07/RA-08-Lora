@@ -19,6 +19,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             &format!("-I{}/lora/radio/sx126x", tremo_sdk_path),
             &format!("-I{}/lora/system", tremo_sdk_path),
             &format!("-I{}/lora/system/cmac", tremo_sdk_path),
+            "-Iinc",
             "-I/usr/arm-none-eabi/include",
             "-mfpu=none",
             "-mfloat-abi=softfp",
@@ -30,6 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .use_core()
         .derive_default(true)
         .derive_debug(true)
+        .derive_copy(true)
         .generate_cstr(true)
         .generate()
         .expect("Unable to generate bindings");
