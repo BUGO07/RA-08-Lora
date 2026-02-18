@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include "Commissioning.h"
 #include "LoRaMac.h"
 #include "utilities.h"
 #include "aes.h"

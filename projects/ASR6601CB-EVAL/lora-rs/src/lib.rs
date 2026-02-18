@@ -1,21 +1,28 @@
 #![no_std]
 #![no_main]
 #![allow(static_mut_refs)]
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-mod class_c;
-mod ffi;
+/// Class C LoRaWAN module
+pub mod class_c;
+/// C FFI Bindings for ASR6601 SDK
+pub mod ffi;
+/// Interrupts
+pub mod tremo_it;
 
 use ffi::*;
 
 use crate::class_c::app_start;
 
+/// entry point
 #[unsafe(no_mangle)]
-extern "C" fn main() -> ! {
+pub extern "C" fn main() -> ! {
     board_init();
     app_start();
 }
 
-fn uart_log_init() {
+/// initialize UART for logging
+pub fn uart_log_init() {
     unsafe {
         gpio_set_iomux(GPIOB, GPIO_PIN_0, 1);
         gpio_set_iomux(GPIOB, GPIO_PIN_1, 1);
@@ -29,7 +36,8 @@ fn uart_log_init() {
     }
 }
 
-fn board_init() {
+/// init board, enable peripheral clocks, etc.
+pub fn board_init() {
     unsafe {
         rcc_enable_oscillator(RCC_OSC_XO32K, true);
 
@@ -52,8 +60,20 @@ fn board_init() {
     }
 }
 
+/// rust panic handler
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    unsafe { printf(c"PANICKED\r\n".as_ptr()) };
+pub fn panic(info: &core::panic::PanicInfo) -> ! {
+    unsafe {
+        if let Some(location) = info.location() {
+            printf(
+                c"Panicked at %s:%d:%d\r\n".as_ptr(),
+                location.file_as_c_str().as_ptr(),
+                location.line(),
+                location.column(),
+            );
+        } else {
+            printf(c"Panicked at unknown location\r\n".as_ptr());
+        }
+    };
     loop {}
 }

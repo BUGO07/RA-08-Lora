@@ -1,7 +1,7 @@
 
 PROJECT := $(notdir $(CURDIR))
 
-$(PROJECT)_SOURCE := $(wildcard src/*.c)  \
+$(PROJECT)_SOURCE := \
     $(TREMO_SDK_PATH)/platform/system/printf-stdarg.c  \
     $(TREMO_SDK_PATH)/platform/system/system_cm4.c  \
     $(TREMO_SDK_PATH)/platform/system/startup_cm4.S \
