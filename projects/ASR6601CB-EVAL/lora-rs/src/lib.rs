@@ -7,12 +7,18 @@
 pub mod class_c;
 /// C FFI Bindings for ASR6601 SDK
 pub mod ffi;
+/// Serial printing
+pub mod print;
+/// RCC
+pub mod rcc;
+/// Tremo Registers
+pub mod regs;
 /// Interrupts
 pub mod tremo_it;
+/// UART driver
+pub mod uart;
 
-use ffi::*;
-
-use crate::class_c::app_start;
+use crate::{class_c::app_start, regs::UART0};
 
 /// entry point
 #[unsafe(no_mangle)]
@@ -24,56 +30,50 @@ pub extern "C" fn main() -> ! {
 /// initialize UART for logging
 pub fn uart_log_init() {
     unsafe {
-        gpio_set_iomux(GPIOB, GPIO_PIN_0, 1);
-        gpio_set_iomux(GPIOB, GPIO_PIN_1, 1);
+        ffi::gpio_set_iomux(ffi::GPIOB, ffi::GPIO_PIN_0, 1);
+        ffi::gpio_set_iomux(ffi::GPIOB, ffi::GPIO_PIN_1, 1);
 
-        let mut uart_config: uart_config_t = core::mem::zeroed();
-        uart_config_init(&mut uart_config);
-
-        uart_config.baudrate = UART_BAUDRATE_115200;
-        uart_init(UART0, &mut uart_config);
-        uart_cmd(UART0, true);
+        UART0.init(Default::default()).unwrap();
+        UART0.cmd(true);
     }
 }
 
 /// init board, enable peripheral clocks, etc.
 pub fn board_init() {
     unsafe {
-        rcc_enable_oscillator(RCC_OSC_XO32K, true);
+        ffi::rcc_enable_oscillator(ffi::RCC_OSC_XO32K, true);
 
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_UART0, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_PWR, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_RTC, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
-        rcc_enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_UART0, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOA, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOB, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOC, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOD, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_PWR, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_RTC, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_SAC, true);
+        ffi::rcc_enable_peripheral_clk(ffi::RCC_PERIPHERAL_LORA, true);
 
-        delay_ms(100);
-        pwr_xo32k_lpm_cmd(true);
+        ffi::delay_ms(100);
+        ffi::pwr_xo32k_lpm_cmd(true);
 
         uart_log_init();
 
-        RtcInit();
+        ffi::RtcInit();
     }
 }
 
 /// rust panic handler
 #[panic_handler]
 pub fn panic(info: &core::panic::PanicInfo) -> ! {
-    unsafe {
-        if let Some(location) = info.location() {
-            printf(
-                c"Panicked at %s:%d:%d\r\n".as_ptr(),
-                location.file_as_c_str().as_ptr(),
-                location.line(),
-                location.column(),
-            );
-        } else {
-            printf(c"Panicked at unknown location\r\n".as_ptr());
-        }
-    };
+    if let Some(location) = info.location() {
+        println!(
+            "Panicked at {}:{}:{}",
+            location.file(),
+            location.line(),
+            location.column(),
+        );
+    } else {
+        println!("Panicked at unknown location");
+    }
     loop {}
 }

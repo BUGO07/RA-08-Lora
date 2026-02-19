@@ -2,7 +2,7 @@
 
 use core::ptr;
 
-use crate::ffi;
+use crate::{ffi, print, println};
 
 /// 30 seconds between transmissions (ms)
 pub const APP_TX_DUTYCYCLE: u32 = 30_000;
@@ -195,14 +195,12 @@ impl App {
             return;
         }
 
-        unsafe {
-            ffi::printf(
-                c"receive data: rssi = %d, snr = %d, datarate = %d\r\n".as_ptr(),
-                mcps_indirection.Rssi as i32,
-                mcps_indirection.Snr as i32,
-                mcps_indirection.RxDatarate as i32,
-            );
-        }
+        println!(
+            "receive data: rssi = {}, snr = {}, datarate = {}",
+            mcps_indirection.Rssi as i32,
+            mcps_indirection.Snr as i32,
+            mcps_indirection.RxDatarate as i32,
+        );
 
         // FramePending → schedule uplink ASAP
         if mcps_indirection.FramePending != 0 {
@@ -211,15 +209,15 @@ impl App {
 
         if mcps_indirection.BufferSize != 0 {
             unsafe {
-                ffi::printf(c"Received: ".as_ptr());
+                print!("Received: ");
                 for i in 0..(mcps_indirection.BufferSize as usize) {
                     let b = *mcps_indirection.Buffer.add(i);
-                    ffi::printf(c"%x ".as_ptr(), b as i32);
+                    print!("{:x} ", b as i32);
                 }
-                ffi::printf(c"\r\n".as_ptr());
+                println!();
             }
         } else {
-            unsafe { ffi::printf(c"\r\n".as_ptr()) };
+            println!();
         }
     }
 
@@ -227,10 +225,10 @@ impl App {
     fn mlme_confirm(&mut self, mlme_confirm: &ffi::MlmeConfirm_t) {
         if mlme_confirm.MlmeRequest == ffi::MLME_JOIN {
             if mlme_confirm.Status == ffi::LORAMAC_EVENT_INFO_STATUS_OK {
-                unsafe { ffi::printf(c"Joined\r\n".as_ptr()) };
+                println!("Joined");
                 self.device_state = DeviceState::Send;
             } else {
-                unsafe { ffi::printf(c"Join failed\r\n".as_ptr()) };
+                println!("Join failed");
 
                 let mut mlme_req: ffi::MlmeReq_t = Default::default();
                 mlme_req.Type = ffi::MLME_JOIN;
@@ -337,7 +335,7 @@ pub extern "C" fn on_tx_next_packet_timer_event() {
 
 /// application start
 pub fn app_start() -> ! {
-    unsafe { ffi::printf(c"ClassC app start\r\n".as_ptr()) };
+    println!("ClassC app start");
 
     unsafe { APP.device_state = DeviceState::Init };
 

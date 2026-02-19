@@ -2,6 +2,7 @@ use std::{env, error::Error, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let tremo_sdk_path = env::var("TREMO_SDK_PATH").unwrap();
+    println!("{}", env::consts::OS);
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -20,7 +21,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             &format!("-I{}/lora/system", tremo_sdk_path),
             &format!("-I{}/lora/system/cmac", tremo_sdk_path),
             "-Iinc",
-            "-I/usr/arm-none-eabi/include",
+            #[allow(clippy::unnecessary_to_owned)]
+            &(if cfg!(target_os = "linux") {
+                "-I/usr/arm-none-eabi/include"
+            } else if cfg!(target_os = "macos") {
+                "-I/usr/local/arm-none-eabi/include"
+            } else {
+                ""
+            })
+            .to_string(),
             "-mfpu=none",
             "-mfloat-abi=softfp",
         ])

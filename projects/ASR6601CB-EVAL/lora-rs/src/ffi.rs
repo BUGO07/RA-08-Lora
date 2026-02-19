@@ -6,8 +6,6 @@
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-pub static mut UART0: *mut uart_t = UART0_BASE as *mut uart_t;
-
 pub static mut GPIOA: *mut gpio_t = GPIO_BASE as *mut gpio_t;
 pub static mut GPIOB: *mut gpio_t = (GPIO_BASE + 0x400) as *mut gpio_t;
 pub static mut GPIOC: *mut gpio_t = (GPIO_BASE + 0x800) as *mut gpio_t;
