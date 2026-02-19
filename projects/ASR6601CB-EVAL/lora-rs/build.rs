@@ -21,15 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             &format!("-I{}/lora/system", tremo_sdk_path),
             &format!("-I{}/lora/system/cmac", tremo_sdk_path),
             "-Iinc",
-            #[allow(clippy::unnecessary_to_owned)]
-            &(if cfg!(target_os = "linux") {
-                "-I/usr/arm-none-eabi/include"
-            } else if cfg!(target_os = "macos") {
-                "-I/usr/local/arm-none-eabi/include"
-            } else {
-                ""
-            })
-            .to_string(),
+            "-I/usr/arm-none-eabi/include",
             "-mfpu=none",
             "-mfloat-abi=softfp",
         ])
