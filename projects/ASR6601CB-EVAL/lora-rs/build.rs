@@ -2,7 +2,6 @@ use std::{env, error::Error, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let tremo_sdk_path = env::var("TREMO_SDK_PATH").unwrap();
-    println!("{}", env::consts::OS);
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
