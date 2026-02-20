@@ -1,6 +1,6 @@
 use core::fmt::Write;
 
-use crate::regs::Uart;
+use crate::peripherals::regs::Uart;
 
 impl Write for Uart {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
@@ -43,7 +43,7 @@ impl<'a> Write for StringBuffer<'a> {
 macro_rules! print {
     ($($arg:tt)*) => {
         #[allow(unused_unsafe)] // rust bug
-        ::core::fmt::Write::write_fmt(unsafe { &mut $crate::regs::UART0} , format_args!($($arg)*)).unwrap();
+        ::core::fmt::Write::write_fmt(unsafe { &mut $crate::peripherals::regs::UART0} , format_args!($($arg)*)).unwrap();
     };
 }
 

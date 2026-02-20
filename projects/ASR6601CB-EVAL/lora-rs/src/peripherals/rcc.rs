@@ -9,7 +9,7 @@ use crate::{
         RCC_OSC_XO24M, RCC_OSC_XO32K, RCC_OSC_XO32M, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_LORA,
         RCC_PERIPHERAL_UART0, RCC_PERIPHERAL_UART1, RCC_PERIPHERAL_UART2, RCC_PERIPHERAL_UART3, *,
     },
-    regs::{__Rcc, AFEC, LORAC, RCC, Rcc},
+    peripherals::regs::{__Rcc, AFEC, LORAC, RCC, Rcc},
     tremo_analog_rd, tremo_analog_wr, tremo_reg_en, tremo_reg_rd, tremo_reg_set,
 };
 
@@ -19,6 +19,7 @@ impl Rcc {
         Self(base as *mut __Rcc)
     }
 
+    /// Get the frequency of the specified clock
     pub fn get_clk_freq(&self, clk: u32) -> u32 {
         let rcc = unsafe { &*self.0 };
 
@@ -66,6 +67,7 @@ impl Rcc {
         freq
     }
 
+    /// Enable/Disable the specified oscillator
     pub fn enable_oscillator(&self, osc: u32, new_state: bool) {
         match osc {
             RCC_OSC_RCO48M => {
@@ -170,6 +172,7 @@ impl Rcc {
         tremo_reg_set!(self, cr0, RCC_CR0_MCO_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the UART0 CLK
     pub fn set_uart0_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_UART0_CLK_EN_SYNC != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_UART0_CLK_EN_MASK, false);
@@ -178,6 +181,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_UART0_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the UART1 CLK
     pub fn set_uart1_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_UART1_CLK_EN_SYNC != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_UART1_CLK_EN_MASK, false);
@@ -186,6 +190,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_UART1_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the UART2 CLK
     pub fn set_uart2_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_UART2_CLK_EN_SYNC != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_UART2_CLK_EN_MASK, false);
@@ -194,6 +199,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_UART2_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the UART3 CLK
     pub fn set_uart3_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_UART3_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_UART3_CLK_EN_MASK, false);
@@ -202,6 +208,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_UART3_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the LPTIMER0 CLK
     pub fn set_lptimer0_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_LPTIMER0_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_LPTIMER0_CLK_EN_MASK, false);
@@ -215,6 +222,7 @@ impl Rcc {
         }
     }
 
+    /// Set the source of the LPTIMER1 CLK
     pub fn set_lptimer1_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_LPTIMER1_CLK_EN_MASK, false);
@@ -228,6 +236,7 @@ impl Rcc {
         }
     }
 
+    /// Set the source of the LCD CLK
     pub fn set_lcd_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_LCD_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_LCD_CLK_EN_MASK, false);
@@ -236,6 +245,7 @@ impl Rcc {
         tremo_reg_set!(self, cr1, RCC_CR1_LCD_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the LPUART CLK
     pub fn set_lpuart_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_LPUART_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_LPUART_CLK_EN_MASK, false);
@@ -244,6 +254,7 @@ impl Rcc {
         tremo_reg_set!(self, cr1, RCC_CR1_LPUART_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the RTC CLK
     pub fn set_rtc_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_RTC_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_RTC_CLK_EN_MASK, false);
@@ -252,6 +263,7 @@ impl Rcc {
         tremo_reg_set!(self, cr1, RCC_CR1_RTC_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the IWDG CLK
     pub fn set_iwdg_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_IWDG_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_IWDG_CLK_EN_MASK, false);
@@ -260,6 +272,7 @@ impl Rcc {
         tremo_reg_set!(self, cr1, RCC_CR1_IWDG_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the ADC CLK
     pub fn set_adc_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_ADC_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr0, RCC_CGR0_ADC_CLK_EN_MASK, false);
@@ -268,6 +281,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_ADC_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the QSPI CLK
     pub fn set_qspi_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_QSPI_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_QSPI_CLK_EN_MASK, false);
@@ -276,6 +290,7 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_QSPI_CLK_SEL_MASK, clk_src);
     }
 
+    /// Set the source of the I2S CLK
     pub fn set_i2s_clk_src(&self, clk_src: u32) {
         if tremo_reg_rd!(RCC, sr1) & RCC_SR1_I2S_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cgr1, RCC_CGR1_I2S_CLK_EN_MASK, false);
@@ -284,10 +299,12 @@ impl Rcc {
         tremo_reg_set!(self, cr2, RCC_CR2_I2S_CLK_SEL_MASK, clk_src);
     }
 
+    /// Get the source of the SYSCLK
     pub fn get_sys_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr0) & RCC_CR0_SYSCLK_SEL_MASK as u32
     }
 
+    /// Get the source of the SYSTICK
     pub fn get_systick_src(&self) -> u32 {
         todo!("SYSTICK")
         // if tremo_reg_rd!(SYSTICK, ctrl) & SysTick_CTRL_CLKSOURCE_Msk != 0 {
@@ -297,26 +314,32 @@ impl Rcc {
         // }
     }
 
+    /// Get the source of the MCO clock
     pub fn get_mco_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr0) & RCC_CR0_MCO_CLK_SEL_MASK
     }
 
+    /// Get the source of the UART0 CLK
     pub fn get_uart0_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_UART0_CLK_SEL_MASK
     }
 
+    /// Get the source of the UART1 CLK
     pub fn get_uart1_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_UART1_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the UART2 CLK
     pub fn get_uart2_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_UART2_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the UART3 CLK
     pub fn get_uart3_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_UART3_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the LPTIMER0 CLK
     pub fn get_lptimer0_get_clk_src(&self) -> u32 {
         if tremo_reg_rd!(self, cr1) & RCC_CR1_LPTIMER0_EXTCLK_SEL_MASK as u32 != 0 {
             RCC_LPTIMER0_CLK_SOURCE_EXTCLK
@@ -325,6 +348,7 @@ impl Rcc {
         }
     }
 
+    /// Get the source of the LPTIMER1 CLK
     pub fn get_lptimer1_get_clk_src(&self) -> u32 {
         if tremo_reg_rd!(self, cr1) & RCC_CR1_LPTIMER1_EXTCLK_SEL_MASK as u32 != 0 {
             RCC_LPTIMER1_CLK_SOURCE_EXTCLK
@@ -333,38 +357,47 @@ impl Rcc {
         }
     }
 
+    /// Get the source of the LCD CLK
     pub fn get_lcd_get_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr1) & RCC_CR1_LCD_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the LPUART CLK
     pub fn get_lpuart_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr1) & RCC_CR1_LPUART_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the RTC CLK
     pub fn get_rtc_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr1) & RCC_CR1_RTC_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the IWDG CLK
     pub fn get_iwdg_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr1) & RCC_CR1_IWDG_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the ADC CLK
     pub fn get_adc_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_ADC_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the QSPI CLK
     pub fn get_qspi_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_QSPI_CLK_SEL_MASK as u32
     }
 
+    /// Get the source of the I2S CLK
     pub fn get_i2s_clk_src(&self) -> u32 {
         tremo_reg_rd!(self, cr2) & RCC_CR2_I2S_CLK_SEL_MASK as u32
     }
 
+    /// Set the divider of the HCLK
     pub fn set_hclk_div(&self, div: u32) {
         tremo_reg_set!(self, cr0, RCC_CR0_HCLK_DIV_MASK, div);
     }
 
+    /// Set the divider of the PCLK
     pub fn set_pclk_div(&self, pclk0_div: u32, pclk1_div: u32) {
         tremo_reg_set!(
             self,
@@ -374,6 +407,7 @@ impl Rcc {
         );
     }
 
+    /// Set the divider of the MCO CLK
     pub fn set_mco_clk_div(&self, div: u32) {
         if tremo_reg_rd!(self, sr1) & RCC_SR1_MCO_CLK_EN_SYNC as u32 != 0 {
             tremo_reg_en!(self, cr0, RCC_CR0_MCO_CLK_OUT_EN_MASK, false);
@@ -382,6 +416,7 @@ impl Rcc {
         tremo_reg_set!(self, cr0, RCC_CR0_MCO_CLK_DIV_MASK, div);
     }
 
+    /// Enable/Disable the clock of the specified peripheral
     pub fn enable_peripheral_clk(&self, peripheral: u32, new_state: bool) {
         match peripheral {
             RCC_PERIPHERAL_UART0 => {
@@ -552,10 +587,12 @@ impl Rcc {
         }
     }
 
+    /// Enable/Disable the output of the mco clk
     pub fn enable_mco_clk_output(&self, new_state: bool) {
         tremo_reg_en!(self, cr0, RCC_CR0_MCO_CLK_OUT_EN_MASK, new_state);
     }
 
+    /// Reset the register of the specified peripheral to the reset value
     pub fn rst_peripheral(&self, mut peripheral: u32, new_state: bool) {
         if peripheral >= RCC_PERIPHERAL_SYSCFG {
             return;
@@ -580,18 +617,22 @@ impl Rcc {
         }
     }
 
+    /// Set the reset mask
     pub fn set_reset_mask(&self, mask: u32) {
         tremo_reg_set!(self, rst_cr, RCC_RST_CR_RESET_REQ_EN_MASK, mask);
     }
 
+    /// Get the reset mask
     pub fn get_reset_mask(&self) -> u32 {
         tremo_reg_rd!(self, rst_cr) & RCC_RST_CR_RESET_REQ_EN_MASK as u32
     }
 
+    /// Set the divider of the I2S MCLK
     pub fn set_i2s_mclk_div(&self, div: u32) {
         tremo_reg_set!(self, cr3, RCC_CR3_I2S_MCLK_DIV_MASK, div << 8);
     }
 
+    /// Set the divider of the I2S SCLK
     pub fn set_i2s_sclk_div(&self, div: u32) {
         tremo_reg_set!(self, cr3, RCC_CR3_I2S_SCLK_DIV_MASK, div);
     }

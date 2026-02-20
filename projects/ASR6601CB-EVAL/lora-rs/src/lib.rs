@@ -8,22 +8,16 @@
 pub mod class_c;
 /// C FFI Bindings for ASR6601 SDK
 pub mod ffi;
-/// GPIO driver
-pub mod gpio;
+/// Peripherals
+pub mod peripherals;
 /// Serial printing
 pub mod print;
-/// RCC
-pub mod rcc;
-/// Tremo Registers
-pub mod regs;
 /// Interrupts
 pub mod tremo_it;
-/// UART driver
-pub mod uart;
 
 use crate::{
     class_c::app_start,
-    regs::{RCC, UART0},
+    peripherals::regs::{RCC, UART0},
 };
 
 /// entry point
@@ -70,7 +64,7 @@ pub fn board_init() {
 
 /// rust panic handler
 #[panic_handler]
-pub fn panic(info: &core::panic::PanicInfo) -> ! {
+pub fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if let Some(location) = info.location() {
         println!(
             "Panicked at {}:{}:{}",

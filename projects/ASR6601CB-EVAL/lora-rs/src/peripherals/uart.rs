@@ -6,16 +6,18 @@ use crate::{
         UART_LCR_H_FEN, UART_LCR_H_PEN, UART_LCR_H_STOP, UART_LCR_H_WLEN, UART0_BASE, UART1_BASE,
         UART2_BASE, UART3_BASE,
     },
-    regs::{__Uart, RCC, Uart},
+    peripherals::regs::{__Uart, RCC, Uart},
     tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
 };
 
+/// Uart Status
 #[repr(u32)]
 pub enum UartStatus {
     Reset = 0,
     Set = !0,
 }
 
+/// UART configuration
 pub struct UartConfig {
     pub baudrate: u32,
     pub data_width: DataWidth,
@@ -91,6 +93,7 @@ pub enum Mode {
     TxRx = 0x00000030,
 }
 
+/// UART initialization error
 #[derive(Debug)]
 pub struct UartInitError;
 
@@ -124,10 +127,12 @@ impl Uart {
         (uart.dr & 0xFF) as u8
     }
 
+    /// Config the interrupt of the specified UART flag
     pub fn config_interrupt(&mut self, uart_interrupt: u32, new_state: bool) {
         tremo_reg_en!(self, imsc, uart_interrupt, new_state);
     }
 
+    /// Deinitializes the UART peripheral registers to the reset values
     pub fn deinit(&mut self) {
         let peripheral = match self.0 as u32 {
             UART0_BASE => RCC_PERIPHERAL_UART0,
@@ -144,10 +149,12 @@ impl Uart {
         }
     }
 
+    /// Set the threshold of RX FIFO
     pub fn set_rx_fifo_threshold(&mut self, fifo_level: u32) {
         tremo_reg_set!(self, ifls, UART_IFLS_RX, fifo_level);
     }
 
+    /// Set the threshold of TX FIFO
     pub fn set_tx_fifo_threshold(&mut self, fifo_level: u32) {
         tremo_reg_set!(self, ifls, UART_IFLS_TX, fifo_level);
     }
@@ -157,6 +164,7 @@ impl Uart {
         tremo_reg_en!(self, cr, UART_CR_UART_EN as u32, new_state);
     }
 
+    /// Get the interrupt status of the UART interrupt
     pub fn get_interrupt_status(&self, interrupt: u32) -> UartStatus {
         if tremo_reg_rd!(self, mis) & interrupt != 0 {
             UartStatus::Set
@@ -165,6 +173,7 @@ impl Uart {
         }
     }
 
+    /// Get the interrupt status of the UART interrupt
     pub fn clear_interrupt(&mut self, interrupt: u32) {
         tremo_reg_wr!(self, icr, interrupt);
     }
