@@ -1,15 +1,19 @@
 use crate::{
     ffi::{
-        RCC_FREQ_4M, RCC_FREQ_24M, RCC_FREQ_32768, RCC_PCLK0, RCC_PCLK1, UART_CR_FLOW_CTRL,
-        UART_CR_UART_EN, UART_CR_UART_MODE, UART_LCR_H_EPS_EVEN, UART_LCR_H_FEN, UART_LCR_H_PEN,
-        UART_LCR_H_STOP, UART_LCR_H_WLEN, UART0_BASE, UART1_BASE, UART2_BASE, UART3_BASE,
+        RCC_FREQ_4M, RCC_FREQ_24M, RCC_FREQ_32768, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_UART0,
+        RCC_PERIPHERAL_UART1, RCC_PERIPHERAL_UART2, RCC_PERIPHERAL_UART3, UART_CR_FLOW_CTRL,
+        UART_CR_UART_EN, UART_CR_UART_MODE, UART_IFLS_RX, UART_IFLS_TX, UART_LCR_H_EPS_EVEN,
+        UART_LCR_H_FEN, UART_LCR_H_PEN, UART_LCR_H_STOP, UART_LCR_H_WLEN, UART0_BASE, UART1_BASE,
+        UART2_BASE, UART3_BASE,
     },
-    regs::{RCC, tremo_reg_en, tremo_reg_set},
+    regs::{__Uart, RCC, Uart},
+    tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
 };
 
-pub enum UartFlagStatus {
-    Reset,
-    Set,
+#[repr(u32)]
+pub enum UartStatus {
+    Reset = 0,
+    Set = !0,
 }
 
 pub struct UartConfig {
@@ -36,6 +40,7 @@ impl Default for UartConfig {
     }
 }
 
+/// UART flags
 #[repr(u32)]
 pub enum UartFlag {
     TxFifoEmpty = 1 << 7,
@@ -45,6 +50,7 @@ pub enum UartFlag {
     Busy = 1 << 3,
 }
 
+/// UART parity
 #[repr(u32)]
 pub enum Parity {
     None,
@@ -52,6 +58,7 @@ pub enum Parity {
     Odd,
 }
 
+/// UART data width
 #[repr(u32)]
 pub enum DataWidth {
     Five = 0x00000000,
@@ -60,12 +67,14 @@ pub enum DataWidth {
     Eight = 0x00000060,
 }
 
+/// UART stop bits
 #[repr(u32)]
 pub enum StopBits {
     One = 0x00000000,
     Two = 0x00000008,
 }
 
+/// UART flow control
 #[repr(u32)]
 pub enum FlowControl {
     Disabled = 0x00000000,
@@ -74,6 +83,7 @@ pub enum FlowControl {
     CtsRts = 0x0000C000,
 }
 
+/// UART mode
 #[repr(u32)]
 pub enum Mode {
     Tx = 0x00000010,
@@ -81,39 +91,87 @@ pub enum Mode {
     TxRx = 0x00000030,
 }
 
-/// wrapper over the raw UART struct [`__Uart`]
-#[repr(C)]
-pub struct __Uart {
-    pub dr: u32,
-    pub rsc_ecr: u32,
-    pub rsv0: [u32; 4],
-    pub fr: u32,
-    pub rsv1: u32,
-    pub ilpr: u32,
-    pub ibrd: u32,
-    pub fbrd: u32,
-    pub lcr_h: u32,
-    pub cr: u32,
-    pub ifls: u32,
-    pub imsc: u32,
-    pub ris: u32,
-    pub mis: u32,
-    pub icr: u32,
-    pub dmacr: u32,
-    pub rsv2: [u32; 997],
-    pub id: [u32; 8],
-}
-
-/// raw UART struct wrapper
-pub struct Uart(*mut __Uart);
+#[derive(Debug)]
+pub struct UartInitError;
 
 impl Uart {
     /// Create a new UART instance from base address
     pub const fn new(base: u32) -> Self {
         Self(base as *mut __Uart)
     }
+
+    /// Get UART flag status
+    pub fn get_flag_status(&self, flag: UartFlag) -> UartStatus {
+        let uart = unsafe { &*self.0 };
+        if (uart.fr & flag as u32) != 0 {
+            UartStatus::Set
+        } else {
+            UartStatus::Reset
+        }
+    }
+    /// Send a byte through UART
+    pub fn send_data(&mut self, data: u8) {
+        let uart = unsafe { &mut *self.0 };
+        // wait till tx fifo is not full
+        while matches!(self.get_flag_status(UartFlag::TxFifoFull), UartStatus::Set) {}
+        uart.dr = data as u32;
+    }
+    /// Receive a byte through UART
+    pub fn receive_data(&mut self) -> u8 {
+        let uart = unsafe { &mut *self.0 };
+        /* wait till rx fifo is not empty */
+        while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), UartStatus::Set) {}
+        (uart.dr & 0xFF) as u8
+    }
+
+    pub fn config_interrupt(&mut self, uart_interrupt: u32, new_state: bool) {
+        tremo_reg_en!(self, imsc, uart_interrupt, new_state);
+    }
+
+    pub fn deinit(&mut self) {
+        let peripheral = match self.0 as u32 {
+            UART0_BASE => RCC_PERIPHERAL_UART0,
+            UART1_BASE => RCC_PERIPHERAL_UART1,
+            UART2_BASE => RCC_PERIPHERAL_UART2,
+            UART3_BASE => RCC_PERIPHERAL_UART3,
+            _ => unreachable!(),
+        };
+
+        unsafe {
+            RCC.enable_peripheral_clk(peripheral, false);
+            RCC.rst_peripheral(peripheral, true);
+            RCC.rst_peripheral(peripheral, false);
+        }
+    }
+
+    pub fn set_rx_fifo_threshold(&mut self, fifo_level: u32) {
+        tremo_reg_set!(self, ifls, UART_IFLS_RX, fifo_level);
+    }
+
+    pub fn set_tx_fifo_threshold(&mut self, fifo_level: u32) {
+        tremo_reg_set!(self, ifls, UART_IFLS_TX, fifo_level);
+    }
+
+    /// Enable or disable the UART peripheral
+    pub fn cmd(&mut self, new_state: bool) {
+        tremo_reg_en!(self, cr, UART_CR_UART_EN as u32, new_state);
+    }
+
+    pub fn get_interrupt_status(&self, interrupt: u32) -> UartStatus {
+        if tremo_reg_rd!(self, mis) & interrupt != 0 {
+            UartStatus::Set
+        } else {
+            UartStatus::Reset
+        }
+    }
+
+    pub fn clear_interrupt(&mut self, interrupt: u32) {
+        tremo_reg_wr!(self, icr, interrupt);
+    }
+
     /// Initialize UART
-    pub fn init(&mut self, config: UartConfig) -> Result<(), ()> {
+    /// TODO: edit with macros
+    pub fn init(&mut self, config: UartConfig) -> Result<(), UartInitError> {
         let uart = unsafe { &mut *self.0 };
 
         uart.cr &= !(UART_CR_UART_EN as u32); // disable UART
@@ -122,10 +180,10 @@ impl Uart {
 
         let clk_src = unsafe {
             match self.0 as u32 {
-                UART0_BASE => RCC.get_uart0_clk_source() >> 15,
-                UART1_BASE => RCC.get_uart0_clk_source() >> 13,
-                UART2_BASE => RCC.get_uart0_clk_source() >> 11,
-                UART3_BASE => RCC.get_uart0_clk_source() >> 9,
+                UART0_BASE => RCC.get_uart0_clk_src() >> 15,
+                UART1_BASE => RCC.get_uart0_clk_src() >> 13,
+                UART2_BASE => RCC.get_uart0_clk_src() >> 11,
+                UART3_BASE => RCC.get_uart0_clk_src() >> 9,
                 _ => 0,
             }
         };
@@ -146,28 +204,16 @@ impl Uart {
         };
 
         if uart_clk_freq < 16 * config.baudrate {
-            return Err(());
+            return Err(UartInitError);
         }
 
         let br_div = calc_uart_baud(uart_clk_freq, config.baudrate);
         uart.ibrd = br_div >> 16;
         uart.fbrd = br_div & 0x3f;
 
-        tremo_reg_set(
-            &mut uart.lcr_h,
-            UART_LCR_H_WLEN as u32,
-            config.data_width as u32,
-        );
-        tremo_reg_set(
-            &mut uart.lcr_h,
-            UART_LCR_H_STOP as u32,
-            config.stop_bits as u32,
-        );
-        tremo_reg_en(
-            &mut uart.lcr_h,
-            UART_LCR_H_FEN as u32,
-            config.fifo_mode != 0,
-        );
+        tremo_reg_set!(self, lcr_h, UART_LCR_H_WLEN, config.data_width as u32);
+        tremo_reg_set!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits as u32);
+        tremo_reg_en!(self, lcr_h, UART_LCR_H_FEN, config.fifo_mode != 0);
 
         match config.parity {
             Parity::Odd => {
@@ -183,48 +229,15 @@ impl Uart {
             }
         }
 
-        tremo_reg_set(&mut uart.cr, UART_CR_UART_MODE as u32, config.mode as u32);
-        tremo_reg_set(
-            &mut uart.cr,
+        tremo_reg_set!(self, cr, UART_CR_UART_MODE as u32, config.mode as u32);
+        tremo_reg_set!(
+            self,
+            cr,
             UART_CR_FLOW_CTRL as u32,
-            config.flow_control as u32,
+            config.flow_control as u32
         );
 
         Ok(())
-    }
-    /// Enable or disable the UART peripheral
-    pub fn cmd(&mut self, new_state: bool) {
-        let uart = unsafe { &mut *self.0 };
-        tremo_reg_en(&mut uart.cr, UART_CR_UART_EN as u32, new_state);
-    }
-    /// Send a byte through UART
-    pub fn send_data(&mut self, data: u8) {
-        let uart = unsafe { &mut *self.0 };
-        // wait till tx fifo is not full
-        while matches!(
-            self.get_flag_status(UartFlag::TxFifoFull),
-            UartFlagStatus::Set
-        ) {}
-        uart.dr = data as u32;
-    }
-    /// Receive a byte through UART
-    pub fn receive_data(&mut self) -> u8 {
-        let uart = unsafe { &mut *self.0 };
-        /* wait till rx fifo is not empty */
-        while matches!(
-            self.get_flag_status(UartFlag::RxFifoEmpty),
-            UartFlagStatus::Set
-        ) {}
-        (uart.dr & 0xFF) as u8
-    }
-    /// Get UART flag status
-    pub fn get_flag_status(&self, flag: UartFlag) -> UartFlagStatus {
-        let uart = unsafe { &*self.0 };
-        if (uart.fr & flag as u32) != 0 {
-            UartFlagStatus::Set
-        } else {
-            UartFlagStatus::Reset
-        }
     }
 }
 

@@ -1,6 +1,6 @@
 use core::fmt::Write;
 
-use crate::uart::Uart;
+use crate::regs::Uart;
 
 impl Write for Uart {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
