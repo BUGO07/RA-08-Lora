@@ -27,6 +27,7 @@ pub enum GpioMode {
     Analog,
 }
 
+/// The output drive capability of the GPIO pin
 #[repr(u32)]
 pub enum GpioDriveCapability {
     _4mA,
@@ -126,6 +127,7 @@ impl Gpio {
         }
     }
 
+    /// Set the output level of the GPIO pin (High = true, Low = false)
     pub fn write(&mut self, pin: u8, high: bool) {
         // TODO: ASSERT PIN
         if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
@@ -165,11 +167,13 @@ impl Gpio {
         tremo_reg_rd!(self, idr) & (1 << pin) != 0
     }
 
+    /// Toggle the output level of the GPIO pin
     pub fn toggle(&mut self, pin: u8) {
         // TODO: ASSERT PIN
         tremo_reg_wr!(self, odr, tremo_reg_rd!(self, odr) ^ (1 << pin));
     }
 
+    /// Config the ouput drive capability of the GPIO pin
     pub fn config_drive_capability(&mut self, pin: u8, capability: GpioDriveCapability) {
         // TODO: ASSERT PIN
         match capability {
@@ -182,17 +186,20 @@ impl Gpio {
         }
     }
 
+    /// Config the interrupt type of the specified GPIO pin
     pub fn config_interrupt(&mut self, pin: u8, int_type: IntType) {
         // TODO: ASSERTS
         self.clear_interrupt(pin);
         tremo_reg_set!(self, icr, 0x3 << (2 * pin), (int_type as u32) << (2 * pin));
     }
 
+    /// Clear the interrupt of the specified GPIO pin
     pub fn clear_interrupt(&mut self, pin: u8) {
         // TODO: ASSERT
         tremo_reg_wr!(self, ifr, tremo_reg_rd!(self, ifr) & 0x3 << (2 * pin));
     }
 
+    /// get the interrupt status of the specified GPIO pin
     pub fn get_interrupt_status(&self, pin: u8) -> SetStatus {
         if tremo_reg_rd!(self, ifr) & (0x3 << (2 * pin)) != 0 {
             SetStatus::Set
@@ -201,11 +208,13 @@ impl Gpio {
         }
     }
 
+    /// Config the wakeup setting of the specified GPIO pin
     pub fn config_wakeup(&mut self, pin: u8, enable: bool, wake_up: bool) {
         tremo_reg_en!(self, wucr, 1 << pin, enable);
         tremo_reg_en!(self, wulvl, 1 << pin, wake_up);
     }
 
+    /// Config the wakeup setting of the specified GPIO pin
     pub fn config_stop3_wakeup(&mut self, mut pin: u8, enable: bool, wake_up: bool) {
         if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
             return;
@@ -231,6 +240,7 @@ impl Gpio {
         );
     }
 
+    /// Config the iomux of the specified GPIO pin
     pub fn set_iomux(&mut self, pin: u8, function: u8) {
         // TODO: ASSERT
 
