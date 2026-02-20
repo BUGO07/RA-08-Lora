@@ -1,6 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "projects/ASR6601CB-EVAL/lora-rs/Cargo.toml"
+        "lora-rs/Cargo.toml"
     ],
     "rust-analyzer.check.allTargets": false,
     "rust-analyzer.cargo.target": "thumbv7em-none-eabi"
