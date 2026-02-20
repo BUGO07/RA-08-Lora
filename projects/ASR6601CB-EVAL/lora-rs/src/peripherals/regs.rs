@@ -1,11 +1,15 @@
-use crate::ffi::{AFEC_BASE, LORAC_BASE};
+use crate::ffi::{AFEC_BASE, GPIO_BASE, LORAC_BASE};
 
-const PERIPH_BASE: u32 = 0x40000000;
-const UART0_BASE: u32 = PERIPH_BASE + 0x3000;
-const UART1_BASE: u32 = PERIPH_BASE + 0x4000;
-const UART2_BASE: u32 = PERIPH_BASE + 0x10000;
-const UART3_BASE: u32 = PERIPH_BASE + 0x11000;
-const RCC_BASE: u32 = PERIPH_BASE;
+pub const PERIPH_BASE: u32 = 0x40000000;
+pub const UART0_BASE: u32 = PERIPH_BASE + 0x3000;
+pub const UART1_BASE: u32 = PERIPH_BASE + 0x4000;
+pub const UART2_BASE: u32 = PERIPH_BASE + 0x10000;
+pub const UART3_BASE: u32 = PERIPH_BASE + 0x11000;
+pub const GPIOA_BASE: u32 = GPIO_BASE;
+pub const GPIOB_BASE: u32 = GPIO_BASE + 0x400;
+pub const GPIOC_BASE: u32 = GPIO_BASE + 0x800;
+pub const GPIOD_BASE: u32 = GPIO_BASE + 0xC00;
+pub const RCC_BASE: u32 = PERIPH_BASE;
 
 pub static mut UART0: Uart = Uart::new(UART0_BASE);
 pub static mut UART1: Uart = Uart::new(UART1_BASE);
@@ -14,6 +18,17 @@ pub static mut UART3: Uart = Uart::new(UART3_BASE);
 pub static mut RCC: Rcc = Rcc::new(RCC_BASE);
 pub static mut AFEC: Afec = Afec::new(AFEC_BASE + 0x200);
 pub static mut LORAC: Lorac = Lorac::new(LORAC_BASE);
+pub static mut GPIOA: Gpio = Gpio::new(GPIOA_BASE);
+pub static mut GPIOB: Gpio = Gpio::new(GPIOB_BASE);
+pub static mut GPIOC: Gpio = Gpio::new(GPIOC_BASE);
+pub static mut GPIOD: Gpio = Gpio::new(GPIOD_BASE);
+
+/// Uart Status
+#[repr(u32)]
+pub enum SetStatus {
+    Reset = 0,
+    Set = !0,
+}
 
 /// raw RCC struct
 #[repr(C)]
@@ -35,6 +50,13 @@ pub struct __Rcc {
 
 /// wrapper over the raw RCC struct [`__Rcc`]
 pub struct Rcc(pub *mut __Rcc);
+
+impl Rcc {
+    /// Create a new RCC instance from base address
+    pub const fn new(base: u32) -> Self {
+        Self(base as *mut __Rcc)
+    }
+}
 
 /// raw UART struct
 #[repr(C)]
@@ -62,6 +84,13 @@ pub struct __Uart {
 /// wrapper over the raw UART struct [`__Uart`]
 pub struct Uart(pub *mut __Uart);
 
+impl Uart {
+    /// Create a new UART instance from base address
+    pub const fn new(base: u32) -> Self {
+        Self(base as *mut __Uart)
+    }
+}
+
 /// raw AFEC struct
 #[repr(C)]
 pub struct __Afec {
@@ -77,6 +106,38 @@ impl Afec {
     /// Create a new AFEC instance from base address
     pub const fn new(base: u32) -> Self {
         Self(base as *mut __Afec)
+    }
+}
+
+/// raw GPIO struct
+#[repr(C)]
+pub struct __Gpio {
+    pub oer: u32,
+    pub otyper: u32,
+    pub ier: u32,
+    pub per: u32,
+    pub psr: u32,
+    pub idr: u32,
+    pub odr: u32,
+    pub brr: u32,
+    pub bsr: u32,
+    pub dsr: u32,
+    pub icr: u32,
+    pub ifr: u32,
+    pub wucr: u32,
+    pub wulvl: u32,
+    pub afrl: u32,
+    pub afrh: u32,
+    pub stop3_wucr: u32,
+}
+
+/// wrapper over the raw GPIO struct [`__Gpio`]
+pub struct Gpio(pub *mut __Gpio);
+
+impl Gpio {
+    /// Create a new GPIO instance from base address
+    pub const fn new(base: u32) -> Self {
+        Self(base as *mut __Gpio)
     }
 }
 

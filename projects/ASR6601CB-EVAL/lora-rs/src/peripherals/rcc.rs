@@ -9,16 +9,11 @@ use crate::{
         RCC_OSC_XO24M, RCC_OSC_XO32K, RCC_OSC_XO32M, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_LORA,
         RCC_PERIPHERAL_UART0, RCC_PERIPHERAL_UART1, RCC_PERIPHERAL_UART2, RCC_PERIPHERAL_UART3, *,
     },
-    peripherals::regs::{__Rcc, AFEC, LORAC, RCC, Rcc},
+    peripherals::regs::{AFEC, LORAC, RCC, Rcc},
     tremo_analog_rd, tremo_analog_wr, tremo_reg_en, tremo_reg_rd, tremo_reg_set,
 };
 
 impl Rcc {
-    /// Create a new RCC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Rcc)
-    }
-
     /// Get the frequency of the specified clock
     pub fn get_clk_freq(&self, clk: u32) -> u32 {
         let rcc = unsafe { &*self.0 };

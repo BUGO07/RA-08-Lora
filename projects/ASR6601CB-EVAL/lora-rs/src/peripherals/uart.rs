@@ -6,16 +6,9 @@ use crate::{
         UART_LCR_H_FEN, UART_LCR_H_PEN, UART_LCR_H_STOP, UART_LCR_H_WLEN, UART0_BASE, UART1_BASE,
         UART2_BASE, UART3_BASE,
     },
-    peripherals::regs::{__Uart, RCC, Uart},
+    peripherals::regs::{RCC, SetStatus, Uart},
     tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
 };
-
-/// Uart Status
-#[repr(u32)]
-pub enum UartStatus {
-    Reset = 0,
-    Set = !0,
-}
 
 /// UART configuration
 pub struct UartConfig {
@@ -98,32 +91,27 @@ pub enum Mode {
 pub struct UartInitError;
 
 impl Uart {
-    /// Create a new UART instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Uart)
-    }
-
     /// Get UART flag status
-    pub fn get_flag_status(&self, flag: UartFlag) -> UartStatus {
+    pub fn get_flag_status(&self, flag: UartFlag) -> SetStatus {
         let uart = unsafe { &*self.0 };
         if (uart.fr & flag as u32) != 0 {
-            UartStatus::Set
+            SetStatus::Set
         } else {
-            UartStatus::Reset
+            SetStatus::Reset
         }
     }
     /// Send a byte through UART
     pub fn send_data(&mut self, data: u8) {
         let uart = unsafe { &mut *self.0 };
         // wait till tx fifo is not full
-        while matches!(self.get_flag_status(UartFlag::TxFifoFull), UartStatus::Set) {}
+        while matches!(self.get_flag_status(UartFlag::TxFifoFull), SetStatus::Set) {}
         uart.dr = data as u32;
     }
     /// Receive a byte through UART
     pub fn receive_data(&mut self) -> u8 {
         let uart = unsafe { &mut *self.0 };
         /* wait till rx fifo is not empty */
-        while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), UartStatus::Set) {}
+        while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), SetStatus::Set) {}
         (uart.dr & 0xFF) as u8
     }
 
@@ -165,11 +153,11 @@ impl Uart {
     }
 
     /// Get the interrupt status of the UART interrupt
-    pub fn get_interrupt_status(&self, interrupt: u32) -> UartStatus {
+    pub fn get_interrupt_status(&self, interrupt: u32) -> SetStatus {
         if tremo_reg_rd!(self, mis) & interrupt != 0 {
-            UartStatus::Set
+            SetStatus::Set
         } else {
-            UartStatus::Reset
+            SetStatus::Reset
         }
     }
 

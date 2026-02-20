@@ -1,4 +1,13 @@
-# ლინუქსზე გასაშვები ინსტრუქციები (Ubuntu)
+# Rust Port of the Ai-thinker RA-08 Lora SDK
+
+## Ported:
+### Peripherals:
+- GPIO
+- UART
+- REGS
+- RCC
+
+## Instructions to run on linux (Ubuntu)
 
 ```
 git clone https://github.com/BUGO07/RA-08-Lora

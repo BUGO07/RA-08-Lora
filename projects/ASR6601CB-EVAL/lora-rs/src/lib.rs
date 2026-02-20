@@ -17,7 +17,8 @@ pub mod tremo_it;
 
 use crate::{
     class_c::app_start,
-    peripherals::regs::{RCC, UART0},
+    ffi::{GPIO_PIN_0, GPIO_PIN_1},
+    peripherals::regs::{GPIOB, RCC, UART0},
 };
 
 /// entry point
@@ -30,8 +31,8 @@ pub extern "C" fn main() -> ! {
 /// initialize UART for logging
 pub fn uart_log_init() {
     unsafe {
-        ffi::gpio_set_iomux(ffi::GPIOB, ffi::GPIO_PIN_0, 1);
-        ffi::gpio_set_iomux(ffi::GPIOB, ffi::GPIO_PIN_1, 1);
+        GPIOB.set_iomux(GPIO_PIN_0, 1);
+        GPIOB.set_iomux(GPIO_PIN_1, 1);
 
         UART0.init(Default::default()).unwrap();
         UART0.cmd(true);
