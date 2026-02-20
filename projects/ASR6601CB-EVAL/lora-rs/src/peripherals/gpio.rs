@@ -1,11 +1,29 @@
 use crate::{
-    ffi::{
-        GPIO_PIN_6, GPIO_PIN_7, GPIO_PIN_8, GPIO_PIN_12, GPIO_PIN_13, RCC_PERIPHERAL_GPIOA,
-        RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC, RCC_PERIPHERAL_GPIOD,
+    peripherals::{
+        rcc::{
+            RCC_PERIPHERAL_GPIOA, RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC, RCC_PERIPHERAL_GPIOD,
+        },
+        regs::{GPIOA_BASE, GPIOD_BASE, Gpio, RCC, SetStatus},
     },
-    peripherals::regs::{GPIOA_BASE, GPIOD_BASE, Gpio, RCC, SetStatus},
     tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
 };
+
+pub const GPIO_PIN_0: u8 = 0;
+pub const GPIO_PIN_1: u8 = 1;
+pub const GPIO_PIN_2: u8 = 2;
+pub const GPIO_PIN_3: u8 = 3;
+pub const GPIO_PIN_4: u8 = 4;
+pub const GPIO_PIN_5: u8 = 5;
+pub const GPIO_PIN_6: u8 = 6;
+pub const GPIO_PIN_7: u8 = 7;
+pub const GPIO_PIN_8: u8 = 8;
+pub const GPIO_PIN_9: u8 = 9;
+pub const GPIO_PIN_10: u8 = 10;
+pub const GPIO_PIN_11: u8 = 11;
+pub const GPIO_PIN_12: u8 = 12;
+pub const GPIO_PIN_13: u8 = 13;
+pub const GPIO_PIN_14: u8 = 14;
+pub const GPIO_PIN_15: u8 = 15;
 
 #[repr(u32)]
 pub enum GpioMode {

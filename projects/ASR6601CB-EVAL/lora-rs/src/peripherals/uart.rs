@@ -1,12 +1,11 @@
 use crate::{
-    ffi::{
-        RCC_FREQ_4M, RCC_FREQ_24M, RCC_FREQ_32768, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_UART0,
-        RCC_PERIPHERAL_UART1, RCC_PERIPHERAL_UART2, RCC_PERIPHERAL_UART3, UART_CR_FLOW_CTRL,
-        UART_CR_UART_EN, UART_CR_UART_MODE, UART_IFLS_RX, UART_IFLS_TX, UART_LCR_H_EPS_EVEN,
-        UART_LCR_H_FEN, UART_LCR_H_PEN, UART_LCR_H_STOP, UART_LCR_H_WLEN, UART0_BASE, UART1_BASE,
-        UART2_BASE, UART3_BASE,
+    peripherals::{
+        rcc::{
+            RCC_FREQ_4M, RCC_FREQ_24M, RCC_FREQ_32768, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_UART0,
+            RCC_PERIPHERAL_UART1, RCC_PERIPHERAL_UART2, RCC_PERIPHERAL_UART3,
+        },
+        regs::*,
     },
-    peripherals::regs::{RCC, SetStatus, Uart},
     tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
 };
 
@@ -149,7 +148,7 @@ impl Uart {
 
     /// Enable or disable the UART peripheral
     pub fn cmd(&mut self, new_state: bool) {
-        tremo_reg_en!(self, cr, UART_CR_UART_EN as u32, new_state);
+        tremo_reg_en!(self, cr, UART_CR_UART_EN, new_state);
     }
 
     /// Get the interrupt status of the UART interrupt
@@ -171,8 +170,8 @@ impl Uart {
     pub fn init(&mut self, config: UartConfig) -> Result<(), UartInitError> {
         let uart = unsafe { &mut *self.0 };
 
-        uart.cr &= !(UART_CR_UART_EN as u32); // disable UART
-        uart.lcr_h &= !(UART_LCR_H_FEN as u32); // flush fifo
+        uart.cr &= !(UART_CR_UART_EN); // disable UART
+        uart.lcr_h &= !(UART_LCR_H_FEN); // flush fifo
         uart.imsc = 0;
 
         let clk_src = unsafe {
@@ -188,7 +187,7 @@ impl Uart {
         let uart_clk_freq = unsafe {
             match clk_src {
                 1 => RCC_FREQ_4M,
-                2 => RCC_FREQ_32768 as u32,
+                2 => RCC_FREQ_32768,
                 3 => RCC_FREQ_24M,
                 _ => {
                     if self.0 as u32 == UART0_BASE || self.0 as u32 == UART1_BASE {
@@ -208,31 +207,26 @@ impl Uart {
         uart.ibrd = br_div >> 16;
         uart.fbrd = br_div & 0x3f;
 
-        tremo_reg_set!(self, lcr_h, UART_LCR_H_WLEN, config.data_width as u32);
-        tremo_reg_set!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits as u32);
+        tremo_reg_set!(self, lcr_h, UART_LCR_H_WLEN, config.data_width);
+        tremo_reg_set!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits);
         tremo_reg_en!(self, lcr_h, UART_LCR_H_FEN, config.fifo_mode != 0);
 
         match config.parity {
             Parity::Odd => {
-                uart.lcr_h |= UART_LCR_H_PEN as u32;
-                uart.lcr_h &= !(UART_LCR_H_EPS_EVEN as u32);
+                uart.lcr_h |= UART_LCR_H_PEN;
+                uart.lcr_h &= !(UART_LCR_H_EPS_EVEN);
             }
             Parity::Even => {
-                uart.lcr_h |= UART_LCR_H_PEN as u32;
-                uart.lcr_h |= UART_LCR_H_EPS_EVEN as u32;
+                uart.lcr_h |= UART_LCR_H_PEN;
+                uart.lcr_h |= UART_LCR_H_EPS_EVEN;
             }
             Parity::None => {
-                uart.lcr_h &= !(UART_LCR_H_PEN as u32);
+                uart.lcr_h &= !(UART_LCR_H_PEN);
             }
         }
 
-        tremo_reg_set!(self, cr, UART_CR_UART_MODE as u32, config.mode as u32);
-        tremo_reg_set!(
-            self,
-            cr,
-            UART_CR_FLOW_CTRL as u32,
-            config.flow_control as u32
-        );
+        tremo_reg_set!(self, cr, UART_CR_UART_MODE, config.mode);
+        tremo_reg_set!(self, cr, UART_CR_FLOW_CTRL, config.flow_control);
 
         Ok(())
     }

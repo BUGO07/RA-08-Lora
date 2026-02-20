@@ -3,6 +3,7 @@
 #![allow(static_mut_refs)]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 #![allow(clippy::macro_metavars_in_unsafe)]
+#![allow(unused_unsafe)]
 
 /// Class C LoRaWAN module
 pub mod class_c;
@@ -17,8 +18,15 @@ pub mod tremo_it;
 
 use crate::{
     class_c::app_start,
-    ffi::{GPIO_PIN_0, GPIO_PIN_1},
-    peripherals::regs::{GPIOB, RCC, UART0},
+    peripherals::{
+        gpio::{GPIO_PIN_0, GPIO_PIN_1},
+        rcc::{
+            RCC_OSC_XO32K, RCC_PERIPHERAL_GPIOA, RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC,
+            RCC_PERIPHERAL_GPIOD, RCC_PERIPHERAL_LORA, RCC_PERIPHERAL_PWR, RCC_PERIPHERAL_RTC,
+            RCC_PERIPHERAL_SAC, RCC_PERIPHERAL_UART0,
+        },
+        regs::{GPIOB, RCC, UART0},
+    },
 };
 
 /// entry point
@@ -42,17 +50,17 @@ pub fn uart_log_init() {
 /// init board, enable peripheral clocks, etc.
 pub fn board_init() {
     unsafe {
-        RCC.enable_oscillator(ffi::RCC_OSC_XO32K, true);
+        RCC.enable_oscillator(RCC_OSC_XO32K, true);
 
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_UART0, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOA, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOB, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOC, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_GPIOD, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_PWR, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_RTC, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_SAC, true);
-        RCC.enable_peripheral_clk(ffi::RCC_PERIPHERAL_LORA, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_UART0, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_PWR, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_RTC, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
+        RCC.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
 
         ffi::delay_ms(100);
         ffi::pwr_xo32k_lpm_cmd(true);
