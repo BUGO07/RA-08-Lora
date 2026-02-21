@@ -1,5 +1,6 @@
 
 PROJECT := $(notdir $(CURDIR))
+TREMO_SDK_PATH := $(abspath ..)
 
 $(PROJECT)_SOURCE := \
     $(TREMO_SDK_PATH)/platform/system/printf-stdarg.c  \
