@@ -7,24 +7,6 @@ pub enum SetStatus {
     Set = !0,
 }
 
-/// Read from a register
-#[macro_export]
-macro_rules! tremo_reg_rd {
-    ($obj:expr, $reg:ident) => {
-        unsafe { core::ptr::read_volatile(core::ptr::addr_of!((*$obj.0).$reg)) }
-    };
-}
-
-/// Write to a register
-#[macro_export]
-macro_rules! tremo_reg_wr {
-    ($obj:expr, $reg:ident, $value:expr) => {
-        unsafe {
-            core::ptr::write_volatile(core::ptr::addr_of_mut!((*$obj.0).$reg), $value as u32);
-        };
-    };
-}
-
 /// Read from analog register at address
 #[macro_export]
 macro_rules! tremo_analog_rd {
@@ -57,12 +39,7 @@ macro_rules! tremo_analog_wr {
 #[macro_export]
 macro_rules! tremo_reg_set {
     ($obj:expr, $reg:ident, $mask:expr, $value:expr) => {
-        unsafe {
-            let ptr = &mut (*$obj.0).$reg;
-            let current = core::ptr::read_volatile(ptr);
-            let new_val = (current & !($mask as u32)) | ($value as u32);
-            core::ptr::write_volatile(ptr, new_val);
-        };
+        $obj.$reg = ($obj.$reg & !($mask as u32)) | ($value as u32);
     };
 }
 
@@ -70,19 +47,70 @@ macro_rules! tremo_reg_set {
 #[macro_export]
 macro_rules! tremo_reg_en {
     ($obj:expr, $reg:ident, $mask:expr, $enable:expr) => {
-        #[allow(clippy::macro_metavars_in_unsafe)]
-        unsafe {
-            let ptr = &mut (*$obj.0).$reg;
-            let current = core::ptr::read_volatile(ptr);
-            let new_val = if $enable {
-                current | ($mask as u32)
-            } else {
-                current & !($mask as u32)
-            };
-            core::ptr::write_volatile(ptr, new_val);
+        $obj.$reg = if $enable {
+            $obj.$reg | ($mask as u32)
+        } else {
+            $obj.$reg & !($mask as u32)
         };
     };
 }
+
+macro_rules! define_reg {
+    (
+        $(#[$wrapper_meta:meta])*
+        $name:ident
+
+        $(#[$raw_meta:meta])*
+        $raw_name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field:ident : $ty:ty
+            ),* $(,)?
+        }
+    ) => {
+        #[repr(C)]
+        $(#[$raw_meta])*
+        pub struct $raw_name {
+            $(pub $field: $ty),*
+        }
+
+        #[derive(Clone)]
+        $(#[$wrapper_meta])*
+        pub struct $name {
+            ptr: *mut $raw_name,
+        }
+
+        unsafe impl Sync for $name {}
+
+        impl $name {
+            pub const fn new(base: u32) -> Self {
+                Self {
+                    ptr: base as *mut $raw_name,
+                }
+            }
+
+            #[inline(always)]
+            pub const fn ptr(&self) -> *mut $raw_name {
+                self.ptr
+            }
+        }
+
+        impl core::ops::Deref for $name {
+            type Target = $raw_name;
+
+            fn deref(&self) -> &Self::Target {
+                unsafe { &*self.ptr }
+            }
+        }
+
+        impl core::ops::DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                unsafe { &mut *self.ptr }
+            }
+        }
+    };
+}
+
 /// The Flash base address
 pub const FLASH_BASE: u32 = 0x08000000;
 /// The Flash info base address
@@ -96,36 +124,27 @@ pub const PERIPH_BASE: u32 = 0x40000000;
 /// The AFEC registers base address
 pub const AFEC_BASE: u32 = 0x40008000;
 
-/// raw RCC struct
-#[repr(C)]
-pub struct __Rcc {
-    pub cr0: u32,
-    pub cr1: u32,
-    pub cr2: u32,
-    pub cgr0: u32,
-    pub cgr1: u32,
-    pub cgr2: u32,
-    pub rst0: u32,
-    pub rst1: u32,
-    pub rst_sr: u32,
-    pub rst_cr: u32,
-    pub sr: u32,
-    pub sr1: u32,
-    pub cr3: u32,
-}
-
-/// wrapper over the raw RCC struct [`__Rcc`]
-pub struct Rcc(pub *mut __Rcc);
-
-impl Rcc {
-    /// Create a new RCC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Rcc)
+define_reg! {
+    Rcc
+    __Rcc {
+        cr0: u32,
+        cr1: u32,
+        cr2: u32,
+        cgr0: u32,
+        cgr1: u32,
+        cgr2: u32,
+        rst0: u32,
+        rst1: u32,
+        rst_sr: u32,
+        rst_cr: u32,
+        sr: u32,
+        sr1: u32,
+        cr3: u32,
     }
 }
 
 pub const RCC_BASE: u32 = PERIPH_BASE + 0x00000000;
-pub static mut RCC: Rcc = Rcc::new(RCC_BASE);
+pub static RCC: Rcc = Rcc::new(RCC_BASE);
 
 pub const RCC_CR0_STCLKEN_SEL_MASK: u32 = 0x02000000;
 pub const RCC_CR0_STCLKEN_SEL_XO32K: u32 = 0x00000000;
@@ -410,78 +429,60 @@ pub const RCC_SR1_LPUART_AON_CLK_EN_SYNC: u32 = 0x00000004;
 pub const RCC_SR1_RTC_AON_CLK_EN_SYNC: u32 = 0x00000002;
 pub const RCC_SR1_IWDG_AON_CLK_EN_SYNC: u32 = 0x00000001;
 
-/// raw SSP struct
-#[repr(C)]
-pub struct __Ssp {
-    pub cr0: u32,
-    pub cr1: u32,
-    pub dr: u32,
-    pub sr: u32,
-    pub cpsr: u32,
-    pub imsc: u32,
-    pub ris: u32,
-    pub mis: u32,
-    pub icr: u32,
-    pub dma_cr: u32,
-    pub resv: [u32; 1006],
-    pub periph_id0: u32,
-    pub periph_id1: u32,
-    pub periph_id2: u32,
-    pub periph_id3: u32,
-    pub pcell_id0: u32,
-    pub pcell_id1: u32,
-    pub pcell_id2: u32,
-    pub pcell_id3: u32,
-}
-
-/// wrapper over the raw SSP struct [`__Ssp`]
-pub struct Ssp(pub *mut __Ssp);
-
-impl Ssp {
-    /// Create a new SSP instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Ssp)
+define_reg! {
+    Ssp
+    __Ssp {
+        cr0: u32,
+        cr1: u32,
+        dr: u32,
+        sr: u32,
+        cpsr: u32,
+        imsc: u32,
+        ris: u32,
+        mis: u32,
+        icr: u32,
+        dma_cr: u32,
+        resv: [u32; 1006],
+        periph_id0: u32,
+        periph_id1: u32,
+        periph_id2: u32,
+        periph_id3: u32,
+        pcell_id0: u32,
+        pcell_id1: u32,
+        pcell_id2: u32,
+        pcell_id3: u32,
     }
 }
 
 pub const SSP0_BASE: u32 = PERIPH_BASE + 0x00006000;
 pub const SSP1_BASE: u32 = PERIPH_BASE + 0x00012000;
 pub const SSP2_BASE: u32 = PERIPH_BASE + 0x00013000;
-pub static mut SSP0: Ssp = Ssp::new(SSP0_BASE);
-pub static mut SSP1: Ssp = Ssp::new(SSP1_BASE);
-pub static mut SSP2: Ssp = Ssp::new(SSP2_BASE);
+pub static SSP0: Ssp = Ssp::new(SSP0_BASE);
+pub static SSP1: Ssp = Ssp::new(SSP1_BASE);
+pub static SSP2: Ssp = Ssp::new(SSP2_BASE);
 
 pub const SSP_NUM_PORTS: u32 = 3;
 
-/// raw GPIO struct
-#[repr(C)]
-pub struct __Gpio {
-    pub oer: u32,
-    pub otyper: u32,
-    pub ier: u32,
-    pub per: u32,
-    pub psr: u32,
-    pub idr: u32,
-    pub odr: u32,
-    pub brr: u32,
-    pub bsr: u32,
-    pub dsr: u32,
-    pub icr: u32,
-    pub ifr: u32,
-    pub wucr: u32,
-    pub wulvl: u32,
-    pub afrl: u32,
-    pub afrh: u32,
-    pub stop3_wucr: u32,
-}
-
-/// wrapper over the raw GPIO struct [`__Gpio`]
-pub struct Gpio(pub *mut __Gpio);
-
-impl Gpio {
-    /// Create a new GPIO instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Gpio)
+define_reg! {
+    Gpio
+    __Gpio {
+        oer: u32,
+        otyper: u32,
+        ier: u32,
+        per: u32,
+        psr: u32,
+        idr: u32,
+        odr: u32,
+        brr: u32,
+        bsr: u32,
+        dsr: u32,
+        icr: u32,
+        ifr: u32,
+        wucr: u32,
+        wulvl: u32,
+        afrl: u32,
+        afrh: u32,
+        stop3_wucr: u32,
     }
 }
 
@@ -490,78 +491,60 @@ pub const GPIOA_BASE: u32 = GPIO_BASE;
 pub const GPIOB_BASE: u32 = GPIO_BASE + 0x400;
 pub const GPIOC_BASE: u32 = GPIO_BASE + 0x800;
 pub const GPIOD_BASE: u32 = GPIO_BASE + 0xC00;
-pub static mut GPIOA: Gpio = Gpio::new(GPIOA_BASE);
-pub static mut GPIOB: Gpio = Gpio::new(GPIOB_BASE);
-pub static mut GPIOC: Gpio = Gpio::new(GPIOC_BASE);
-pub static mut GPIOD: Gpio = Gpio::new(GPIOD_BASE);
+pub static GPIOA: Gpio = Gpio::new(GPIOA_BASE);
+pub static GPIOB: Gpio = Gpio::new(GPIOB_BASE);
+pub static GPIOC: Gpio = Gpio::new(GPIOC_BASE);
+pub static GPIOD: Gpio = Gpio::new(GPIOD_BASE);
 
-/// raw RTC struct
-#[repr(C)]
-pub struct __Rtc {
-    pub ctrl: u32,
-    pub alarm0: u32,
-    pub alarm1: u32,
-    pub ppm_adjust: u32,
-    pub calendar: u32,
-    pub calendar_h: u32,
-    pub cyc_max: u32,
-    pub sr: u32,
-    pub asyn_data: u32,
-    pub asyn_data_h: u32,
-    pub cr1: u32,
-    pub sr1: u32,
-    pub cr2: u32,
-    pub sub_second_cnt: u32,
-    pub cyc_cnt: u32,
-    pub alarm0_subsecond: u32,
-    pub alarm1_subsecond: u32,
-    pub calendar_r: u32,
-    pub calendar_r_h: u32,
-}
-
-/// wrapper over the raw RTC struct [`__Rtc`]
-pub struct Rtc(pub *mut __Rtc);
-
-impl Rtc {
-    /// Create a new RTC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Rtc)
+define_reg! {
+    Rtc
+    __Rtc {
+        ctrl: u32,
+        alarm0: u32,
+        alarm1: u32,
+        ppm_adjust: u32,
+        calendar: u32,
+        calendar_h: u32,
+        cyc_max: u32,
+        sr: u32,
+        asyn_data: u32,
+        asyn_data_h: u32,
+        cr1: u32,
+        sr1: u32,
+        cr2: u32,
+        sub_second_cnt: u32,
+        cyc_cnt: u32,
+        alarm0_subsecond: u32,
+        alarm1_subsecond: u32,
+        calendar_r: u32,
+        calendar_r_h: u32,
     }
 }
 
 pub const RTC_REG_BASE: u32 = 0x4000E000;
-pub static mut RTC: Rtc = Rtc::new(RTC_REG_BASE);
+pub static RTC: Rtc = Rtc::new(RTC_REG_BASE);
 
-/// raw UART struct
-#[repr(C)]
-pub struct __Uart {
-    pub dr: u32,
-    pub rsc_ecr: u32,
-    pub rsv0: [u32; 4],
-    pub fr: u32,
-    pub rsv1: u32,
-    pub ilpr: u32,
-    pub ibrd: u32,
-    pub fbrd: u32,
-    pub lcr_h: u32,
-    pub cr: u32,
-    pub ifls: u32,
-    pub imsc: u32,
-    pub ris: u32,
-    pub mis: u32,
-    pub icr: u32,
-    pub dmacr: u32,
-    pub rsv2: [u32; 997],
-    pub id: [u32; 8],
-}
-
-/// wrapper over the raw UART struct [`__Uart`]
-pub struct Uart(pub *mut __Uart);
-
-impl Uart {
-    /// Create a new UART instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Uart)
+define_reg! {
+    Uart
+    __Uart {
+        dr: u32,
+        rsc_ecr: u32,
+        rsv0: [u32; 4],
+        fr: u32,
+        rsv1: u32,
+        ilpr: u32,
+        ibrd: u32,
+        fbrd: u32,
+        lcr_h: u32,
+        cr: u32,
+        ifls: u32,
+        imsc: u32,
+        ris: u32,
+        mis: u32,
+        icr: u32,
+        dmacr: u32,
+        rsv2: [u32; 997],
+        id: [u32; 8],
     }
 }
 
@@ -570,10 +553,10 @@ pub const UART1_BASE: u32 = PERIPH_BASE + 0x4000;
 pub const UART2_BASE: u32 = PERIPH_BASE + 0x10000;
 pub const UART3_BASE: u32 = PERIPH_BASE + 0x11000;
 
-pub static mut UART0: Uart = Uart::new(UART0_BASE);
-pub static mut UART1: Uart = Uart::new(UART1_BASE);
-pub static mut UART2: Uart = Uart::new(UART2_BASE);
-pub static mut UART3: Uart = Uart::new(UART3_BASE);
+pub static UART0: Uart = Uart::new(UART0_BASE);
+pub static UART1: Uart = Uart::new(UART1_BASE);
+pub static UART2: Uart = Uart::new(UART2_BASE);
+pub static UART3: Uart = Uart::new(UART3_BASE);
 
 /****************************UART CR bit definition***************************/
 pub const UART_CR_SIR_LPIRDA_EN: u32 = 0x00000004;
@@ -632,66 +615,48 @@ pub const UART_DMACR_TX_EN_MASK: u32 = 0x00000002;
 
 pub const UART_DMACR_RX_EN_MASK: u32 = 0x00000001;
 
-/// raw LPUART struct
-#[repr(C)]
-pub struct __Lpuart {
-    pub cr0: u32,
-    pub cr1: u32,
-    pub sr0: u32,
-    pub sr1: u32,
-    pub data: u32,
-}
-
-/// wrapper over the raw LPUART struct [`__Lpuart`]
-pub struct Lpuart(pub *mut __Lpuart);
-
-impl Lpuart {
-    /// Create a new LPUART instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Lpuart)
+define_reg! {
+    Lpuart
+    __Lpuart {
+        cr0: u32,
+        cr1: u32,
+        sr0: u32,
+        sr1: u32,
+        data: u32,
     }
 }
 
 pub const LPUART_BASE: u32 = PERIPH_BASE + 0x5000;
-pub static mut LPUART: Lpuart = Lpuart::new(LPUART_BASE);
+pub static LPUART: Lpuart = Lpuart::new(LPUART_BASE);
 
-/// raw EFC struct
-#[repr(C)]
-pub struct __Efc {
-    pub cr: u32,
-    pub int_en: u32,
-    pub sr: u32,
-    pub program_data0: u32,
-    pub program_data1: u32,
-    pub timing_cfg: u32,
-    pub protect_seq: u32,
-    pub rsv0: u32,
-    pub chip_pattern: u32,
-    pub ip_trim_l: u32,
-    pub ip_trim_h: u32,
-    pub sn_l: u32,
-    pub sn_h: u32,
-    pub test_info_l: u32,
-    pub test_info_h: u32,
-    pub option_csr_bytes: u32,
-    pub option_e0_bytes: u32,
-    pub option_wp_bytes: u32,
-    pub option_sec_bytes0: u32,
-    pub option_sec_bytes1: u32,
-}
-
-/// wrapper over the raw EFC struct [`__Efc`]
-pub struct Efc(pub *mut __Efc);
-
-impl Efc {
-    /// Create a new EFC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Efc)
+define_reg! {
+    Efc
+    __Efc {
+        cr: u32,
+        int_en: u32,
+        sr: u32,
+        program_data0: u32,
+        program_data1: u32,
+        timing_cfg: u32,
+        protect_seq: u32,
+        rsv0: u32,
+        chip_pattern: u32,
+        ip_trim_l: u32,
+        ip_trim_h: u32,
+        sn_l: u32,
+        sn_h: u32,
+        test_info_l: u32,
+        test_info_h: u32,
+        option_csr_bytes: u32,
+        option_e0_bytes: u32,
+        option_wp_bytes: u32,
+        option_sec_bytes0: u32,
+        option_sec_bytes1: u32,
     }
 }
 
 pub const EFC_BASE: u32 = PERIPH_BASE + 0x20000;
-pub static mut EFC: Efc = Efc::new(EFC_BASE);
+pub static EFC: Efc = Efc::new(EFC_BASE);
 
 /****************************EFC CR bit definition*****************************/
 pub const EFC_CR_INFO_LOAD_MASK: u32 = 0x80000000;
@@ -732,90 +697,62 @@ pub const EFC_SR_READ_NUM_DONE: u32 = 0x00000002;
 
 pub const EFC_SR_OPERATION_DONE: u32 = 0x00000001;
 
-/// raw LORAC struct
-#[repr(C)]
-pub struct __Lorac {
-    pub ssp_cr0: u32,
-    pub ssp_cr1: u32,
-    pub ssp_dr: u32,
-    pub ssp_sr: u32,
-    pub ssp_cpsr: u32,
-    pub ssp_imsc: u32,
-    pub ssp_ris: u32,
-    pub ssp_mis: u32,
-    pub ssp_icr: u32,
-    pub ssp_dma_cr: u32,
-    pub rsv: [u32; 54],
-    pub cr0: u32,
-    pub cr1: u32,
-    pub sr: u32,
-    pub nss_cr: u32,
-    pub sck_cr: u32,
-    pub mosi_cr: u32,
-    pub miso_sr: u32,
-}
-
-/// wrapper over the raw LORAC struct [`__Lorac`]
-pub struct Lorac(pub *mut __Lorac);
-
-impl Lorac {
-    /// Create a new LORAC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Lorac)
+define_reg! {
+    Lorac
+    __Lorac {
+        ssp_cr0: u32,
+        ssp_cr1: u32,
+        ssp_dr: u32,
+        ssp_sr: u32,
+        ssp_cpsr: u32,
+        ssp_imsc: u32,
+        ssp_ris: u32,
+        ssp_mis: u32,
+        ssp_icr: u32,
+        ssp_dma_cr: u32,
+        rsv: [u32; 54],
+        cr0: u32,
+        cr1: u32,
+        sr: u32,
+        nss_cr: u32,
+        sck_cr: u32,
+        mosi_cr: u32,
+        miso_sr: u32,
     }
 }
 
 pub const LORAC_BASE: u32 = PERIPH_BASE + 0x9000;
-pub static mut LORAC: Lorac = Lorac::new(LORAC_BASE);
-/// raw AFEC struct
-#[repr(C)]
-pub struct __Afec {
-    pub cr: u32,
-    pub int_sr: u32,
-    pub raw_sr: u32,
-}
-
-/// wrapper over the raw AFEC struct [`__Afec`]
-pub struct Afec(pub *mut __Afec);
-
-impl Afec {
-    /// Create a new AFEC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Afec)
+pub static LORAC: Lorac = Lorac::new(LORAC_BASE);
+define_reg! {
+    Afec
+    __Afec {
+        cr: u32,
+        int_sr: u32,
+        raw_sr: u32,
     }
 }
-
-pub static mut AFEC: Afec = Afec::new(AFEC_BASE + 0x200);
+pub static AFEC: Afec = Afec::new(AFEC_BASE + 0x200);
 
 pub const AFEC_RAW_SR_RCO4M_READY_MASK: u32 = 0x80000000;
 
 pub const AFEC_RAW_SR_PLL_UNLOCK_MASK: u32 = 0x40000000;
 
 pub const AFEC_RAW_SR_RCO24M_READY_MASK: u32 = 0x00000004;
-/// raw IWDG struct
-#[repr(C)]
-pub struct __Iwdg {
-    pub cr: u32,
-    pub max: u32,
-    pub win: u32,
-    pub sr: u32,
-    pub sr1: u32,
-    pub cr1: u32,
-    pub sr2: u32,
-}
-
-/// wrapper over the raw IWDG struct [`__Iwdg`]
-pub struct Iwdg(pub *mut __Iwdg);
-
-impl Iwdg {
-    /// Create a new IWDG instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Iwdg)
+define_reg! {
+    Iwdg
+    __Iwdg {
+        cr: u32,
+        max: u32,
+        win: u32,
+        sr: u32,
+        sr1: u32,
+        cr1: u32,
+        sr2: u32,
     }
 }
 
 pub const IWDG_BASE: u32 = PERIPH_BASE + 0x1D000;
-pub static mut IWDG: Iwdg = Iwdg::new(IWDG_BASE);
+pub static IWDG: Iwdg = Iwdg::new(IWDG_BASE);
 
 /****************************IWDG CR bit definition*************************/
 pub const IWDG_CR_RSTEN_MASK: u32 = 0x00000020;
@@ -848,71 +785,53 @@ pub const IWDG_CR1_RESET_REQ_INT_EN_MASK: u32 = 0x00000001;
 /****************************IWDG SR2 bit definition************************/
 pub const IWDG_SR2_RESET_REQ_SR_MASK: u32 = 0x00000001;
 
-/// raw WDG struct
-#[repr(C)]
-pub struct __Wdg {
-    pub load: u32,
-    pub value: u32,
-    pub control: u32,
-    pub intclr: u32,
-    pub ris: u32,
-    pub mis: u32,
-    pub dummy0: [u32; 0x2FA],
-    pub lock: u32,
-    pub dummy1: [u32; 0xBF],
-    pub itcr: u32,
-    pub itop: u32,
-    pub dummy2: [u32; 0x32],
-    pub periphid4: u32,
-    pub periphid5: u32,
-    pub periphid6: u32,
-    pub periphid7: u32,
-    pub periphid0: u32,
-    pub periphid1: u32,
-    pub periphid2: u32,
-    pub periphid3: u32,
-    pub pcellid0: u32,
-    pub pcellid1: u32,
-    pub pcellid2: u32,
-    pub pcellid3: u32,
-}
-
-/// wrapper over the raw WDG struct [`__Wdg`]
-pub struct Wdg(pub *mut __Wdg);
-
-impl Wdg {
-    /// Create a new WDG instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Wdg)
+define_reg! {
+    Wdg
+    __Wdg {
+        load: u32,
+        value: u32,
+        control: u32,
+        intclr: u32,
+        ris: u32,
+        mis: u32,
+        dummy0: [u32; 0x2FA],
+        lock: u32,
+        dummy1: [u32; 0xBF],
+        itcr: u32,
+        itop: u32,
+        dummy2: [u32; 0x32],
+        periphid4: u32,
+        periphid5: u32,
+        periphid6: u32,
+        periphid7: u32,
+        periphid0: u32,
+        periphid1: u32,
+        periphid2: u32,
+        periphid3: u32,
+        pcellid0: u32,
+        pcellid1: u32,
+        pcellid2: u32,
+        pcellid3: u32,
     }
 }
 
 pub const WDG_BASE: u32 = PERIPH_BASE + 0x1E000;
-pub static mut WDG: Wdg = Wdg::new(WDG_BASE);
+pub static WDG: Wdg = Wdg::new(WDG_BASE);
 
-/// raw CRC struct
-#[repr(C)]
-pub struct __Crc {
-    pub cr: u32,
-    pub dr: u32,
-    pub init: u32,
-    pub poly: u32,
-}
-
-/// wrapper over the raw CRC struct [`__Crc`]
-pub struct Crc(pub *mut __Crc);
-
-impl Crc {
-    /// Create a new CRC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Crc)
+define_reg! {
+    Crc
+    __Crc {
+        cr: u32,
+        dr: u32,
+        init: u32,
+        poly: u32,
     }
 }
 
 /// CRC base address
 pub const CRC_BASE: u32 = PERIPH_BASE + 0x22000;
 /// CRC peripheral
-pub static mut CRC: Crc = Crc::new(CRC_BASE);
+pub static CRC: Crc = Crc::new(CRC_BASE);
 
 /****************************CRC CR bit definition*****************************/
 pub const CRC_CR_CALC_FLAG: u32 = 0x00000040;
@@ -932,44 +851,35 @@ pub const CRC_CR_REVERSE_IN_HWORD: u32 = 0x00000004;
 pub const CRC_CR_REVERSE_IN_WORD: u32 = 0x00000006;
 
 pub const CRC_CR_REVERSE_OUT_EN: u32 = 0x00000001;
-/// raw I2C struct
-#[repr(C)]
-pub struct __I2c {
-    pub cr: u32,
-    pub sr: u32,
-    pub sar: u32,
-    pub dbr: u32,
-    pub lcr: u32,
-    pub wcr: u32,
-    pub rst_cycl: u32,
-    pub bmr: u32,
-    pub wfifo: u32,
-    pub wfifo_wprt: u32,
-    pub wfifo_rptr: u32,
-    pub rfifo: u32,
-    pub rfifo_wptr: u32,
-    pub rfifo_rptr: u32,
-    pub resv: [u32; 2],
-    pub wfifo_status: u32,
-    pub rfifo_status: u32,
-}
-
-/// wrapper over the raw I2C struct [`__I2c`]
-pub struct I2c(pub *mut __I2c);
-
-impl I2c {
-    /// Create a new I2C instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __I2c)
+define_reg! {
+    I2c
+    __I2c {
+        cr: u32,
+        sr: u32,
+        sar: u32,
+        dbr: u32,
+        lcr: u32,
+        wcr: u32,
+        rst_cycl: u32,
+        bmr: u32,
+        wfifo: u32,
+        wfifo_wprt: u32,
+        wfifo_rptr: u32,
+        rfifo: u32,
+        rfifo_wptr: u32,
+        rfifo_rptr: u32,
+        resv: [u32; 2],
+        wfifo_status: u32,
+        rfifo_status: u32,
     }
 }
 
 pub const I2C0_BASE: u32 = PERIPH_BASE + 0x7000;
 pub const I2C1_BASE: u32 = PERIPH_BASE + 0x14000;
 pub const I2C2_BASE: u32 = PERIPH_BASE + 0x15000;
-pub static mut I2C0: I2c = I2c::new(I2C0_BASE);
-pub static mut I2C1: I2c = I2c::new(I2C1_BASE);
-pub static mut I2C2: I2c = I2c::new(I2C2_BASE);
+pub static I2C0: I2c = I2c::new(I2C0_BASE);
+pub static I2C1: I2c = I2c::new(I2C1_BASE);
+pub static I2C2: I2c = I2c::new(I2C2_BASE);
 
 pub const I2C_CR_RFIFO_OVERRUN_INTR_EN_MASK: u32 = 0x80000000;
 pub const I2C_CR_RFIFO_FULL_INTR_EN_MASK: u32 = 0x40000000;
@@ -1045,121 +955,96 @@ pub const I2C_RFIFO_STATUS_FULL_MASK: u32 = 0x00000003;
 pub const I2C_RFIFO_STATUS_HFULL_MASK: u32 = 0x00000002;
 pub const I2C_RFIFO_STATUS_OVERUN_MASK: u32 = 0x00000001;
 
-/// raw SYSCFG struct
-#[repr(C)]
-pub struct __Syscfg {
-    pub cr0: u32,
-    pub cr1: u32,
-    pub cr2: u32,
-    pub cr3: u32,
-    pub cr4: u32,
-    pub cr5: u32,
-    pub cr6: u32,
-    pub cr7: u32,
-    pub cr8: u32,
-    pub cr9: u32,
-    pub cr10: u32,
-}
-
-/// wrapper over the raw SYSCFG struct [`__Syscfg`]
-pub struct Syscfg(pub *mut __Syscfg);
-
-impl Syscfg {
-    /// Create a new SYSCFG instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Syscfg)
+define_reg! {
+    Syscfg
+    __Syscfg {
+        cr0: u32,
+        cr1: u32,
+        cr2: u32,
+        cr3: u32,
+        cr4: u32,
+        cr5: u32,
+        cr6: u32,
+        cr7: u32,
+        cr8: u32,
+        cr9: u32,
+        cr10: u32,
     }
 }
 
 pub const SYSCFG_BASE: u32 = PERIPH_BASE + 0x1000;
-pub static mut SYSCFG: Syscfg = Syscfg::new(SYSCFG_BASE);
+pub static SYSCFG: Syscfg = Syscfg::new(SYSCFG_BASE);
 
-/// raw PWR struct
-#[repr(C)]
-pub struct __Pwr {
-    /// control register 0, offset 0x00
-    pub cr0: u32,
-    /// control register 1, offset 0x04
-    pub cr1: u32,
-    /// status register 0, offset 0x08
-    pub sr0: u32,
-    /// status register 2, offset 0x0C
-    pub sr1: u32,
-    /// control register 3, offset 0x10
-    pub cr2: u32,
-    /// control register 4, offset 0x14
-    pub cr3: u32,
-    /// control register 5, offset 0x18
-    pub cr4: u32,
-    /// control register 6, offset 0x1C
-    pub cr5: u32,
-}
-
-/// wrapper over the raw PWR struct [`__Pwr`]
-pub struct Pwr(pub *mut __Pwr);
-
-impl Pwr {
-    /// Create a new PWR instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Pwr)
+define_reg! {
+    /// Wrapper over the raw PWR struct [`__Pwr`]
+    Pwr
+    /// Raw PWR struct
+    __Pwr {
+        /// control register 0, offset 0x00
+        cr0: u32,
+        /// control register 1, offset 0x04
+        cr1: u32,
+        /// status register 0, offset 0x08
+        sr0: u32,
+        /// status register 2, offset 0x0C
+        sr1: u32,
+        /// control register 3, offset 0x10
+        cr2: u32,
+        /// control register 4, offset 0x14
+        cr3: u32,
+        /// control register 5, offset 0x18
+        cr4: u32,
+        /// control register 6, offset 0x1C
+        cr5: u32,
     }
 }
 
 pub const PWR_BASE: u32 = PERIPH_BASE + 0x1800;
-pub static mut PWR: Pwr = Pwr::new(PWR_BASE);
+pub static PWR: Pwr = Pwr::new(PWR_BASE);
 
-/// raw TIMER_GP struct
-#[repr(C)]
-pub struct __TimerGp {
-    /// TIMER control register 1, Address offset: 0x00
-    pub cr1: u32,
-    /// TIMER control register 2, Address offset: 0x04
-    pub cr2: u32,
-    /// TIMER slave Mode Control register, Address offset: 0x08
-    pub smcr: u32,
-    /// TIMER DMA/interrupt enable register, Address offset: 0x0C
-    pub dier: u32,
-    /// TIMER event generation register, Address offset: 0x14
-    pub egr: u32,
-    /// TIMER  capture/compare mode register 1, Address offset: 0x18
-    pub ccmr1: u32,
-    /// TIMER  capture/compare mode register 2, Address offset: 0x1C
-    pub ccmr2: u32,
-    /// TIMER capture/compare enable register, Address offset: 0x20
-    pub ccer: u32,
-    /// TIMER counter register, Address offset: 0x24
-    pub cnt: u32,
-    /// TIMER prescaler register, Address offset: 0x28
-    pub psc: u32,
-    /// TIMER auto-reload register, Address offset: 0x2C
-    pub arr: u32,
-    /// Reserved Address offset: 0x30
-    pub resv1: u32,
-    /// TIMER capture/compare register 0, Address offset: 0x34
-    pub ccr0: u32,
-    /// TIMER capture/compare register 1, Address offset: 0x38
-    pub ccr1: u32,
-    /// TIMER capture/compare register 2, Address offset: 0x3C
-    pub ccr2: u32,
-    /// TIMER capture/compare register 3, Address offset: 0x40
-    pub ccr3: u32,
-    /// Reserved, Address offset: 0x44
-    pub resv2: u32,
-    /// TIMER DMA control register, Address offset: 0x48
-    pub dcr: u32,
-    /// TIMER DMA address for full transfer register, Address offset: 0x4C
-    pub dmar: u32,
-    /// TIMER option register, Address offset: 0x50
-    pub or: u32,
-}
-
-/// wrapper over the raw TIMER_GP struct [`__TimerGp`]
-pub struct TimerGp(pub *mut __TimerGp);
-
-impl TimerGp {
-    /// Create a new TIMER_GP instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __TimerGp)
+define_reg! {
+    TimerGp
+    __TimerGp {
+        /// TIMER control register 1, Address offset: 0x00
+        cr1: u32,
+        /// TIMER control register 2, Address offset: 0x04
+        cr2: u32,
+        /// TIMER slave Mode Control register, Address offset: 0x08
+        smcr: u32,
+        /// TIMER DMA/interrupt enable register, Address offset: 0x0C
+        dier: u32,
+        /// TIMER event generation register, Address offset: 0x14
+        egr: u32,
+        /// TIMER  capture/compare mode register 1, Address offset: 0x18
+        ccmr1: u32,
+        /// TIMER  capture/compare mode register 2, Address offset: 0x1C
+        ccmr2: u32,
+        /// TIMER capture/compare enable register, Address offset: 0x20
+        ccer: u32,
+        /// TIMER counter register, Address offset: 0x24
+        cnt: u32,
+        /// TIMER prescaler register, Address offset: 0x28
+        psc: u32,
+        /// TIMER auto-reload register, Address offset: 0x2C
+        arr: u32,
+        /// Reserved Address offset: 0x30
+        resv1: u32,
+        /// TIMER capture/compare register 0, Address offset: 0x34
+        ccr0: u32,
+        /// TIMER capture/compare register 1, Address offset: 0x38
+        ccr1: u32,
+        /// TIMER capture/compare register 2, Address offset: 0x3C
+        ccr2: u32,
+        /// TIMER capture/compare register 3, Address offset: 0x40
+        ccr3: u32,
+        /// Reserved, Address offset: 0x44
+        resv2: u32,
+        /// TIMER DMA control register, Address offset: 0x48
+        dcr: u32,
+        /// TIMER DMA address for full transfer register, Address offset: 0x4C
+        dmar: u32,
+        /// TIMER option register, Address offset: 0x50
+        or: u32,
     }
 }
 
@@ -1167,250 +1052,196 @@ pub const TIMER0_SFR_BASE: u32 = 0x4000A000;
 pub const TIMER1_SFR_BASE: u32 = 0x4001A000;
 pub const TIMER2_SFR_BASE: u32 = 0x4000B000;
 pub const TIMER3_SFR_BASE: u32 = 0x4001B000;
-pub static mut TIMER0: TimerGp = TimerGp::new(TIMER0_SFR_BASE);
-pub static mut TIMER1: TimerGp = TimerGp::new(TIMER1_SFR_BASE);
-pub static mut TIMER2: TimerGp = TimerGp::new(TIMER2_SFR_BASE);
-pub static mut TIMER3: TimerGp = TimerGp::new(TIMER3_SFR_BASE);
+pub static TIMER0: TimerGp = TimerGp::new(TIMER0_SFR_BASE);
+pub static TIMER1: TimerGp = TimerGp::new(TIMER1_SFR_BASE);
+pub static TIMER2: TimerGp = TimerGp::new(TIMER2_SFR_BASE);
+pub static TIMER3: TimerGp = TimerGp::new(TIMER3_SFR_BASE);
 
-/// raw LPTIMER struct
-#[repr(C)]
-pub struct __Lptimer {
-    /// LPTIMER flag and status register
-    pub isr: u32,
-    /// LPTIMER flag clear register
-    pub icr: u32,
-    /// LPTIMER interrupt enable register
-    pub ier: u32,
-    /// LPTIMER configuration register
-    pub cfgr: u32,
-    /// LPTIMER control register
-    pub cr: u32,
-    /// LPTIMER compare register
-    pub cmp: u32,
-    /// LPTIMER autoreload register
-    pub arr: u32,
-    /// LPTIMER counter register
-    pub cnt: u32,
-    /// LPTIMER CSR register
-    pub csr: u32,
-    /// LPTIMER SR1 register
-    pub sr1: u32,
-}
-
-/// wrapper over the raw LPTIMER struct [`__Lptimer`]
-pub struct Lptimer(pub *mut __Lptimer);
-
-impl Lptimer {
-    /// Create a new LPTIMER instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Lptimer)
+define_reg! {
+    Lptimer
+    __Lptimer {
+        /// LPTIMER flag and status register
+        isr: u32,
+        /// LPTIMER flag clear register
+        icr: u32,
+        /// LPTIMER interrupt enable register
+        ier: u32,
+        /// LPTIMER configuration register
+        cfgr: u32,
+        /// LPTIMER control register
+        cr: u32,
+        /// LPTIMER compare register
+        cmp: u32,
+        /// LPTIMER autoreload register
+        arr: u32,
+        /// LPTIMER counter register
+        cnt: u32,
+        /// LPTIMER CSR register
+        csr: u32,
+        /// LPTIMER SR1 register
+        sr1: u32,
     }
 }
 
 pub const LPTIMER0_SFR_BASE: u32 = 0x4000D000;
 pub const LPTIMER1_SFR_BASE: u32 = 0x4000D800;
-pub static mut LPTIMER0: Lptimer = Lptimer::new(LPTIMER0_SFR_BASE);
-pub static mut LPTIMER1: Lptimer = Lptimer::new(LPTIMER1_SFR_BASE);
+pub static LPTIMER0: Lptimer = Lptimer::new(LPTIMER0_SFR_BASE);
+pub static LPTIMER1: Lptimer = Lptimer::new(LPTIMER1_SFR_BASE);
 
-/// raw I2S struct
-#[repr(C)]
-pub struct __I2s {
-    /// enable register, offset 0x00
-    pub ier: u32,
-    /// receiver block enable register, offset 0x04
-    pub irer: u32,
-    /// transmitter block enable register, offset 0x08
-    pub iter: u32,
-    /// clock enable register, offset 0x0c
-    pub cer: u32,
-    /// clock configuration register, offset 0x10
-    pub ccr: u32,
-    /// receiver block FIFO reset register, offset
-    pub rxffr: u32,
-    /// transmitter block FIFO reset register, offset 0x18
-    pub txffr: u32,
-    /// reserved
-    pub resv0: u32,
+define_reg! {
+    I2s
+    __I2s {
+        /// enable register, offset 0x00
+        ier: u32,
+        /// receiver block enable register, offset 0x04
+        irer: u32,
+        /// transmitter block enable register, offset 0x08
+        iter: u32,
+        /// clock enable register, offset 0x0c
+        cer: u32,
+        /// clock configuration register, offset 0x10
+        ccr: u32,
+        /// receiver block FIFO reset register, offset
+        rxffr: u32,
+        /// transmitter block FIFO reset register, offset 0x18
+        txffr: u32,
+        /// reserved
+        resv0: u32,
 
-    /// right receive buffer register, offset 0x20
-    pub lrbr_lthr: u32,
-    /// right transmit holding register, offset 0x24
-    pub rrbr_rthr: u32,
-    /// receiver enable register, offset 0x28
-    pub rer: u32,
-    /// transmitter enable register, offset 0x2c
-    pub ter: u32,
-    /// receiver configuration register, offset 0x30
-    pub rcr: u32,
-    /// transmitter configuration register, offset 0x34
-    pub tcr: u32,
-    /// interrupt status register, offset 0x38
-    pub isr: u32,
-    /// interrupt mask register, offset 0x3c
-    pub imr: u32,
-    /// receiver overrun register, offset 0x40
-    pub ror: u32,
-    /// transmitter overrun register, offset 0x44
-    pub tor: u32,
-    /// receiver FIFO configuration register, offset 0x48
-    pub rfcr: u32,
-    /// transmitter FIFO configuration register, offset 0x4c
-    pub tfcr: u32,
-    /// receiver FIFO flush register, offset 0x50
-    pub rff: u32,
-    /// transmitter FIFO flush register, offset 0x54
-    pub tff: u32,
-    /// reserved
-    pub resv1: [u32; 0x5a],
-    /// receiver block dma register, offset 0x1c0
-    pub rxdma: u32,
-    /// reset receiver block dma register, offset 0x1c4
-    pub rrxdma: u32,
-    /// transmitter block dma register, offset 0x1c8
-    pub txdma: u32,
-    /// reset transmitter block dma register, offset 0x1cc
-    pub rtxdma: u32,
-    /// reserved
-    pub resv2: [u32; 8],
-    /// component parameter register 2, offset 0x1f0
-    pub i2s_comp_param_2: u32,
-    /// component parameter register 1, offset 0x1f4
-    pub i2s_comp_param_1: u32,
-    /// component version register, offset 0x1f8
-    pub i2s_comp_version: u32,
-    /// component type register, offset 0x1fc
-    pub i2s_comp_type: u32,
-}
-
-/// wrapper over the raw I2S struct [`__I2s`]
-pub struct I2s(pub *mut __I2s);
-
-impl I2s {
-    /// Create a new I2S instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __I2s)
+        /// right receive buffer register, offset 0x20
+        lrbr_lthr: u32,
+        /// right transmit holding register, offset 0x24
+        rrbr_rthr: u32,
+        /// receiver enable register, offset 0x28
+        rer: u32,
+        /// transmitter enable register, offset 0x2c
+        ter: u32,
+        /// receiver configuration register, offset 0x30
+        rcr: u32,
+        /// transmitter configuration register, offset 0x34
+        tcr: u32,
+        /// interrupt status register, offset 0x38
+        isr: u32,
+        /// interrupt mask register, offset 0x3c
+        imr: u32,
+        /// receiver overrun register, offset 0x40
+        ror: u32,
+        /// transmitter overrun register, offset 0x44
+        tor: u32,
+        /// receiver FIFO configuration register, offset 0x48
+        rfcr: u32,
+        /// transmitter FIFO configuration register, offset 0x4c
+        tfcr: u32,
+        /// receiver FIFO flush register, offset 0x50
+        rff: u32,
+        /// transmitter FIFO flush register, offset 0x54
+        tff: u32,
+        /// reserved
+        resv1: [u32; 0x5a],
+        /// receiver block dma register, offset 0x1c0
+        rxdma: u32,
+        /// reset receiver block dma register, offset 0x1c4
+        rrxdma: u32,
+        /// transmitter block dma register, offset 0x1c8
+        txdma: u32,
+        /// reset transmitter block dma register, offset 0x1cc
+        rtxdma: u32,
+        /// reserved
+        resv2: [u32; 8],
+        /// component parameter register 2, offset 0x1f0
+        i2s_comp_param_2: u32,
+        /// component parameter register 1, offset 0x1f4
+        i2s_comp_param_1: u32,
+        /// component version register, offset 0x1f8
+        i2s_comp_version: u32,
+        /// component type register, offset 0x1fc
+        i2s_comp_type: u32,
     }
 }
 
 pub const I2S_BASE: u32 = 0x40002000;
-pub static mut I2S: I2s = I2s::new(I2S_BASE);
+pub static I2S: I2s = I2s::new(I2S_BASE);
 
-/// raw BSTIMER struct
-#[repr(C)]
-pub struct __Bstimer {
-    pub cr1: u32,
-    pub cr2: u32,
-    pub resv1: u32,
-    pub dier: u32,
-    pub sr: u32,
-    pub egr: u32,
-    pub resv2: [u32; 3],
-    pub cnt: u32,
-    pub psc: u32,
-    pub arr: u32,
-}
-
-/// wrapper over the raw BSTIMER struct [`__Bstimer`]
-pub struct Bstimer(pub *mut __Bstimer);
-
-impl Bstimer {
-    /// Create a new BSTIMER instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Bstimer)
+define_reg! {
+    Bstimer
+    __Bstimer {
+        cr1: u32,
+        cr2: u32,
+        resv1: u32,
+        dier: u32,
+        sr: u32,
+        egr: u32,
+        resv2: [u32; 3],
+        cnt: u32,
+        psc: u32,
+        arr: u32,
     }
 }
 
 pub const BSTIMER0_SFR_BASE: u32 = 0x4000C000;
 pub const BSTIMER1_SFR_BASE: u32 = 0x4001C000;
-pub static mut BSTIMER0: Bstimer = Bstimer::new(BSTIMER0_SFR_BASE);
-pub static mut BSTIMER1: Bstimer = Bstimer::new(BSTIMER1_SFR_BASE);
+pub static BSTIMER0: Bstimer = Bstimer::new(BSTIMER0_SFR_BASE);
+pub static BSTIMER1: Bstimer = Bstimer::new(BSTIMER1_SFR_BASE);
 
-/// raw SEC struct
-#[repr(C)]
-pub struct __Sec {
-    pub int: u32,
-    pub rst: u32,
-    pub sr: u32,
-    pub filter0: u32,
-    pub filter1: u32,
-    pub filter2: u32,
-    pub filter3: u32,
-}
-
-/// wrapper over the raw SEC struct [`__Sec`]
-pub struct Sec(pub *mut __Sec);
-
-impl Sec {
-    /// Create a new SEC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Sec)
+define_reg! {
+    Sec
+    __Sec {
+        int: u32,
+        rst: u32,
+        sr: u32,
+        filter0: u32,
+        filter1: u32,
+        filter2: u32,
+        filter3: u32,
     }
 }
 
 pub const SEC_BASE: u32 = 0x4000F000;
-pub static mut SEC: Sec = Sec::new(SEC_BASE);
+pub static SEC: Sec = Sec::new(SEC_BASE);
 
 pub const SEC_SR_FLASH_ACCESS_ERROR_MASK: u32 = 0x00001000;
 
-/// raw QSPI struct
-#[repr(C)]
-pub struct __Qspi {
-    pub qspi_cr: u32,
-    pub qspi_dcr: u32,
-    pub qspi_sr: u32,
-    pub qspi_fcr: u32,
-    pub qspi_dlr: u32,
-    pub qspi_ccr: u32,
-    pub qspi_ar: u32,
-    pub qspi_abr: u32,
-    pub qspi_dr: u32,
-    pub qspi_psmkr: u32,
-    pub qspi_psmar: u32,
-    pub qspi_pir: u32,
-    pub qspi_tor: u32,
-    pub reserved: [u32; 19],
-    pub qspi_hit0r: u32,
-    pub qspi_hit1r: u32,
-    pub qspi_mir: u32,
-    pub qspi_cfgr: u32,
-    pub sbus_start: u32,
-}
-
-/// wrapper over the raw QSPI struct [`__Qspi`]
-pub struct Qspi(pub *mut __Qspi);
-
-impl Qspi {
-    /// Create a new QSPI instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Qspi)
+define_reg! {
+    Qspi
+    __Qspi {
+        qspi_cr: u32,
+        qspi_dcr: u32,
+        qspi_sr: u32,
+        qspi_fcr: u32,
+        qspi_dlr: u32,
+        qspi_ccr: u32,
+        qspi_ar: u32,
+        qspi_abr: u32,
+        qspi_dr: u32,
+        qspi_psmkr: u32,
+        qspi_psmar: u32,
+        qspi_pir: u32,
+        qspi_tor: u32,
+        reserved: [u32; 19],
+        qspi_hit0r: u32,
+        qspi_hit1r: u32,
+        qspi_mir: u32,
+        qspi_cfgr: u32,
+        sbus_start: u32,
     }
 }
 
 pub const QSPI_BASE: u32 = 0x40021000;
-pub static mut QSPI: Qspi = Qspi::new(QSPI_BASE);
+pub static QSPI: Qspi = Qspi::new(QSPI_BASE);
 
-/// raw DAC struct
-#[repr(C)]
-pub struct __Dac {
-    pub cr: u32,
-    pub swtrigr: u32,
-    pub dhr: u32,
-    pub dor: u32,
-    pub sr: u32,
-}
-
-/// wrapper over the raw DAC struct [`__Dac`]
-pub struct Dac(pub *mut __Dac);
-
-impl Dac {
-    /// Create a new DAC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Dac)
+define_reg! {
+    Dac
+    __Dac {
+        cr: u32,
+        swtrigr: u32,
+        dhr: u32,
+        dor: u32,
+        sr: u32,
     }
 }
 
 pub const DAC_BASE: u32 = 0x40019000;
-pub static mut DAC: Dac = Dac::new(DAC_BASE);
+pub static DAC: Dac = Dac::new(DAC_BASE);
 
 pub const DAC_CR_INTR_EMPTY_EN_MASK: u32 = 0x00010000;
 pub const DAC_CR_INTR_UNDERFLOW_EN_MASK: u32 = 0x00008000;
@@ -1453,61 +1284,43 @@ pub const DAC_CR_TRIG_EN_MASK: u32 = 0x00000004;
 
 pub const DAC_CR_DAC_EN_MASK: u32 = 0x00000001;
 
-/// raw ADC struct
-#[repr(C)]
-pub struct __Adc {
-    pub cr: u32,
-    pub cfgr: u32,
-    pub seqr0: u32,
-    pub seqr1: u32,
-    pub diffsel: u32,
-    pub isr: u32,
-    pub ier: u32,
-    pub dr: u32,
-    pub awd0_cfgr: u32,
-    pub awd1_cfgr: u32,
-    pub awd2_cfgr: u32,
-}
-
-/// wrapper over the raw ADC struct [`__Adc`]
-pub struct Adc(pub *mut __Adc);
-
-impl Adc {
-    /// Create a new ADC instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Adc)
+define_reg! {
+    Adc
+    __Adc {
+        cr: u32,
+        cfgr: u32,
+        seqr0: u32,
+        seqr1: u32,
+        diffsel: u32,
+        isr: u32,
+        ier: u32,
+        dr: u32,
+        awd0_cfgr: u32,
+        awd1_cfgr: u32,
+        awd2_cfgr: u32,
     }
 }
 
 pub const ADC_BASE: u32 = 0x40017000;
-pub static mut ADC: Adc = Adc::new(ADC_BASE);
+pub static ADC: Adc = Adc::new(ADC_BASE);
 
-/// raw LCD struct
-#[repr(C)]
-pub struct __Lcd {
-    pub cr0: u32,
-    pub cr1: u32,
-    pub dr0: u32,
-    pub dr1: u32,
-    pub dr2: u32,
-    pub dr3: u32,
-    pub dr4: u32,
-    pub dr5: u32,
-    pub dr6: u32,
-    pub dr7: u32,
-    pub sr: u32,
-    pub cr2: u32,
-}
-
-/// wrapper over the raw LCD struct [`__Lcd`]
-pub struct Lcd(pub *mut __Lcd);
-
-impl Lcd {
-    /// Create a new LCD instance from base address
-    pub const fn new(base: u32) -> Self {
-        Self(base as *mut __Lcd)
+define_reg! {
+    Lcd
+    __Lcd {
+        cr0: u32,
+        cr1: u32,
+        dr0: u32,
+        dr1: u32,
+        dr2: u32,
+        dr3: u32,
+        dr4: u32,
+        dr5: u32,
+        dr6: u32,
+        dr7: u32,
+        sr: u32,
+        cr2: u32,
     }
 }
 
 pub const LCD_BASE: u32 = 0x40018000;
-pub static mut LCD: Lcd = Lcd::new(LCD_BASE);
+pub static LCD: Lcd = Lcd::new(LCD_BASE);

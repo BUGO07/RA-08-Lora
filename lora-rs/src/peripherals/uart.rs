@@ -6,7 +6,7 @@ use crate::{
         },
         regs::*,
     },
-    tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
+    tremo_reg_en, tremo_reg_set,
 };
 
 /// UART configuration
@@ -92,8 +92,7 @@ pub struct UartInitError;
 impl Uart {
     /// Get UART flag status
     pub fn get_flag_status(&self, flag: UartFlag) -> SetStatus {
-        let uart = unsafe { &*self.0 };
-        if (uart.fr & flag as u32) != 0 {
+        if (self.fr & flag as u32) != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
@@ -101,17 +100,15 @@ impl Uart {
     }
     /// Send a byte through UART
     pub fn send_data(&mut self, data: u8) {
-        let uart = unsafe { &mut *self.0 };
         // wait till tx fifo is not full
         while matches!(self.get_flag_status(UartFlag::TxFifoFull), SetStatus::Set) {}
-        uart.dr = data as u32;
+        self.dr = data as u32;
     }
     /// Receive a byte through UART
     pub fn receive_data(&mut self) -> u8 {
-        let uart = unsafe { &mut *self.0 };
         /* wait till rx fifo is not empty */
         while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), SetStatus::Set) {}
-        (uart.dr & 0xFF) as u8
+        (self.dr & 0xFF) as u8
     }
 
     /// Config the interrupt of the specified UART flag
@@ -121,7 +118,7 @@ impl Uart {
 
     /// Deinitializes the UART peripheral registers to the reset values
     pub fn deinit(&mut self) {
-        let peripheral = match self.0 as u32 {
+        let peripheral = match self.ptr() as u32 {
             UART0_BASE => RCC_PERIPHERAL_UART0,
             UART1_BASE => RCC_PERIPHERAL_UART1,
             UART2_BASE => RCC_PERIPHERAL_UART2,
@@ -129,11 +126,9 @@ impl Uart {
             _ => unreachable!(),
         };
 
-        unsafe {
-            RCC.enable_peripheral_clk(peripheral, false);
-            RCC.rst_peripheral(peripheral, true);
-            RCC.rst_peripheral(peripheral, false);
-        }
+        RCC.clone().enable_peripheral_clk(peripheral, false);
+        RCC.clone().rst_peripheral(peripheral, true);
+        RCC.clone().rst_peripheral(peripheral, false);
     }
 
     /// Set the threshold of RX FIFO
@@ -153,7 +148,7 @@ impl Uart {
 
     /// Get the interrupt status of the UART interrupt
     pub fn get_interrupt_status(&self, interrupt: u32) -> SetStatus {
-        if tremo_reg_rd!(self, mis) & interrupt != 0 {
+        if self.mis & interrupt != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
@@ -162,39 +157,33 @@ impl Uart {
 
     /// Get the interrupt status of the UART interrupt
     pub fn clear_interrupt(&mut self, interrupt: u32) {
-        tremo_reg_wr!(self, icr, interrupt);
+        self.icr = interrupt;
     }
 
     /// Initialize UART
     /// TODO: edit with macros
     pub fn init(&mut self, config: UartConfig) -> Result<(), UartInitError> {
-        let uart = unsafe { &mut *self.0 };
+        self.cr &= !(UART_CR_UART_EN); // disable UART
+        self.lcr_h &= !(UART_LCR_H_FEN); // flush fifo
+        self.imsc = 0;
 
-        uart.cr &= !(UART_CR_UART_EN); // disable UART
-        uart.lcr_h &= !(UART_LCR_H_FEN); // flush fifo
-        uart.imsc = 0;
-
-        let clk_src = unsafe {
-            match self.0 as u32 {
-                UART0_BASE => RCC.get_uart0_clk_src() >> 15,
-                UART1_BASE => RCC.get_uart0_clk_src() >> 13,
-                UART2_BASE => RCC.get_uart0_clk_src() >> 11,
-                UART3_BASE => RCC.get_uart0_clk_src() >> 9,
-                _ => 0,
-            }
+        let clk_src = match self.ptr() as u32 {
+            UART0_BASE => RCC.get_uart0_clk_src() >> 15,
+            UART1_BASE => RCC.get_uart0_clk_src() >> 13,
+            UART2_BASE => RCC.get_uart0_clk_src() >> 11,
+            UART3_BASE => RCC.get_uart0_clk_src() >> 9,
+            _ => 0,
         };
 
-        let uart_clk_freq = unsafe {
-            match clk_src {
-                1 => RCC_FREQ_4M,
-                2 => RCC_FREQ_32768,
-                3 => RCC_FREQ_24M,
-                _ => {
-                    if self.0 as u32 == UART0_BASE || self.0 as u32 == UART1_BASE {
-                        RCC.get_clk_freq(RCC_PCLK0)
-                    } else {
-                        RCC.get_clk_freq(RCC_PCLK1)
-                    }
+        let uart_clk_freq = match clk_src {
+            1 => RCC_FREQ_4M,
+            2 => RCC_FREQ_32768,
+            3 => RCC_FREQ_24M,
+            _ => {
+                if self.ptr() as u32 == UART0_BASE || self.ptr() as u32 == UART1_BASE {
+                    RCC.get_clk_freq(RCC_PCLK0)
+                } else {
+                    RCC.get_clk_freq(RCC_PCLK1)
                 }
             }
         };
@@ -204,8 +193,8 @@ impl Uart {
         }
 
         let br_div = calc_uart_baud(uart_clk_freq, config.baudrate);
-        uart.ibrd = br_div >> 16;
-        uart.fbrd = br_div & 0x3f;
+        self.ibrd = br_div >> 16;
+        self.fbrd = br_div & 0x3f;
 
         tremo_reg_set!(self, lcr_h, UART_LCR_H_WLEN, config.data_width);
         tremo_reg_set!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits);
@@ -213,15 +202,15 @@ impl Uart {
 
         match config.parity {
             Parity::Odd => {
-                uart.lcr_h |= UART_LCR_H_PEN;
-                uart.lcr_h &= !(UART_LCR_H_EPS_EVEN);
+                self.lcr_h |= UART_LCR_H_PEN;
+                self.lcr_h &= !(UART_LCR_H_EPS_EVEN);
             }
             Parity::Even => {
-                uart.lcr_h |= UART_LCR_H_PEN;
-                uart.lcr_h |= UART_LCR_H_EPS_EVEN;
+                self.lcr_h |= UART_LCR_H_PEN;
+                self.lcr_h |= UART_LCR_H_EPS_EVEN;
             }
             Parity::None => {
-                uart.lcr_h &= !(UART_LCR_H_PEN);
+                self.lcr_h &= !(UART_LCR_H_PEN);
             }
         }
 

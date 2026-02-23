@@ -6,3 +6,5 @@ pub mod rcc;
 pub mod regs;
 /// UART driver
 pub mod uart;
+/// Watchdog
+pub mod wdg;

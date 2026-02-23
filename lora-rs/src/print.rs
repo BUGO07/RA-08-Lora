@@ -16,7 +16,7 @@ impl Write for Uart {
 macro_rules! print {
     ($($arg:tt)*) => {
         #[allow(unused_unsafe)] // rust bug
-        ::core::fmt::Write::write_fmt(unsafe { &mut $crate::peripherals::regs::UART0} , format_args!($($arg)*)).unwrap();
+        ::core::fmt::Write::write_fmt(&mut $crate::peripherals::regs::UART0.clone(), format_args!($($arg)*)).unwrap();
     };
 }
 

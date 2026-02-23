@@ -5,7 +5,7 @@ use crate::{
         },
         regs::{GPIOA_BASE, GPIOD_BASE, Gpio, RCC, SetStatus},
     },
-    tremo_reg_en, tremo_reg_rd, tremo_reg_set, tremo_reg_wr,
+    tremo_reg_en, tremo_reg_set,
 };
 
 pub const GPIO_PIN_0: u8 = 0;
@@ -68,14 +68,13 @@ impl Gpio {
     /// Deinitializes the GPIO registers to the reset values
     /// TODO: CURRENTLY IT DISABLES ALL GPIOS, FIXME
     pub fn deinit(&mut self) {
-        unsafe {
-            RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, false);
-            RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, false);
-            RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, false);
-            RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, false);
-            RCC.rst_peripheral(RCC_PERIPHERAL_GPIOA, true);
-            RCC.rst_peripheral(RCC_PERIPHERAL_GPIOB, false);
-        }
+        let rcc = &mut RCC.clone();
+        rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, false);
+        rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, false);
+        rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, false);
+        rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, false);
+        rcc.rst_peripheral(RCC_PERIPHERAL_GPIOA, true);
+        rcc.rst_peripheral(RCC_PERIPHERAL_GPIOB, false);
     }
 
     /// Init the GPIOx according to the specified parameters
@@ -112,7 +111,7 @@ impl Gpio {
                 tremo_reg_en!(self, odr, 1 << pin, false);
             }
             GpioMode::OutputODHiz => {
-                if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
+                if self.ptr() as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
                     tremo_reg_en!(self, odr, 1 << pin, false);
                     tremo_reg_en!(self, ier, 1 << pin, false);
                     tremo_reg_en!(self, oer, 1 << pin, true);
@@ -125,7 +124,7 @@ impl Gpio {
                 }
             }
             GpioMode::OutputODLow => {
-                if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
+                if self.ptr() as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
                     tremo_reg_en!(self, odr, 1 << pin, false);
                     tremo_reg_en!(self, ier, 1 << pin, false);
                     tremo_reg_en!(self, oer, 1 << pin, false);
@@ -148,11 +147,11 @@ impl Gpio {
     /// Set the output level of the GPIO pin (High = true, Low = false)
     pub fn write(&mut self, pin: u8, high: bool) {
         // TODO: ASSERT PIN
-        if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
-            if (tremo_reg_rd!(self, odr) & (1 << pin) == 0)
-                && (tremo_reg_rd!(self, ier) & (1 << pin) == 0)
-                && (tremo_reg_rd!(self, oer) & (1 << pin) != 0)
-                && (tremo_reg_rd!(self, psr) & (1 << pin) != 0)
+        if self.ptr() as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
+            if (self.odr & (1 << pin) == 0)
+                && (self.ier & (1 << pin) == 0)
+                && (self.oer & (1 << pin) != 0)
+                && (self.psr & (1 << pin) != 0)
             {
                 if !high {
                     tremo_reg_en!(self, odr, 1 << pin, false);
@@ -160,10 +159,10 @@ impl Gpio {
                     tremo_reg_en!(self, oer, 1 << pin, true);
                     tremo_reg_en!(self, psr, 1 << pin, true);
                 }
-            } else if tremo_reg_rd!(self, odr) & (1 << pin) == 0
-                && tremo_reg_rd!(self, ier) & (1 << pin) == 0
-                && tremo_reg_rd!(self, oer) & (1 << pin) == 0
-                && tremo_reg_rd!(self, psr) & (1 << pin) != 0
+            } else if self.odr & (1 << pin) == 0
+                && self.ier & (1 << pin) == 0
+                && self.oer & (1 << pin) == 0
+                && self.psr & (1 << pin) != 0
             {
                 tremo_reg_en!(self, oer, 1 << pin, false);
                 tremo_reg_en!(self, ier, 1 << pin, false);
@@ -182,13 +181,13 @@ impl Gpio {
     /// Read the input level (High = true, Low = false)
     pub fn read(&self, pin: u8) -> bool {
         // TODO: ASSERT PIN
-        tremo_reg_rd!(self, idr) & (1 << pin) != 0
+        self.idr & (1 << pin) != 0
     }
 
     /// Toggle the output level of the GPIO pin
     pub fn toggle(&mut self, pin: u8) {
         // TODO: ASSERT PIN
-        tremo_reg_wr!(self, odr, tremo_reg_rd!(self, odr) ^ (1 << pin));
+        self.odr ^= 1 << pin;
     }
 
     /// Config the ouput drive capability of the GPIO pin
@@ -214,12 +213,12 @@ impl Gpio {
     /// Clear the interrupt of the specified GPIO pin
     pub fn clear_interrupt(&mut self, pin: u8) {
         // TODO: ASSERT
-        tremo_reg_wr!(self, ifr, tremo_reg_rd!(self, ifr) & 0x3 << (2 * pin));
+        self.ifr &= 0x3 << (2 * pin);
     }
 
     /// get the interrupt status of the specified GPIO pin
     pub fn get_interrupt_status(&self, pin: u8) -> SetStatus {
-        if tremo_reg_rd!(self, ifr) & (0x3 << (2 * pin)) != 0 {
+        if self.ifr & (0x3 << (2 * pin)) != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
@@ -234,11 +233,11 @@ impl Gpio {
 
     /// Config the wakeup setting of the specified GPIO pin
     pub fn config_stop3_wakeup(&mut self, mut pin: u8, enable: bool, wake_up: bool) {
-        if self.0 as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
+        if self.ptr() as u32 == GPIOD_BASE && pin > GPIO_PIN_7 {
             return;
         }
 
-        if self.0 as u32 == GPIOA_BASE {
+        if self.ptr() as u32 == GPIOA_BASE {
             if matches!(pin, GPIO_PIN_6 | GPIO_PIN_7) {
                 pin += 6;
             } else if matches!(pin, GPIO_PIN_12 | GPIO_PIN_13) {
@@ -264,12 +263,12 @@ impl Gpio {
 
         if pin > GPIO_PIN_7 {
             let index = pin - GPIO_PIN_8;
-            let tmp_mask = if self.0 as u32 == GPIOD_BASE {
+            let tmp_mask = if self.ptr() as u32 == GPIOD_BASE {
                 0x7 << (3 * index)
             } else {
                 0xF << (4 * index)
             };
-            let tmp = if self.0 as u32 == GPIOD_BASE {
+            let tmp = if self.ptr() as u32 == GPIOD_BASE {
                 function << (3 * index)
             } else {
                 function << (4 * index)
