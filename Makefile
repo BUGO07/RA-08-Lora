@@ -1,6 +1,6 @@
 
 PROJECT := $(notdir $(CURDIR))
-TREMO_SDK_PATH := $(abspath ..)
+TREMO_SDK_PATH := $(abspath .)
 
 $(PROJECT)_SOURCE := \
     $(TREMO_SDK_PATH)/platform/system/printf-stdarg.c  \
@@ -33,7 +33,7 @@ $(PROJECT)_DEFINES := -DCONFIG_DEBUG_UART=UART0 -DUSE_MODEM_LORA -DREGION_EU868
 
 $(PROJECT)_LDFLAGS := -Wl,--gc-sections -Wl,--wrap=printf -Wl,--wrap=sprintf -Wl,--wrap=snprintf
 
-$(PROJECT)_LIBS := target/thumbv7em-none-eabi/release/liblora_rs.a $(TREMO_SDK_PATH)/drivers/crypto/lib/libcrypto.a
+$(PROJECT)_LIBS := target/thumbv7em-none-eabi/release/libra08lora.a $(TREMO_SDK_PATH)/drivers/crypto/lib/libcrypto.a
 
 $(PROJECT)_LINK_LD := cfg/gcc.ld
 
@@ -45,6 +45,9 @@ $(PROJECT)_LINK_LD := cfg/gcc.ld
 ##################################################################################################
 
 include $(TREMO_SDK_PATH)/build/make/common.mk
+
+clangdb:
+	bear -- make
 
 buildrs:
 	cargo build --release

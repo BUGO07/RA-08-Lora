@@ -71,7 +71,10 @@ macro_rules! define_reg {
         #[repr(C)]
         $(#[$raw_meta])*
         pub struct $raw_name {
-            $(pub $field: $ty),*
+            $(
+                $(#[$field_meta])*
+                pub $field: $ty
+            ),*
         }
 
         #[derive(Clone)]

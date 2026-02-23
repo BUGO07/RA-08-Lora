@@ -68,16 +68,12 @@ SERIAL_BAUDRATE    ?= 921600
 $(PROJECT)_ADDRESS ?= 0x08000000
 
 ##################################################################################################
-ifeq ($(IDE),keil)
-all: keil_project
-	$(VIEW)echo generate keil project done
-else
+
 all: $(OUT_DIR)/$(PROJECT)$(BIN_OUTPUT_SUFFIX)
 	$(VIEW)echo Build completed.
 	$(SIZE) $(OUT_DIR)/$(PROJECT)$(LINK_OUTPUT_SUFFIX)
 	$(VIEW)echo "Please run 'make flash' or the following command to download the app"
 	@echo $(PYTHON) $(TREMO_LOADER) -p $(SERIAL_PORT) -b $(SERIAL_BAUDRATE) flash $($(PROJECT)_ADDRESS) $(OUT_DIR)/$(PROJECT)$(BIN_OUTPUT_SUFFIX)
-endif    
 
 $(OUT_DIR)/$(PROJECT)$(BIN_OUTPUT_SUFFIX): $(OUT_DIR)/$(PROJECT)$(LINK_OUTPUT_SUFFIX)
 	$(VIEW)echo $@
@@ -96,5 +92,7 @@ flash: $(OUT_DIR)/$(PROJECT)$(BIN_OUTPUT_SUFFIX) $(TREMO_LOADER)
 clean:
 	$(VIEW)echo Cleaning...
 	$(VIEW)rm -rf $(OUT_DIR)
+	$(VIEW)rm -rf compile_commands.json
+	$(VIEW)cargo clean
 	$(VIEW)echo Done
 

@@ -1,5 +1,5 @@
 [package]
-name = "lora-rs"
+name = "ra08lora"
 version = "0.1.0"
 edition = "2024"
 

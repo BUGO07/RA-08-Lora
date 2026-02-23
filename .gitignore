@@ -1,9 +1,13 @@
+/target
+Cargo.lock
+
+/.cache
+compile_commands.json
+
 **/out/*
 **/\~\$*
 *.si4project
-tools/toolchain/arm-none-eabi/*
-tools/toolchain/bin/*
-tools/toolchain/lib/*
-tools/toolchain/share/*
+.macro_eval.c
+*.pch
 
 doc

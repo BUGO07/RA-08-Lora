@@ -10,7 +10,7 @@
 ## Instructions to run on linux (Ubuntu)
 
 ```
-sudo apt-get install clang gcc-arm-none-eabi newlib-arm-none-eabi git vim python python-pip
+sudo apt-get install clang gcc-arm-none-eabi newlib-arm-none-eabi git vim python python-pip bear
 python3 -m pip config set global.break-system-packages true
 pip install pyserial configparser
 
