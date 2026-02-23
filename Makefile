@@ -47,6 +47,7 @@ $(PROJECT)_LINK_LD := cfg/gcc.ld
 include $(TREMO_SDK_PATH)/build/make/common.mk
 
 clangdb:
+	rm -rf out
 	bear -- make
 
 buildrs:
