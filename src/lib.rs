@@ -5,6 +5,8 @@
 
 /// Class C LoRaWAN module
 pub mod class_c;
+/// Core Cortex M4 Utilities
+pub mod cortex;
 /// C FFI Bindings for ASR6601 SDK
 pub mod ffi;
 /// Peripherals
@@ -17,13 +19,13 @@ pub mod tremo_it;
 use crate::{
     class_c::app_start,
     peripherals::{
-        gpio::{GPIO_PIN_0, GPIO_PIN_1},
+        gpio::{GpioMode, GpioPin},
         rcc::{
             RCC_OSC_XO32K, RCC_PERIPHERAL_GPIOA, RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC,
             RCC_PERIPHERAL_GPIOD, RCC_PERIPHERAL_LORA, RCC_PERIPHERAL_PWR, RCC_PERIPHERAL_RTC,
             RCC_PERIPHERAL_SAC, RCC_PERIPHERAL_UART0,
         },
-        regs::{GPIOB, RCC, UART0},
+        regs::{GPIOA, GPIOB, PWR, RCC, UART0},
     },
 };
 
@@ -36,13 +38,11 @@ pub extern "C" fn main() -> ! {
 
 /// initialize UART for logging
 pub fn uart_log_init() {
-    let gpio_b = &mut GPIOB.clone();
-    gpio_b.set_iomux(GPIO_PIN_0, 1);
-    gpio_b.set_iomux(GPIO_PIN_1, 1);
+    GPIOB.clone().set_iomux(GpioPin::Pin0, 1);
+    GPIOB.clone().set_iomux(GpioPin::Pin1, 1);
 
-    let uart = &mut UART0.clone();
-    uart.init(Default::default()).unwrap();
-    uart.cmd(true);
+    UART0.clone().init(Default::default()).unwrap();
+    UART0.clone().cmd(true);
 }
 
 /// init board, enable peripheral clocks, etc.
@@ -60,14 +60,16 @@ pub fn board_init() {
     rcc.enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
     rcc.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
 
-    unsafe {
-        ffi::delay_ms(100);
-        ffi::pwr_xo32k_lpm_cmd(true);
+    // Turn the white LED on to know the board is alive. It will be turned off in app_start() when the device enters low power mode.
+    GPIOA.clone().init(GpioPin::Pin14, GpioMode::OutputPPHigh);
 
-        uart_log_init();
+    unsafe { ffi::delay_ms(100) };
 
-        ffi::RtcInit();
-    }
+    PWR.clone().xo32k_lpm_cmd(true);
+
+    uart_log_init();
+
+    unsafe { ffi::RtcInit() };
 }
 
 /// rust panic handler

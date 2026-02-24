@@ -52,5 +52,6 @@ clangdb:
 
 buildrs:
 	cargo build --release
+	rm -rf out/RA-08-Lora.*
 
-flashrs: buildrs flash clean
+flashrs: buildrs flash

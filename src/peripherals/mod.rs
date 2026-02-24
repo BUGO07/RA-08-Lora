@@ -1,5 +1,9 @@
+/// Delay functions
+pub mod delay;
 /// GPIO driver
 pub mod gpio;
+/// Power management
+pub mod pwr;
 /// RCC
 pub mod rcc;
 /// Tremo Registers

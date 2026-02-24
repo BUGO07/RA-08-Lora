@@ -3,7 +3,7 @@ use crate::{
         rcc::RCC_PERIPHERAL_WDG,
         regs::{RCC, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, Wdg},
     },
-    tremo_reg_en,
+    toggle_reg_bits,
 };
 
 pub const WDG_LOCK_TOKEN: u32 = 0x1ACCE551;
@@ -25,7 +25,7 @@ impl Wdg {
         self.control = WDG_RESEN | WDG_INTEN;
         self.lock();
 
-        tremo_reg_en!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
+        toggle_reg_bits!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
     }
 
     pub fn reload(&mut self) {
@@ -35,7 +35,7 @@ impl Wdg {
     }
 
     pub fn stop(&mut self) {
-        tremo_reg_en!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
+        toggle_reg_bits!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
 
         self.unlock();
         self.control = 0x0;

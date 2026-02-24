@@ -9,7 +9,7 @@ pub enum SetStatus {
 
 /// Read from analog register at address
 #[macro_export]
-macro_rules! tremo_analog_rd {
+macro_rules! analog_read {
     ($addr:expr) => {{
         let addr = $addr;
         unsafe {
@@ -22,7 +22,7 @@ macro_rules! tremo_analog_rd {
 
 /// Write to analog register at address
 #[macro_export]
-macro_rules! tremo_analog_wr {
+macro_rules! analog_write {
     ($addr:expr, $value:expr) => {
         let addr = $addr;
         let value = $value;
@@ -37,7 +37,7 @@ macro_rules! tremo_analog_wr {
 
 /// Set bits in a register based on a mask and value
 #[macro_export]
-macro_rules! tremo_reg_set {
+macro_rules! set_reg_bits {
     ($obj:expr, $reg:ident, $mask:expr, $value:expr) => {
         $obj.$reg = ($obj.$reg & !($mask as u32)) | ($value as u32);
     };
@@ -45,7 +45,7 @@ macro_rules! tremo_reg_set {
 
 /// Enable or disable bits in a register based on a mask
 #[macro_export]
-macro_rules! tremo_reg_en {
+macro_rules! toggle_reg_bits {
     ($obj:expr, $reg:ident, $mask:expr, $enable:expr) => {
         $obj.$reg = if $enable {
             $obj.$reg | ($mask as u32)
@@ -55,6 +55,7 @@ macro_rules! tremo_reg_en {
     };
 }
 
+/// Define a register block and a corresponding wrapper struct for safe access
 macro_rules! define_reg {
     (
         $(#[$wrapper_meta:meta])*
