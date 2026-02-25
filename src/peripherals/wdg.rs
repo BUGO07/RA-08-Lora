@@ -11,42 +11,41 @@ pub const WDG_RESEN: u32 = 1 << 1;
 pub const WDG_INTEN: u32 = 1;
 
 impl Wdg {
-    pub fn lock(&mut self) {
-        self.lock = !WDG_LOCK_TOKEN;
+    pub fn lock(&self) {
+        self.lock.write(!WDG_LOCK_TOKEN);
     }
 
-    pub fn unlock(&mut self) {
-        self.lock = WDG_LOCK_TOKEN;
+    pub fn unlock(&self) {
+        self.lock.write(WDG_LOCK_TOKEN);
     }
 
-    pub fn start(&mut self, reload_value: u32) {
+    pub fn start(&self, reload_value: u32) {
         self.unlock();
-        self.load = reload_value;
-        self.control = WDG_RESEN | WDG_INTEN;
+        self.load.write(reload_value);
+        self.control.write(WDG_RESEN | WDG_INTEN);
         self.lock();
 
-        toggle_reg_bits!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
+        toggle_reg_bits!(RCC, rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
     }
 
-    pub fn reload(&mut self) {
+    pub fn reload(&self) {
         self.unlock();
-        self.intclr = 0x1;
+        self.intclr.write(0x1);
         self.lock();
     }
 
-    pub fn stop(&mut self) {
-        toggle_reg_bits!(RCC.clone(), rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
+    pub fn stop(&self) {
+        toggle_reg_bits!(RCC, rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
 
         self.unlock();
-        self.control = 0x0;
-        self.load = 0xFFFFFFFF;
+        self.control.write(0x0);
+        self.load.write(0xFFFFFFFF);
         self.lock();
     }
 }
 
 pub fn deinit() {
-    let rcc = &mut RCC.clone();
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_WDG, false);
-    rcc.rst_peripheral(RCC_PERIPHERAL_WDG, true);
-    rcc.rst_peripheral(RCC_PERIPHERAL_WDG, false);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_WDG, false);
+    RCC.rst_peripheral(RCC_PERIPHERAL_WDG, true);
+    RCC.rst_peripheral(RCC_PERIPHERAL_WDG, false);
 }

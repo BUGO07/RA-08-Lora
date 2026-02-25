@@ -99,32 +99,32 @@ pub struct UartInitError;
 impl Uart {
     /// Get UART flag status
     pub fn get_flag_status(&self, flag: UartFlag) -> SetStatus {
-        if (self.fr & flag as u32) != 0 {
+        if (self.fr.read() & flag as u32) != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
         }
     }
     /// Send a byte through UART
-    pub fn send_data(&mut self, data: u8) {
+    pub fn send_data(&self, data: u8) {
         // wait till tx fifo is not full
         while matches!(self.get_flag_status(UartFlag::TxFifoFull), SetStatus::Set) {}
-        self.dr = data as u32;
+        self.dr.write(data as u32);
     }
     /// Receive a byte through UART
-    pub fn receive_data(&mut self) -> u8 {
+    pub fn receive_data(&self) -> u8 {
         /* wait till rx fifo is not empty */
         while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), SetStatus::Set) {}
-        (self.dr & 0xFF) as u8
+        (self.dr.read() & 0xFF) as u8
     }
 
     /// Config the interrupt of the specified UART flag
-    pub fn config_interrupt(&mut self, uart_interrupt: u32, new_state: bool) {
+    pub fn config_interrupt(&self, uart_interrupt: u32, new_state: bool) {
         toggle_reg_bits!(self, imsc, uart_interrupt, new_state);
     }
 
     /// Deinitializes the UART peripheral registers to the reset values
-    pub fn deinit(&mut self) {
+    pub fn deinit(&self) {
         let peripheral = match self.ptr() as u32 {
             UART0_BASE => RCC_PERIPHERAL_UART0,
             UART1_BASE => RCC_PERIPHERAL_UART1,
@@ -133,29 +133,29 @@ impl Uart {
             _ => unreachable!(),
         };
 
-        RCC.clone().enable_peripheral_clk(peripheral, false);
-        RCC.clone().rst_peripheral(peripheral, true);
-        RCC.clone().rst_peripheral(peripheral, false);
+        RCC.enable_peripheral_clk(peripheral, false);
+        RCC.rst_peripheral(peripheral, true);
+        RCC.rst_peripheral(peripheral, false);
     }
 
     /// Set the threshold of RX FIFO
-    pub fn set_rx_fifo_threshold(&mut self, fifo_level: u32) {
+    pub fn set_rx_fifo_threshold(&self, fifo_level: u32) {
         set_reg_bits!(self, ifls, UART_IFLS_RX, fifo_level);
     }
 
     /// Set the threshold of TX FIFO
-    pub fn set_tx_fifo_threshold(&mut self, fifo_level: u32) {
+    pub fn set_tx_fifo_threshold(&self, fifo_level: u32) {
         set_reg_bits!(self, ifls, UART_IFLS_TX, fifo_level);
     }
 
     /// Enable or disable the UART peripheral
-    pub fn cmd(&mut self, new_state: bool) {
+    pub fn cmd(&self, new_state: bool) {
         toggle_reg_bits!(self, cr, UART_CR_UART_EN, new_state);
     }
 
     /// Get the interrupt status of the UART interrupt
     pub fn get_interrupt_status(&self, interrupt: u32) -> SetStatus {
-        if self.mis & interrupt != 0 {
+        if self.mis.read() & interrupt != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
@@ -163,15 +163,15 @@ impl Uart {
     }
 
     /// Get the interrupt status of the UART interrupt
-    pub fn clear_interrupt(&mut self, interrupt: u32) {
-        self.icr = interrupt;
+    pub fn clear_interrupt(&self, interrupt: u32) {
+        self.icr.write(interrupt);
     }
 
     /// Initialize UART
-    pub fn init(&mut self, config: UartConfig) -> Result<(), UartInitError> {
+    pub fn init(&self, config: UartConfig) -> Result<(), UartInitError> {
         toggle_reg_bits!(self, cr, UART_CR_UART_EN, false); // disable UART
         toggle_reg_bits!(self, lcr_h, UART_LCR_H_FEN, false); // flush fifo
-        self.imsc = 0;
+        self.imsc.write(0);
 
         let clk_src = match self.ptr() as u32 {
             UART0_BASE => RCC.get_uart0_clk_src() >> 15,
@@ -199,8 +199,8 @@ impl Uart {
         }
 
         let br_div = calc_uart_baud(uart_clk_freq, config.baudrate);
-        self.ibrd = br_div >> 16;
-        self.fbrd = br_div & 0x3f;
+        self.ibrd.write(br_div >> 16);
+        self.fbrd.write(br_div & 0x3f);
 
         set_reg_bits!(self, lcr_h, UART_LCR_H_WLEN, config.data_width);
         set_reg_bits!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits);

@@ -89,7 +89,7 @@ pub enum IntType {
 
 impl Gpio {
     /// Init the GPIOx according to the specified parameters
-    pub fn init(&mut self, gpio_pin: GpioPin, mode: GpioMode) {
+    pub fn init(&self, gpio_pin: GpioPin, mode: GpioMode) {
         let pin = gpio_pin as u32;
         match mode {
             GpioMode::InputFloating => {
@@ -156,13 +156,13 @@ impl Gpio {
     }
 
     /// Set the output level of the GPIO pin (High = true, Low = false)
-    pub fn write(&mut self, gpio_pin: GpioPin, high: bool) {
+    pub fn write(&self, gpio_pin: GpioPin, high: bool) {
         let pin = gpio_pin as u32;
         if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
-            if (self.odr & (1 << pin) == 0)
-                && (self.ier & (1 << pin) == 0)
-                && (self.oer & (1 << pin) != 0)
-                && (self.psr & (1 << pin) != 0)
+            if (self.odr.read() & (1 << pin) == 0)
+                && (self.ier.read() & (1 << pin) == 0)
+                && (self.oer.read() & (1 << pin) != 0)
+                && (self.psr.read() & (1 << pin) != 0)
             {
                 if !high {
                     toggle_reg_bits!(self, odr, 1 << pin, false);
@@ -170,10 +170,10 @@ impl Gpio {
                     toggle_reg_bits!(self, oer, 1 << pin, false);
                     toggle_reg_bits!(self, psr, 1 << pin, true);
                 }
-            } else if self.odr & (1 << pin) == 0
-                && self.ier & (1 << pin) == 0
-                && self.oer & (1 << pin) == 0
-                && self.psr & (1 << pin) != 0
+            } else if self.odr.read() & (1 << pin) == 0
+                && self.ier.read() & (1 << pin) == 0
+                && self.oer.read() & (1 << pin) == 0
+                && self.psr.read() & (1 << pin) != 0
             {
                 toggle_reg_bits!(self, oer, 1 << pin, false);
                 toggle_reg_bits!(self, ier, 1 << pin, false);
@@ -197,16 +197,16 @@ impl Gpio {
 
     /// Read the input level (High = true, Low = false)
     pub fn read(&self, gpio_pin: GpioPin) -> bool {
-        self.idr & (1 << gpio_pin as u32) != 0
+        self.idr.read() & (1 << gpio_pin as u32) != 0
     }
 
     /// Toggle the output level of the GPIO pin
-    pub fn toggle(&mut self, gpio_pin: GpioPin) {
-        self.odr ^= 1 << gpio_pin as u32;
+    pub fn toggle(&self, gpio_pin: GpioPin) {
+        self.odr.write(self.odr.read() ^ (1 << gpio_pin as u32));
     }
 
     /// Config the ouput drive capability of the GPIO pin
-    pub fn config_drive_capability(&mut self, gpio_pin: GpioPin, capability: GpioDriveCapability) {
+    pub fn config_drive_capability(&self, gpio_pin: GpioPin, capability: GpioDriveCapability) {
         match capability {
             GpioDriveCapability::_4mA => {
                 toggle_reg_bits!(self, dsr, 1 << gpio_pin as u32, true);
@@ -218,7 +218,7 @@ impl Gpio {
     }
 
     /// Config the interrupt type of the specified GPIO pin
-    pub fn config_interrupt(&mut self, gpio_pin: GpioPin, int_type: IntType) {
+    pub fn config_interrupt(&self, gpio_pin: GpioPin, int_type: IntType) {
         self.clear_interrupt(gpio_pin);
         set_reg_bits!(
             self,
@@ -229,13 +229,14 @@ impl Gpio {
     }
 
     /// Clear the interrupt of the specified GPIO pin
-    pub fn clear_interrupt(&mut self, gpio_pin: GpioPin) {
-        self.ifr &= 0x3 << (2 * gpio_pin as u32);
+    pub fn clear_interrupt(&self, gpio_pin: GpioPin) {
+        self.ifr
+            .write(self.ifr.read() & 0x3 << (2 * gpio_pin as u32));
     }
 
     /// get the interrupt status of the specified GPIO pin
     pub fn get_interrupt_status(&self, gpio_pin: GpioPin) -> SetStatus {
-        if self.ifr & (0x3 << (2 * gpio_pin as u32)) != 0 {
+        if self.ifr.read() & (0x3 << (2 * gpio_pin as u32)) != 0 {
             SetStatus::Set
         } else {
             SetStatus::Reset
@@ -243,13 +244,13 @@ impl Gpio {
     }
 
     /// Config the wakeup setting of the specified GPIO pin
-    pub fn config_wakeup(&mut self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
+    pub fn config_wakeup(&self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
         toggle_reg_bits!(self, wucr, 1 << gpio_pin as u32, enable);
         toggle_reg_bits!(self, wulvl, 1 << gpio_pin as u32, wake_up);
     }
 
     /// Config the wakeup setting of the specified GPIO pin
-    pub fn config_stop3_wakeup(&mut self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
+    pub fn config_stop3_wakeup(&self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
         let mut pin = gpio_pin as u32;
         if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
             return;
@@ -276,7 +277,7 @@ impl Gpio {
     }
 
     /// Config the iomux of the specified GPIO pin
-    pub fn set_iomux(&mut self, gpio_pin: GpioPin, function: u8) {
+    pub fn set_iomux(&self, gpio_pin: GpioPin, function: u8) {
         let pin = gpio_pin as u32;
         if pin > GpioPin::Pin7 as u32 {
             let index = pin - GpioPin::Pin8 as u32;
@@ -301,11 +302,10 @@ impl Gpio {
 
 /// Deinitializes the GPIO registers to the reset values
 pub fn deinit() {
-    let rcc = &mut RCC.clone();
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, false);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, false);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, false);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, false);
-    rcc.rst_peripheral(RCC_PERIPHERAL_GPIOA, true);
-    rcc.rst_peripheral(RCC_PERIPHERAL_GPIOB, false);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, false);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, false);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, false);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, false);
+    RCC.rst_peripheral(RCC_PERIPHERAL_GPIOA, true);
+    RCC.rst_peripheral(RCC_PERIPHERAL_GPIOB, false);
 }

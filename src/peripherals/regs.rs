@@ -1,4 +1,4 @@
-#![allow(clippy::identity_op)]
+use crate::cortex::{VolatileRO, VolatileRW};
 
 /// Uart Status
 #[repr(u32)]
@@ -39,7 +39,8 @@ macro_rules! analog_write {
 #[macro_export]
 macro_rules! set_reg_bits {
     ($obj:expr, $reg:ident, $mask:expr, $value:expr) => {
-        $obj.$reg = ($obj.$reg & !($mask as u32)) | ($value as u32);
+        $obj.$reg
+            .write(($obj.$reg.read() & !($mask as u32)) | ($value as u32));
     };
 }
 
@@ -47,15 +48,16 @@ macro_rules! set_reg_bits {
 #[macro_export]
 macro_rules! toggle_reg_bits {
     ($obj:expr, $reg:ident, $mask:expr, $enable:expr) => {
-        $obj.$reg = if $enable {
-            $obj.$reg | ($mask as u32)
+        $obj.$reg.write(if $enable {
+            $obj.$reg.read() | ($mask as u32)
         } else {
-            $obj.$reg & !($mask as u32)
-        };
+            $obj.$reg.read() & !($mask as u32)
+        });
     };
 }
 
 /// Define a register block and a corresponding wrapper struct for safe access
+#[macro_export]
 macro_rules! define_reg {
     (
         $(#[$wrapper_meta:meta])*
@@ -78,13 +80,12 @@ macro_rules! define_reg {
             ),*
         }
 
-        #[derive(Clone)]
         $(#[$wrapper_meta])*
         pub struct $name {
             ptr: *mut $raw_name,
         }
 
-        unsafe impl Sync for $name {}
+        unsafe impl ::core::marker::Sync for $name {}
 
         impl $name {
             pub const fn new(base: u32) -> Self {
@@ -99,17 +100,11 @@ macro_rules! define_reg {
             }
         }
 
-        impl core::ops::Deref for $name {
+        impl ::core::ops::Deref for $name {
             type Target = $raw_name;
 
             fn deref(&self) -> &Self::Target {
                 unsafe { &*self.ptr }
-            }
-        }
-
-        impl core::ops::DerefMut for $name {
-            fn deref_mut(&mut self) -> &mut Self::Target {
-                unsafe { &mut *self.ptr }
             }
         }
     };
@@ -131,22 +126,23 @@ pub const AFEC_BASE: u32 = 0x40008000;
 define_reg! {
     Rcc
     __Rcc {
-        cr0: u32,
-        cr1: u32,
-        cr2: u32,
-        cgr0: u32,
-        cgr1: u32,
-        cgr2: u32,
-        rst0: u32,
-        rst1: u32,
-        rst_sr: u32,
-        rst_cr: u32,
-        sr: u32,
-        sr1: u32,
-        cr3: u32,
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        cgr0: VolatileRW<u32>,
+        cgr1: VolatileRW<u32>,
+        cgr2: VolatileRW<u32>,
+        rst0: VolatileRW<u32>,
+        rst1: VolatileRW<u32>,
+        rst_sr: VolatileRW<u32>,
+        rst_cr: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        sr1: VolatileRO<u32>,
+        cr3: VolatileRW<u32>,
     }
 }
 
+#[allow(clippy::identity_op)]
 pub const RCC_BASE: u32 = PERIPH_BASE + 0x00000000;
 pub static RCC: Rcc = Rcc::new(RCC_BASE);
 
@@ -436,25 +432,25 @@ pub const RCC_SR1_IWDG_AON_CLK_EN_SYNC: u32 = 0x00000001;
 define_reg! {
     Ssp
     __Ssp {
-        cr0: u32,
-        cr1: u32,
-        dr: u32,
-        sr: u32,
-        cpsr: u32,
-        imsc: u32,
-        ris: u32,
-        mis: u32,
-        icr: u32,
-        dma_cr: u32,
-        resv: [u32; 1006],
-        periph_id0: u32,
-        periph_id1: u32,
-        periph_id2: u32,
-        periph_id3: u32,
-        pcell_id0: u32,
-        pcell_id1: u32,
-        pcell_id2: u32,
-        pcell_id3: u32,
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        dr: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        cpsr: VolatileRW<u32>,
+        imsc: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        icr: VolatileRW<u32>,
+        dma_cr: VolatileRW<u32>,
+        resv: [VolatileRO<u32>; 1006],
+        periph_id0: VolatileRO<u32>,
+        periph_id1: VolatileRO<u32>,
+        periph_id2: VolatileRO<u32>,
+        periph_id3: VolatileRO<u32>,
+        pcell_id0: VolatileRO<u32>,
+        pcell_id1: VolatileRO<u32>,
+        pcell_id2: VolatileRO<u32>,
+        pcell_id3: VolatileRO<u32>,
     }
 }
 
@@ -470,23 +466,40 @@ pub const SSP_NUM_PORTS: u32 = 3;
 define_reg! {
     Gpio
     __Gpio {
-        oer: u32,
-        otyper: u32,
-        ier: u32,
-        per: u32,
-        psr: u32,
-        idr: u32,
-        odr: u32,
-        brr: u32,
-        bsr: u32,
-        dsr: u32,
-        icr: u32,
-        ifr: u32,
-        wucr: u32,
-        wulvl: u32,
-        afrl: u32,
-        afrh: u32,
-        stop3_wucr: u32,
+        ///  output enable register
+        oer: VolatileRW<u32>,
+        ///  output type register
+        otyper: VolatileRW<u32>,
+        ///  input enable register
+        ier: VolatileRW<u32>,
+        ///  pull enable register
+        per: VolatileRW<u32>,
+        ///  pull select register
+        psr: VolatileRW<u32>,
+        ///  input data register
+        idr: VolatileRO<u32>,
+        ///  output data register
+        odr: VolatileRW<u32>,
+        ///  bit reset register
+        brr: VolatileRW<u32>,
+        ///  bit set register
+        bsr: VolatileRW<u32>,
+        ///  dirve set register
+        dsr: VolatileRW<u32>,
+        ///  interrupt control register
+        icr: VolatileRW<u32>,
+        ///  interrupt flag register
+        ifr: VolatileRW<u32>,
+        ///  wakeup control register
+        wucr: VolatileRW<u32>,
+        ///  wakeup level register
+        wulvl: VolatileRW<u32>,
+        ///  alternate function low register
+        afrl: VolatileRW<u32>,
+        ///  alternate function high register
+        afrh: VolatileRW<u32>,
+        ///  stop3 wakeup control register
+        stop3_wucr: VolatileRW<u32>,
     }
 }
 
@@ -503,25 +516,25 @@ pub static GPIOD: Gpio = Gpio::new(GPIOD_BASE);
 define_reg! {
     Rtc
     __Rtc {
-        ctrl: u32,
-        alarm0: u32,
-        alarm1: u32,
-        ppm_adjust: u32,
-        calendar: u32,
-        calendar_h: u32,
-        cyc_max: u32,
-        sr: u32,
-        asyn_data: u32,
-        asyn_data_h: u32,
-        cr1: u32,
-        sr1: u32,
-        cr2: u32,
-        sub_second_cnt: u32,
-        cyc_cnt: u32,
-        alarm0_subsecond: u32,
-        alarm1_subsecond: u32,
-        calendar_r: u32,
-        calendar_r_h: u32,
+        ctrl: VolatileRW<u32>,
+        alarm0: VolatileRW<u32>,
+        alarm1: VolatileRW<u32>,
+        ppm_adjust: VolatileRW<u32>,
+        calendar: VolatileRW<u32>,
+        calendar_h: VolatileRW<u32>,
+        cyc_max: VolatileRW<u32>,
+        sr: VolatileRW<u32>,
+        asyn_data: VolatileRO<u32>,
+        asyn_data_h: VolatileRO<u32>,
+        cr1: VolatileRW<u32>,
+        sr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        sub_second_cnt: VolatileRO<u32>,
+        cyc_cnt: VolatileRO<u32>,
+        alarm0_subsecond: VolatileRW<u32>,
+        alarm1_subsecond: VolatileRW<u32>,
+        calendar_r: VolatileRW<u32>,
+        calendar_r_h: VolatileRW<u32>,
     }
 }
 
@@ -529,26 +542,27 @@ pub const RTC_REG_BASE: u32 = 0x4000E000;
 pub static RTC: Rtc = Rtc::new(RTC_REG_BASE);
 
 define_reg! {
+    #[derive(Clone)]
     Uart
     __Uart {
-        dr: u32,
-        rsc_ecr: u32,
-        rsv0: [u32; 4],
-        fr: u32,
-        rsv1: u32,
-        ilpr: u32,
-        ibrd: u32,
-        fbrd: u32,
-        lcr_h: u32,
-        cr: u32,
-        ifls: u32,
-        imsc: u32,
-        ris: u32,
-        mis: u32,
-        icr: u32,
-        dmacr: u32,
-        rsv2: [u32; 997],
-        id: [u32; 8],
+        dr: VolatileRW<u32>,
+        rsc_ecr: VolatileRW<u32>,
+        rsv0: [VolatileRO<u32>; 4],
+        fr: VolatileRO<u32>,
+        rsv1: VolatileRO<u32>,
+        ilpr: VolatileRW<u32>,
+        ibrd: VolatileRW<u32>,
+        fbrd: VolatileRW<u32>,
+        lcr_h: VolatileRW<u32>,
+        cr: VolatileRW<u32>,
+        ifls: VolatileRW<u32>,
+        imsc: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        icr: VolatileRW<u32>,
+        dmacr: VolatileRW<u32>,
+        rsv2: [VolatileRO<u32>; 997],
+        id: [VolatileRO<u32>; 8],
     }
 }
 
@@ -622,11 +636,11 @@ pub const UART_DMACR_RX_EN_MASK: u32 = 0x00000001;
 define_reg! {
     Lpuart
     __Lpuart {
-        cr0: u32,
-        cr1: u32,
-        sr0: u32,
-        sr1: u32,
-        data: u32,
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        sr0: VolatileRW<u32>,
+        sr1: VolatileRW<u32>,
+        data: VolatileRW<u32>,
     }
 }
 
@@ -636,26 +650,26 @@ pub static LPUART: Lpuart = Lpuart::new(LPUART_BASE);
 define_reg! {
     Efc
     __Efc {
-        cr: u32,
-        int_en: u32,
-        sr: u32,
-        program_data0: u32,
-        program_data1: u32,
-        timing_cfg: u32,
-        protect_seq: u32,
-        rsv0: u32,
-        chip_pattern: u32,
-        ip_trim_l: u32,
-        ip_trim_h: u32,
-        sn_l: u32,
-        sn_h: u32,
-        test_info_l: u32,
-        test_info_h: u32,
-        option_csr_bytes: u32,
-        option_e0_bytes: u32,
-        option_wp_bytes: u32,
-        option_sec_bytes0: u32,
-        option_sec_bytes1: u32,
+        cr: VolatileRW<u32>,
+        int_en: VolatileRW<u32>,
+        sr: VolatileRW<u32>,
+        program_data0: VolatileRW<u32>,
+        program_data1: VolatileRW<u32>,
+        timing_cfg: VolatileRW<u32>,
+        protect_seq: VolatileRW<u32>,
+        rsv0: VolatileRW<u32>,
+        chip_pattern: VolatileRO<u32>,
+        ip_trim_l: VolatileRO<u32>,
+        ip_trim_h: VolatileRO<u32>,
+        sn_l: VolatileRO<u32>,
+        sn_h: VolatileRO<u32>,
+        test_info_l: VolatileRO<u32>,
+        test_info_h: VolatileRO<u32>,
+        option_csr_bytes: VolatileRO<u32>,
+        option_e0_bytes: VolatileRO<u32>,
+        option_wp_bytes: VolatileRO<u32>,
+        option_sec_bytes0: VolatileRO<u32>,
+        option_sec_bytes1: VolatileRO<u32>,
     }
 }
 
@@ -704,24 +718,24 @@ pub const EFC_SR_OPERATION_DONE: u32 = 0x00000001;
 define_reg! {
     Lorac
     __Lorac {
-        ssp_cr0: u32,
-        ssp_cr1: u32,
-        ssp_dr: u32,
-        ssp_sr: u32,
-        ssp_cpsr: u32,
-        ssp_imsc: u32,
-        ssp_ris: u32,
-        ssp_mis: u32,
-        ssp_icr: u32,
-        ssp_dma_cr: u32,
-        rsv: [u32; 54],
-        cr0: u32,
-        cr1: u32,
-        sr: u32,
-        nss_cr: u32,
-        sck_cr: u32,
-        mosi_cr: u32,
-        miso_sr: u32,
+        ssp_cr0: VolatileRW<u32>,
+        ssp_cr1: VolatileRW<u32>,
+        ssp_dr: VolatileRW<u32>,
+        ssp_sr: VolatileRO<u32>,
+        ssp_cpsr: VolatileRW<u32>,
+        ssp_imsc: VolatileRW<u32>,
+        ssp_ris: VolatileRO<u32>,
+        ssp_mis: VolatileRO<u32>,
+        ssp_icr: VolatileRW<u32>,
+        ssp_dma_cr: VolatileRW<u32>,
+        rsv: [VolatileRO<u32>; 54],
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        nss_cr: VolatileRW<u32>,
+        sck_cr: VolatileRW<u32>,
+        mosi_cr: VolatileRW<u32>,
+        miso_sr: VolatileRW<u32>,
     }
 }
 
@@ -730,9 +744,9 @@ pub static LORAC: Lorac = Lorac::new(LORAC_BASE);
 define_reg! {
     Afec
     __Afec {
-        cr: u32,
-        int_sr: u32,
-        raw_sr: u32,
+        cr: VolatileRW<u32>,
+        int_sr: VolatileRW<u32>,
+        raw_sr: VolatileRO<u32>,
     }
 }
 pub static AFEC: Afec = Afec::new(AFEC_BASE + 0x200);
@@ -745,13 +759,13 @@ pub const AFEC_RAW_SR_RCO24M_READY_MASK: u32 = 0x00000004;
 define_reg! {
     Iwdg
     __Iwdg {
-        cr: u32,
-        max: u32,
-        win: u32,
-        sr: u32,
-        sr1: u32,
-        cr1: u32,
-        sr2: u32,
+        cr: VolatileRW<u32>,
+        max: VolatileRW<u32>,
+        win: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        sr1: VolatileRO<u32>,
+        cr1: VolatileRW<u32>,
+        sr2: VolatileRW<u32>,
     }
 }
 
@@ -792,30 +806,30 @@ pub const IWDG_SR2_RESET_REQ_SR_MASK: u32 = 0x00000001;
 define_reg! {
     Wdg
     __Wdg {
-        load: u32,
-        value: u32,
-        control: u32,
-        intclr: u32,
-        ris: u32,
-        mis: u32,
-        dummy0: [u32; 0x2FA],
-        lock: u32,
-        dummy1: [u32; 0xBF],
-        itcr: u32,
-        itop: u32,
-        dummy2: [u32; 0x32],
-        periphid4: u32,
-        periphid5: u32,
-        periphid6: u32,
-        periphid7: u32,
-        periphid0: u32,
-        periphid1: u32,
-        periphid2: u32,
-        periphid3: u32,
-        pcellid0: u32,
-        pcellid1: u32,
-        pcellid2: u32,
-        pcellid3: u32,
+        load: VolatileRW<u32>,
+        value: VolatileRO<u32>,
+        control: VolatileRW<u32>,
+        intclr: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        dummy0: [VolatileRO<u32>; 0x2FA],
+        lock: VolatileRW<u32>,
+        dummy1: [VolatileRO<u32>; 0xBF],
+        itcr: VolatileRW<u32>,
+        itop: VolatileRW<u32>,
+        dummy2: [VolatileRO<u32>; 0x32],
+        periphid4: VolatileRO<u32>,
+        periphid5: VolatileRO<u32>,
+        periphid6: VolatileRO<u32>,
+        periphid7: VolatileRO<u32>,
+        periphid0: VolatileRO<u32>,
+        periphid1: VolatileRO<u32>,
+        periphid2: VolatileRO<u32>,
+        periphid3: VolatileRO<u32>,
+        pcellid0: VolatileRO<u32>,
+        pcellid1: VolatileRO<u32>,
+        pcellid2: VolatileRO<u32>,
+        pcellid3: VolatileRO<u32>,
     }
 }
 
@@ -825,10 +839,10 @@ pub static WDG: Wdg = Wdg::new(WDG_BASE);
 define_reg! {
     Crc
     __Crc {
-        cr: u32,
-        dr: u32,
-        init: u32,
-        poly: u32,
+        cr: VolatileRW<u32>,
+        dr: VolatileRW<u32>,
+        init: VolatileRW<u32>,
+        poly: VolatileRW<u32>,
     }
 }
 
@@ -858,23 +872,23 @@ pub const CRC_CR_REVERSE_OUT_EN: u32 = 0x00000001;
 define_reg! {
     I2c
     __I2c {
-        cr: u32,
-        sr: u32,
-        sar: u32,
-        dbr: u32,
-        lcr: u32,
-        wcr: u32,
-        rst_cycl: u32,
-        bmr: u32,
-        wfifo: u32,
-        wfifo_wprt: u32,
-        wfifo_rptr: u32,
-        rfifo: u32,
-        rfifo_wptr: u32,
-        rfifo_rptr: u32,
-        resv: [u32; 2],
-        wfifo_status: u32,
-        rfifo_status: u32,
+        cr: VolatileRW<u32>,
+        sr: VolatileRW<u32>,
+        sar: VolatileRW<u32>,
+        dbr: VolatileRW<u32>,
+        lcr: VolatileRW<u32>,
+        wcr: VolatileRW<u32>,
+        rst_cycl: VolatileRW<u32>,
+        bmr: VolatileRO<u32>,
+        wfifo: VolatileRW<u32>,
+        wfifo_wprt: VolatileRW<u32>,
+        wfifo_rptr: VolatileRW<u32>,
+        rfifo: VolatileRW<u32>,
+        rfifo_wptr: VolatileRW<u32>,
+        rfifo_rptr: VolatileRW<u32>,
+        resv: [VolatileRW<u32>; 2],
+        wfifo_status: VolatileRO<u32>,
+        rfifo_status: VolatileRO<u32>,
     }
 }
 
@@ -962,17 +976,17 @@ pub const I2C_RFIFO_STATUS_OVERUN_MASK: u32 = 0x00000001;
 define_reg! {
     Syscfg
     __Syscfg {
-        cr0: u32,
-        cr1: u32,
-        cr2: u32,
-        cr3: u32,
-        cr4: u32,
-        cr5: u32,
-        cr6: u32,
-        cr7: u32,
-        cr8: u32,
-        cr9: u32,
-        cr10: u32,
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        cr3: VolatileRW<u32>,
+        cr4: VolatileRW<u32>,
+        cr5: VolatileRW<u32>,
+        cr6: VolatileRW<u32>,
+        cr7: VolatileRW<u32>,
+        cr8: VolatileRW<u32>,
+        cr9: VolatileRW<u32>,
+        cr10: VolatileRW<u32>,
     }
 }
 
@@ -985,21 +999,21 @@ define_reg! {
     /// Raw PWR struct
     __Pwr {
         /// control register 0, offset 0x00
-        cr0: u32,
+        cr0: VolatileRW<u32>,
         /// control register 1, offset 0x04
-        cr1: u32,
+        cr1: VolatileRW<u32>,
         /// status register 0, offset 0x08
-        sr0: u32,
+        sr0: VolatileRW<u32>,
         /// status register 2, offset 0x0C
-        sr1: u32,
+        sr1: VolatileRW<u32>,
         /// control register 3, offset 0x10
-        cr2: u32,
+        cr2: VolatileRW<u32>,
         /// control register 4, offset 0x14
-        cr3: u32,
+        cr3: VolatileRW<u32>,
         /// control register 5, offset 0x18
-        cr4: u32,
+        cr4: VolatileRW<u32>,
         /// control register 6, offset 0x1C
-        cr5: u32,
+        cr5: VolatileRW<u32>,
     }
 }
 
@@ -1010,45 +1024,45 @@ define_reg! {
     TimerGp
     __TimerGp {
         /// TIMER control register 1, Address offset: 0x00
-        cr1: u32,
+        cr1: VolatileRW<u32>,
         /// TIMER control register 2, Address offset: 0x04
-        cr2: u32,
+        cr2: VolatileRW<u32>,
         /// TIMER slave Mode Control register, Address offset: 0x08
-        smcr: u32,
+        smcr: VolatileRW<u32>,
         /// TIMER DMA/interrupt enable register, Address offset: 0x0C
-        dier: u32,
+        dier: VolatileRW<u32>,
         /// TIMER event generation register, Address offset: 0x14
-        egr: u32,
+        egr: VolatileRW<u32>,
         /// TIMER  capture/compare mode register 1, Address offset: 0x18
-        ccmr1: u32,
+        ccmr1: VolatileRW<u32>,
         /// TIMER  capture/compare mode register 2, Address offset: 0x1C
-        ccmr2: u32,
+        ccmr2: VolatileRW<u32>,
         /// TIMER capture/compare enable register, Address offset: 0x20
-        ccer: u32,
+        ccer: VolatileRW<u32>,
         /// TIMER counter register, Address offset: 0x24
-        cnt: u32,
+        cnt: VolatileRW<u32>,
         /// TIMER prescaler register, Address offset: 0x28
-        psc: u32,
+        psc: VolatileRW<u32>,
         /// TIMER auto-reload register, Address offset: 0x2C
-        arr: u32,
+        arr: VolatileRW<u32>,
         /// Reserved Address offset: 0x30
-        resv1: u32,
+        resv1: VolatileRO<u32>,
         /// TIMER capture/compare register 0, Address offset: 0x34
-        ccr0: u32,
+        ccr0: VolatileRW<u32>,
         /// TIMER capture/compare register 1, Address offset: 0x38
-        ccr1: u32,
+        ccr1: VolatileRW<u32>,
         /// TIMER capture/compare register 2, Address offset: 0x3C
-        ccr2: u32,
+        ccr2: VolatileRW<u32>,
         /// TIMER capture/compare register 3, Address offset: 0x40
-        ccr3: u32,
+        ccr3: VolatileRW<u32>,
         /// Reserved, Address offset: 0x44
-        resv2: u32,
+        resv2: VolatileRO<u32>,
         /// TIMER DMA control register, Address offset: 0x48
-        dcr: u32,
+        dcr: VolatileRW<u32>,
         /// TIMER DMA address for full transfer register, Address offset: 0x4C
-        dmar: u32,
+        dmar: VolatileRW<u32>,
         /// TIMER option register, Address offset: 0x50
-        or: u32,
+        or: VolatileRW<u32>,
     }
 }
 
@@ -1065,25 +1079,25 @@ define_reg! {
     Lptimer
     __Lptimer {
         /// LPTIMER flag and status register
-        isr: u32,
+        isr: VolatileRO<u32>,
         /// LPTIMER flag clear register
-        icr: u32,
+        icr: VolatileRW<u32>,
         /// LPTIMER interrupt enable register
-        ier: u32,
+        ier: VolatileRW<u32>,
         /// LPTIMER configuration register
-        cfgr: u32,
+        cfgr: VolatileRW<u32>,
         /// LPTIMER control register
-        cr: u32,
+        cr: VolatileRW<u32>,
         /// LPTIMER compare register
-        cmp: u32,
+        cmp: VolatileRW<u32>,
         /// LPTIMER autoreload register
-        arr: u32,
+        arr: VolatileRW<u32>,
         /// LPTIMER counter register
-        cnt: u32,
+        cnt: VolatileRO<u32>,
         /// LPTIMER CSR register
-        csr: u32,
+        csr: VolatileRO<u32>,
         /// LPTIMER SR1 register
-        sr1: u32,
+        sr1: VolatileRO<u32>,
     }
 }
 
@@ -1096,70 +1110,70 @@ define_reg! {
     I2s
     __I2s {
         /// enable register, offset 0x00
-        ier: u32,
+        ier: VolatileRW<u32>,
         /// receiver block enable register, offset 0x04
-        irer: u32,
+        irer: VolatileRW<u32>,
         /// transmitter block enable register, offset 0x08
-        iter: u32,
+        iter: VolatileRW<u32>,
         /// clock enable register, offset 0x0c
-        cer: u32,
+        cer: VolatileRW<u32>,
         /// clock configuration register, offset 0x10
-        ccr: u32,
+        ccr: VolatileRW<u32>,
         /// receiver block FIFO reset register, offset
-        rxffr: u32,
+        rxffr: VolatileRW<u32>,
         /// transmitter block FIFO reset register, offset 0x18
-        txffr: u32,
+        txffr: VolatileRW<u32>,
         /// reserved
-        resv0: u32,
+        resv0: VolatileRO<u32>,
 
         /// right receive buffer register, offset 0x20
-        lrbr_lthr: u32,
+        lrbr_lthr: VolatileRW<u32>,
         /// right transmit holding register, offset 0x24
-        rrbr_rthr: u32,
+        rrbr_rthr: VolatileRW<u32>,
         /// receiver enable register, offset 0x28
-        rer: u32,
+        rer: VolatileRW<u32>,
         /// transmitter enable register, offset 0x2c
-        ter: u32,
+        ter: VolatileRW<u32>,
         /// receiver configuration register, offset 0x30
-        rcr: u32,
+        rcr: VolatileRW<u32>,
         /// transmitter configuration register, offset 0x34
-        tcr: u32,
+        tcr: VolatileRW<u32>,
         /// interrupt status register, offset 0x38
-        isr: u32,
+        isr: VolatileRO<u32>,
         /// interrupt mask register, offset 0x3c
-        imr: u32,
+        imr: VolatileRW<u32>,
         /// receiver overrun register, offset 0x40
-        ror: u32,
+        ror: VolatileRO<u32>,
         /// transmitter overrun register, offset 0x44
-        tor: u32,
+        tor: VolatileRO<u32>,
         /// receiver FIFO configuration register, offset 0x48
-        rfcr: u32,
+        rfcr: VolatileRW<u32>,
         /// transmitter FIFO configuration register, offset 0x4c
-        tfcr: u32,
+        tfcr: VolatileRW<u32>,
         /// receiver FIFO flush register, offset 0x50
-        rff: u32,
+        rff: VolatileRW<u32>,
         /// transmitter FIFO flush register, offset 0x54
-        tff: u32,
+        tff: VolatileRW<u32>,
         /// reserved
-        resv1: [u32; 0x5a],
+        resv1: [VolatileRO<u32>; 0x5a],
         /// receiver block dma register, offset 0x1c0
-        rxdma: u32,
+        rxdma: VolatileRW<u32>,
         /// reset receiver block dma register, offset 0x1c4
-        rrxdma: u32,
+        rrxdma: VolatileRW<u32>,
         /// transmitter block dma register, offset 0x1c8
-        txdma: u32,
+        txdma: VolatileRW<u32>,
         /// reset transmitter block dma register, offset 0x1cc
-        rtxdma: u32,
+        rtxdma: VolatileRW<u32>,
         /// reserved
-        resv2: [u32; 8],
+        resv2: [VolatileRO<u32>; 8],
         /// component parameter register 2, offset 0x1f0
-        i2s_comp_param_2: u32,
+        i2s_comp_param_2: VolatileRO<u32>,
         /// component parameter register 1, offset 0x1f4
-        i2s_comp_param_1: u32,
+        i2s_comp_param_1: VolatileRO<u32>,
         /// component version register, offset 0x1f8
-        i2s_comp_version: u32,
+        i2s_comp_version: VolatileRO<u32>,
         /// component type register, offset 0x1fc
-        i2s_comp_type: u32,
+        i2s_comp_type: VolatileRO<u32>,
     }
 }
 
@@ -1169,16 +1183,16 @@ pub static I2S: I2s = I2s::new(I2S_BASE);
 define_reg! {
     Bstimer
     __Bstimer {
-        cr1: u32,
-        cr2: u32,
-        resv1: u32,
-        dier: u32,
-        sr: u32,
-        egr: u32,
-        resv2: [u32; 3],
-        cnt: u32,
-        psc: u32,
-        arr: u32,
+        cr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        resv1: VolatileRO<u32>,
+        dier: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        egr: VolatileRW<u32>,
+        resv2: [VolatileRO<u32>; 3],
+        cnt: VolatileRW<u32>,
+        psc: VolatileRW<u32>,
+        arr: VolatileRW<u32>,
     }
 }
 
@@ -1190,13 +1204,13 @@ pub static BSTIMER1: Bstimer = Bstimer::new(BSTIMER1_SFR_BASE);
 define_reg! {
     Sec
     __Sec {
-        int: u32,
-        rst: u32,
-        sr: u32,
-        filter0: u32,
-        filter1: u32,
-        filter2: u32,
-        filter3: u32,
+        int: VolatileRW<u32>,
+        rst: VolatileRW<u32>,
+        sr: VolatileRW<u32>,
+        filter0: VolatileRW<u32>,
+        filter1: VolatileRW<u32>,
+        filter2: VolatileRW<u32>,
+        filter3: VolatileRW<u32>,
     }
 }
 
@@ -1208,25 +1222,25 @@ pub const SEC_SR_FLASH_ACCESS_ERROR_MASK: u32 = 0x00001000;
 define_reg! {
     Qspi
     __Qspi {
-        qspi_cr: u32,
-        qspi_dcr: u32,
-        qspi_sr: u32,
-        qspi_fcr: u32,
-        qspi_dlr: u32,
-        qspi_ccr: u32,
-        qspi_ar: u32,
-        qspi_abr: u32,
-        qspi_dr: u32,
-        qspi_psmkr: u32,
-        qspi_psmar: u32,
-        qspi_pir: u32,
-        qspi_tor: u32,
-        reserved: [u32; 19],
-        qspi_hit0r: u32,
-        qspi_hit1r: u32,
-        qspi_mir: u32,
-        qspi_cfgr: u32,
-        sbus_start: u32,
+        qspi_cr: VolatileRW<u32>,
+        qspi_dcr: VolatileRW<u32>,
+        qspi_sr: VolatileRW<u32>,
+        qspi_fcr: VolatileRW<u32>,
+        qspi_dlr: VolatileRW<u32>,
+        qspi_ccr: VolatileRW<u32>,
+        qspi_ar: VolatileRW<u32>,
+        qspi_abr: VolatileRW<u32>,
+        qspi_dr: VolatileRW<u32>,
+        qspi_psmkr: VolatileRW<u32>,
+        qspi_psmar: VolatileRW<u32>,
+        qspi_pir: VolatileRW<u32>,
+        qspi_tor: VolatileRW<u32>,
+        reserved: [VolatileRW<u32>; 19],
+        qspi_hit0r: VolatileRW<u32>,
+        qspi_hit1r: VolatileRW<u32>,
+        qspi_mir: VolatileRW<u32>,
+        qspi_cfgr: VolatileRW<u32>,
+        sbus_start: VolatileRW<u32>,
     }
 }
 
@@ -1236,11 +1250,11 @@ pub static QSPI: Qspi = Qspi::new(QSPI_BASE);
 define_reg! {
     Dac
     __Dac {
-        cr: u32,
-        swtrigr: u32,
-        dhr: u32,
-        dor: u32,
-        sr: u32,
+        cr: VolatileRW<u32>,
+        swtrigr: VolatileRW<u32>,
+        dhr: VolatileRW<u32>,
+        dor: VolatileRO<u32>,
+        sr: VolatileRW<u32>,
     }
 }
 
@@ -1291,17 +1305,17 @@ pub const DAC_CR_DAC_EN_MASK: u32 = 0x00000001;
 define_reg! {
     Adc
     __Adc {
-        cr: u32,
-        cfgr: u32,
-        seqr0: u32,
-        seqr1: u32,
-        diffsel: u32,
-        isr: u32,
-        ier: u32,
-        dr: u32,
-        awd0_cfgr: u32,
-        awd1_cfgr: u32,
-        awd2_cfgr: u32,
+        cr: VolatileRW<u32>,
+        cfgr: VolatileRW<u32>,
+        seqr0: VolatileRW<u32>,
+        seqr1: VolatileRW<u32>,
+        diffsel: VolatileRW<u32>,
+        isr: VolatileRW<u32>,
+        ier: VolatileRW<u32>,
+        dr: VolatileRO<u32>,
+        awd0_cfgr: VolatileRW<u32>,
+        awd1_cfgr: VolatileRW<u32>,
+        awd2_cfgr: VolatileRW<u32>,
     }
 }
 
@@ -1311,18 +1325,18 @@ pub static ADC: Adc = Adc::new(ADC_BASE);
 define_reg! {
     Lcd
     __Lcd {
-        cr0: u32,
-        cr1: u32,
-        dr0: u32,
-        dr1: u32,
-        dr2: u32,
-        dr3: u32,
-        dr4: u32,
-        dr5: u32,
-        dr6: u32,
-        dr7: u32,
-        sr: u32,
-        cr2: u32,
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        dr0: VolatileRW<u32>,
+        dr1: VolatileRW<u32>,
+        dr2: VolatileRW<u32>,
+        dr3: VolatileRW<u32>,
+        dr4: VolatileRW<u32>,
+        dr5: VolatileRW<u32>,
+        dr6: VolatileRW<u32>,
+        dr7: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        cr2: VolatileRW<u32>,
     }
 }
 

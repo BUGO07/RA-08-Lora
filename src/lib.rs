@@ -9,16 +9,17 @@ pub mod class_c;
 pub mod cortex;
 /// C FFI Bindings for ASR6601 SDK
 pub mod ffi;
+/// Interrupts
+pub mod interrupts;
 /// Peripherals
 pub mod peripherals;
 /// Serial printing
 pub mod print;
-/// Interrupts
-pub mod tremo_it;
 
 use crate::{
     class_c::app_start,
     peripherals::{
+        delay::delay_ms,
         gpio::{GpioMode, GpioPin},
         rcc::{
             RCC_OSC_XO32K, RCC_PERIPHERAL_GPIOA, RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC,
@@ -38,34 +39,35 @@ pub extern "C" fn main() -> ! {
 
 /// initialize UART for logging
 pub fn uart_log_init() {
-    GPIOB.clone().set_iomux(GpioPin::Pin0, 1);
-    GPIOB.clone().set_iomux(GpioPin::Pin1, 1);
+    GPIOB.set_iomux(GpioPin::Pin0, 1);
+    GPIOB.set_iomux(GpioPin::Pin1, 1);
 
-    UART0.clone().init(Default::default()).unwrap();
-    UART0.clone().cmd(true);
+    UART0.init(Default::default()).unwrap();
+    UART0.cmd(true);
 }
 
 /// init board, enable peripheral clocks, etc.
 pub fn board_init() {
-    let rcc = &mut RCC.clone();
-    rcc.enable_oscillator(RCC_OSC_XO32K, true);
+    RCC.enable_oscillator(RCC_OSC_XO32K, true);
 
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_UART0, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_PWR, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_RTC, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
-    rcc.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_UART0, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOA, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOB, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_PWR, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_RTC, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
+    RCC.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
+
+    // delay_ms(1000);
 
     // Turn the white LED on to know the board is alive. It will be turned off in app_start() when the device enters low power mode.
-    GPIOA.clone().init(GpioPin::Pin14, GpioMode::OutputPPHigh);
+    GPIOA.init(GpioPin::Pin14, GpioMode::OutputPPHigh);
 
-    unsafe { ffi::delay_ms(100) };
+    delay_ms(100);
 
-    PWR.clone().xo32k_lpm_cmd(true);
+    PWR.xo32k_lpm_cmd(true);
 
     uart_log_init();
 

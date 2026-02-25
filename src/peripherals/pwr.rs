@@ -1,8 +1,11 @@
-// ! TODO: Implement Core Libraries to implement this
-
 use crate::{
     analog_read, analog_write,
-    ffi::PWR_LP_MODE_STOP3,
+    cortex::{
+        IRQType, SCB,
+        asm::{_sev, _wfe, _wfi},
+        nvic_enable_irq,
+    },
+    ffi::{PWR_LP_MODE_STOP3, SCB_SCR_SLEEPDEEP_Msk},
     peripherals::regs::{EFC, EFC_CR_PREFETCH_EN_MASK, Pwr},
     set_reg_bits, toggle_reg_bits,
 };
@@ -16,23 +19,22 @@ pub const REG_AFEC_RAW_SR: u32 = 0x40008208;
 pub const AFEC_RAW_SR_RCO48M_READY: u32 = 0x00000004;
 
 impl Pwr {
-    #![allow(unused)]
-    pub fn deep_sleep(&mut self, mode: u32, wfi: u32) {
+    pub fn deep_sleep(&self, mode: u32, wfi: u32) {
         if (unsafe { *(0x10002010 as *const u32) } & 0x3) == 0 {
             set_reg_bits!(self, cr1, (0xF << 20), (1 << 20));
         }
 
-        todo!("core_cm4");
-        // toggle_reg_bits!(SCB, scr, SCB_SCR_SLEEPDEEP_Msk, true);
+        toggle_reg_bits!(SCB, scr, SCB_SCR_SLEEPDEEP_Msk, true);
 
         toggle_reg_bits!(self, cr0, 1 << 5, wfi == 0);
 
         if mode < PWR_LP_MODE_STOP3 as u32 {
             set_reg_bits!(self, cr0, PWR_LP_MODE_MASK, mode);
         } else {
-            if EFC.cr & EFC_CR_PREFETCH_EN_MASK != 0 {
+            if EFC.cr.read() & EFC_CR_PREFETCH_EN_MASK != 0 {
+                // TODO: tremo_flash
                 // flash_cr_unlock!();
-                toggle_reg_bits!(EFC.clone(), cr, EFC_CR_PREFETCH_EN_MASK, false);
+                toggle_reg_bits!(EFC, cr, EFC_CR_PREFETCH_EN_MASK, false);
                 // flash_cr_unlock!();
             }
 
@@ -50,56 +52,56 @@ impl Pwr {
             );
         }
 
-        // if wfi != 0 {
-        //     NVIC_EnableIRQ(PWR_IRQn);
-        //     __WFI();
-        // } else {
-        //     __SEV();
-        //     __WFE();
-        //     __WFE();
-        // }
+        if wfi != 0 {
+            nvic_enable_irq(IRQType::Pwr);
+            _wfi();
+        } else {
+            _sev();
+            _wfe();
+            _wfe();
+        }
     }
 
-    pub fn deepsleep_wfi(&mut self, mode: u32) {
+    pub fn deepsleep_wfi(&self, mode: u32) {
         self.deep_sleep(mode, 1);
     }
 
-    pub fn deepsleep_wfe(&mut self, mode: u32) {
+    pub fn deepsleep_wfe(&self, mode: u32) {
         self.deep_sleep(mode, 0);
     }
 
-    pub fn sleep_wfi(&mut self, low_power: bool) {
+    pub fn sleep_wfi(&self, low_power: bool) {
         if low_power {
             self.enter_lprun_mode();
         }
 
-        // NVIC_EnableIRQ(PWR_IRQn);
-        // __WFI();
+        nvic_enable_irq(IRQType::Pwr);
+        _wfi();
     }
 
-    pub fn sleep_wfe(&mut self, low_power: bool) {
+    pub fn sleep_wfe(&self, low_power: bool) {
         if low_power {
             self.enter_lprun_mode();
         }
 
-        // __WFE();
+        _wfe();
     }
 
-    pub fn enter_lprun_mode(&mut self) {
+    pub fn enter_lprun_mode(&self) {
         analog_write!(0x05, analog_read!(0x05) | (1 << 3));
         analog_write!(0x06, analog_read!(0x06) | (0x3 << 20));
     }
 
-    pub fn exit_lprun_mode(&mut self) {
+    pub fn exit_lprun_mode(&self) {
         analog_write!(0x06, analog_read!(0x06) & !(0x3 << 20));
         analog_write!(0x05, analog_read!(0x05) & !(1 << 3));
     }
 
-    pub fn xo32k_lpm_cmd(&mut self, enable: bool) {
+    pub fn xo32k_lpm_cmd(&self, new_state: bool) {
         let value = analog_read!(0x03);
         analog_write!(
             0x03,
-            if enable {
+            if new_state {
                 value | (1 << 7)
             } else {
                 value & !(1 << 7)

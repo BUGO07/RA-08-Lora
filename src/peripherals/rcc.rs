@@ -1,4 +1,7 @@
-use crate::{analog_read, analog_write, peripherals::regs::*, set_reg_bits, toggle_reg_bits};
+use crate::{
+    analog_read, analog_write, cortex::SYSTICK, ffi::SysTick_CTRL_CLKSOURCE_Msk,
+    peripherals::regs::*, set_reg_bits, toggle_reg_bits,
+};
 
 pub const RCC_FREQ_48M: u32 = 48000000;
 pub const RCC_FREQ_40M: u32 = 40000000;
@@ -205,7 +208,7 @@ impl Rcc {
     /// Get the frequency of the specified clock
     pub fn get_clk_freq(&self, clk: u32) -> u32 {
         let mut freq;
-        let mut tmp = self.cr0 & RCC_CR0_SYSCLK_SEL_MASK;
+        let mut tmp = self.cr0.read() & RCC_CR0_SYSCLK_SEL_MASK;
         let sysclk_freq = match tmp {
             RCC_CR0_SYSCLK_SEL_RCO48M => RCC_FREQ_48M,
             RCC_CR0_SYSCLK_SEL_RCO32K => RCC_FREQ_32000,
@@ -218,25 +221,25 @@ impl Rcc {
 
         match clk {
             RCC_HCLK => {
-                tmp = self.cr0 & RCC_CR0_HCLK_DIV_MASK;
+                tmp = self.cr0.read() & RCC_CR0_HCLK_DIV_MASK;
                 tmp >>= 8;
                 freq = sysclk_freq >> tmp;
             }
             RCC_PCLK0 => {
-                let mut tmp = self.cr0 & RCC_CR0_HCLK_DIV_MASK;
+                let mut tmp = self.cr0.read() & RCC_CR0_HCLK_DIV_MASK;
                 tmp >>= 8;
                 freq = sysclk_freq >> tmp;
 
-                tmp = self.cr0 & RCC_CR0_PCLK0_DIV_MASK;
+                tmp = self.cr0.read() & RCC_CR0_PCLK0_DIV_MASK;
                 tmp >>= 5;
                 freq >>= tmp;
             }
             RCC_PCLK1 => {
-                let mut tmp = self.cr0 & RCC_CR0_HCLK_DIV_MASK;
+                let mut tmp = self.cr0.read() & RCC_CR0_HCLK_DIV_MASK;
                 tmp >>= 8;
                 freq = sysclk_freq >> tmp;
 
-                tmp = self.cr0 & RCC_CR0_PCLK1_DIV_MASK;
+                tmp = self.cr0.read() & RCC_CR0_PCLK1_DIV_MASK;
                 tmp >>= 15;
                 freq >>= tmp;
             }
@@ -249,16 +252,16 @@ impl Rcc {
     }
 
     /// Enable/Disable the specified oscillator
-    pub fn enable_oscillator(&mut self, osc: u32, new_state: bool) {
+    pub fn enable_oscillator(&self, osc: u32, new_state: bool) {
         match osc {
             RCC_OSC_RCO48M => {
                 let value = analog_read!(0x06);
                 if new_state {
                     analog_write!(0x06, value & !(1 << 5));
-                    while (AFEC.clone().raw_sr & AFEC_RAW_SR_RCO24M_READY_MASK) == 0 {}
+                    while (AFEC.raw_sr.read() & AFEC_RAW_SR_RCO24M_READY_MASK) == 0 {}
                 } else {
                     analog_write!(0x06, value | (1 << 5));
-                    while (AFEC.clone().raw_sr & AFEC_RAW_SR_RCO24M_READY_MASK) != 0 {}
+                    while (AFEC.raw_sr.read() & AFEC_RAW_SR_RCO24M_READY_MASK) != 0 {}
                 }
             }
             RCC_OSC_RCO32K => {
@@ -296,28 +299,28 @@ impl Rcc {
             }
             RCC_OSC_XO32M => {
                 self.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
-                let lorac = &mut LORAC.clone();
+
                 if new_state {
-                    if (lorac.cr1 & 0x00000020) == 0 {
-                        lorac.cr1 |= 1 << 5; // nreset
-                        lorac.cr1 &= !(1 << 7); // por
+                    if (LORAC.cr1.read() & 0x00000020) == 0 {
+                        LORAC.cr1.write(LORAC.cr1.read() | (1 << 5)); // nreset
+                        LORAC.cr1.write(LORAC.cr1.read() & !(1 << 7)); // por
                     }
 
-                    lorac.cr1 |= 1 << 2;
-                    while (LORAC.clone().sr & (1 << 1)) == 0 {}
+                    LORAC.cr1.write(LORAC.cr1.read() | (1 << 2));
+                    while (LORAC.sr.read() & (1 << 1)) == 0 {}
                 } else {
-                    lorac.cr1 &= !(1 << 2);
-                    while (LORAC.clone().sr & (1 << 1)) != 0 {}
+                    LORAC.cr1.write(LORAC.cr1.read() & !(1 << 2));
+                    while (LORAC.sr.read() & (1 << 1)) != 0 {}
                 }
             }
             RCC_OSC_RCO4M => {
                 let value = analog_read!(0x06);
                 if new_state {
                     analog_write!(0x06, value & !(1 << 6));
-                    while (AFEC.clone().raw_sr & AFEC_RAW_SR_RCO4M_READY_MASK) == 0 {}
+                    while (AFEC.raw_sr.read() & AFEC_RAW_SR_RCO4M_READY_MASK) == 0 {}
                 } else {
                     analog_write!(0x06, value | (1 << 6));
-                    while (AFEC.clone().raw_sr & AFEC_RAW_SR_RCO4M_READY_MASK) != 0 {}
+                    while (AFEC.raw_sr.read() & AFEC_RAW_SR_RCO4M_READY_MASK) != 0 {}
                 }
             }
             _ => {}
@@ -325,70 +328,69 @@ impl Rcc {
     }
 
     /// Set the source of the SYSCLK
-    pub fn set_sys_clk_src(&mut self, clk_src: u32) {
+    pub fn set_sys_clk_src(&self, clk_src: u32) {
         set_reg_bits!(self, cr0, RCC_CR0_SYSCLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the SYSTICK
-    pub fn set_systick_src(&mut self, clk_src: u32) {
+    pub fn set_systick_src(&self, clk_src: u32) {
         if clk_src == RCC_SYSTICK_SOURCE_HCLK {
-            todo!("SYSTICK")
-            // tremo_reg_en!(SYSTICK, ctrl, SysTick_CTRL_CLKSOURCE_Msk, true);
+            toggle_reg_bits!(SYSTICK, ctrl, SysTick_CTRL_CLKSOURCE_Msk, true);
         } else {
             toggle_reg_bits!(self, cr0, RCC_CR0_HCLK_DIV_MASK, false);
         }
     }
 
     /// Set the source of the MCO clock
-    pub fn set_mco_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
+    pub fn set_mco_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cr0, RCC_CR0_MCO_CLK_SEL_MASK, false);
-            while self.clone().sr1 & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr0, RCC_CR0_MCO_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the UART0 CLK
-    pub fn set_uart0_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_UART0_CLK_EN_SYNC != 0 {
+    pub fn set_uart0_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_UART0_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_UART0_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_UART0_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_UART0_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_UART0_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the UART1 CLK
-    pub fn set_uart1_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_UART1_CLK_EN_SYNC != 0 {
+    pub fn set_uart1_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_UART1_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_UART1_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_UART1_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_UART1_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_UART1_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the UART2 CLK
-    pub fn set_uart2_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_UART2_CLK_EN_SYNC != 0 {
+    pub fn set_uart2_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_UART2_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_UART2_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_UART2_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_UART2_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_UART2_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the UART3 CLK
-    pub fn set_uart3_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_UART3_CLK_EN_SYNC != 0 {
+    pub fn set_uart3_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_UART3_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_UART3_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_UART3_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_UART3_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_UART3_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the LPTIMER0 CLK
-    pub fn set_lptimer0_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {
+    pub fn set_lptimer0_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER0_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {}
         }
 
         if clk_src == RCC_LPTIMER0_CLK_SOURCE_EXTCLK {
@@ -399,10 +401,10 @@ impl Rcc {
     }
 
     /// Set the source of the LPTIMER1 CLK
-    pub fn set_lptimer1_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {
+    pub fn set_lptimer1_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER1_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {}
         }
 
         if clk_src == RCC_LPTIMER1_CLK_SOURCE_EXTCLK {
@@ -413,168 +415,167 @@ impl Rcc {
     }
 
     /// Set the source of the LCD CLK
-    pub fn set_lcd_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_LCD_CLK_EN_SYNC != 0 {
+    pub fn set_lcd_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_LCD_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_LCD_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_LCD_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_LCD_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr1, RCC_CR1_LCD_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the LPUART CLK
-    pub fn set_lpuart_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {
+    pub fn set_lpuart_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_LPUART_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr1, RCC_CR1_LPUART_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the RTC CLK
-    pub fn set_rtc_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_RTC_CLK_EN_SYNC != 0 {
+    pub fn set_rtc_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_RTC_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_RTC_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_RTC_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_RTC_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr1, RCC_CR1_RTC_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the IWDG CLK
-    pub fn set_iwdg_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {
+    pub fn set_iwdg_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_IWDG_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr1, RCC_CR1_IWDG_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the ADC CLK
-    pub fn set_adc_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_ADC_CLK_EN_SYNC != 0 {
+    pub fn set_adc_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_ADC_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr0, RCC_CGR0_ADC_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_ADC_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_ADC_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_ADC_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the QSPI CLK
-    pub fn set_qspi_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {
+    pub fn set_qspi_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_QSPI_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_QSPI_CLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the I2S CLK
-    pub fn set_i2s_clk_src(&mut self, clk_src: u32) {
-        if self.sr1 & RCC_SR1_I2S_CLK_EN_SYNC != 0 {
+    pub fn set_i2s_clk_src(&self, clk_src: u32) {
+        if self.sr1.read() & RCC_SR1_I2S_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cgr1, RCC_CGR1_I2S_CLK_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_I2S_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_I2S_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr2, RCC_CR2_I2S_CLK_SEL_MASK, clk_src);
     }
 
     /// Get the source of the SYSCLK
     pub fn get_sys_clk_src(&self) -> u32 {
-        self.cr0 & RCC_CR0_SYSCLK_SEL_MASK
+        self.cr0.read() & RCC_CR0_SYSCLK_SEL_MASK
     }
 
     /// Get the source of the SYSTICK
     pub fn get_systick_src(&self) -> u32 {
-        todo!("SYSTICK")
-        // if SYSTICK.ctrl & SysTick_CTRL_CLKSOURCE_Msk != 0 {
-        //     RCC_SYSTICK_SOURCE_HCLK
-        // } else {
-        //     self.cr0 & RCC_CR0_HCLK_DIV_MASK
-        // }
+        if SYSTICK.ctrl.read() & SysTick_CTRL_CLKSOURCE_Msk as u32 != 0 {
+            RCC_SYSTICK_SOURCE_HCLK
+        } else {
+            self.cr0.read() & RCC_CR0_HCLK_DIV_MASK
+        }
     }
 
     /// Get the source of the MCO clock
     pub fn get_mco_clk_src(&self) -> u32 {
-        self.cr0 & RCC_CR0_MCO_CLK_SEL_MASK
+        self.cr0.read() & RCC_CR0_MCO_CLK_SEL_MASK
     }
 
     /// Get the source of the UART0 CLK
     pub fn get_uart0_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_UART0_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_UART0_CLK_SEL_MASK
     }
 
     /// Get the source of the UART1 CLK
     pub fn get_uart1_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_UART1_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_UART1_CLK_SEL_MASK
     }
 
     /// Get the source of the UART2 CLK
     pub fn get_uart2_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_UART2_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_UART2_CLK_SEL_MASK
     }
 
     /// Get the source of the UART3 CLK
     pub fn get_uart3_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_UART3_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_UART3_CLK_SEL_MASK
     }
 
     /// Get the source of the LPTIMER0 CLK
     pub fn get_lptimer0_get_clk_src(&self) -> u32 {
-        if self.cr1 & RCC_CR1_LPTIMER0_EXTCLK_SEL_MASK != 0 {
+        if self.cr1.read() & RCC_CR1_LPTIMER0_EXTCLK_SEL_MASK != 0 {
             RCC_LPTIMER0_CLK_SOURCE_EXTCLK
         } else {
-            self.cr1 & RCC_CR1_LPTIMER0_CLK_SEL_MASK
+            self.cr1.read() & RCC_CR1_LPTIMER0_CLK_SEL_MASK
         }
     }
 
     /// Get the source of the LPTIMER1 CLK
     pub fn get_lptimer1_get_clk_src(&self) -> u32 {
-        if self.cr1 & RCC_CR1_LPTIMER1_EXTCLK_SEL_MASK != 0 {
+        if self.cr1.read() & RCC_CR1_LPTIMER1_EXTCLK_SEL_MASK != 0 {
             RCC_LPTIMER1_CLK_SOURCE_EXTCLK
         } else {
-            self.cr1 & RCC_CR1_LPTIMER1_CLK_SEL_MASK
+            self.cr1.read() & RCC_CR1_LPTIMER1_CLK_SEL_MASK
         }
     }
 
     /// Get the source of the LCD CLK
     pub fn get_lcd_get_clk_src(&self) -> u32 {
-        self.cr1 & RCC_CR1_LCD_CLK_SEL_MASK
+        self.cr1.read() & RCC_CR1_LCD_CLK_SEL_MASK
     }
 
     /// Get the source of the LPUART CLK
     pub fn get_lpuart_clk_src(&self) -> u32 {
-        self.cr1 & RCC_CR1_LPUART_CLK_SEL_MASK
+        self.cr1.read() & RCC_CR1_LPUART_CLK_SEL_MASK
     }
 
     /// Get the source of the RTC CLK
     pub fn get_rtc_clk_src(&self) -> u32 {
-        self.cr1 & RCC_CR1_RTC_CLK_SEL_MASK
+        self.cr1.read() & RCC_CR1_RTC_CLK_SEL_MASK
     }
 
     /// Get the source of the IWDG CLK
     pub fn get_iwdg_clk_src(&self) -> u32 {
-        self.cr1 & RCC_CR1_IWDG_CLK_SEL_MASK
+        self.cr1.read() & RCC_CR1_IWDG_CLK_SEL_MASK
     }
 
     /// Get the source of the ADC CLK
     pub fn get_adc_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_ADC_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_ADC_CLK_SEL_MASK
     }
 
     /// Get the source of the QSPI CLK
     pub fn get_qspi_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_QSPI_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_QSPI_CLK_SEL_MASK
     }
 
     /// Get the source of the I2S CLK
     pub fn get_i2s_clk_src(&self) -> u32 {
-        self.cr2 & RCC_CR2_I2S_CLK_SEL_MASK
+        self.cr2.read() & RCC_CR2_I2S_CLK_SEL_MASK
     }
 
     /// Set the divider of the HCLK
-    pub fn set_hclk_div(&mut self, div: u32) {
+    pub fn set_hclk_div(&self, div: u32) {
         set_reg_bits!(self, cr0, RCC_CR0_HCLK_DIV_MASK, div);
     }
 
     /// Set the divider of the PCLK
-    pub fn set_pclk_div(&mut self, pclk0_div: u32, pclk1_div: u32) {
+    pub fn set_pclk_div(&self, pclk0_div: u32, pclk1_div: u32) {
         set_reg_bits!(
             self,
             cr0,
@@ -584,16 +585,16 @@ impl Rcc {
     }
 
     /// Set the divider of the MCO CLK
-    pub fn set_mco_clk_div(&mut self, div: u32) {
-        if self.sr1 & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
+    pub fn set_mco_clk_div(&self, div: u32) {
+        if self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self, cr0, RCC_CR0_MCO_CLK_OUT_EN_MASK, false);
-            while self.clone().sr1 & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
+            while self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
         }
         set_reg_bits!(self, cr0, RCC_CR0_MCO_CLK_DIV_MASK, div);
     }
 
     /// Enable/Disable the clock of the specified peripheral
-    pub fn enable_peripheral_clk(&mut self, peripheral: u32, new_state: bool) {
+    pub fn enable_peripheral_clk(&self, peripheral: u32, new_state: bool) {
         match peripheral {
             RCC_PERIPHERAL_UART0 => {
                 toggle_reg_bits!(self, cgr0, RCC_CGR0_UART0_CLK_EN_MASK, new_state);
@@ -609,7 +610,7 @@ impl Rcc {
             }
             RCC_PERIPHERAL_LPUART => {
                 toggle_reg_bits!(self, cgr0, RCC_CGR0_LPUART_CLK_EN_MASK, new_state);
-                while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                 toggle_reg_bits!(self, cgr2, RCC_CGR2_LPUART_AON_CLK_EN_MASK, new_state);
             }
             RCC_PERIPHERAL_SSP0 => {
@@ -644,7 +645,7 @@ impl Rcc {
             }
             RCC_PERIPHERAL_LCD => {
                 toggle_reg_bits!(self, cgr0, RCC_CGR0_LCD_CLK_EN_MASK, new_state);
-                while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                 toggle_reg_bits!(self, cgr2, RCC_CGR2_LCD_AON_CLK_EN_MASK, new_state);
             }
             RCC_PERIPHERAL_LORA => {
@@ -683,12 +684,12 @@ impl Rcc {
             RCC_PERIPHERAL_LPTIMER0 => {
                 if new_state {
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER0_PCLK_EN_MASK, new_state);
-                    while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                    while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                     toggle_reg_bits!(self, cgr2, RCC_CGR2_LPTIMER0_AON_CLK_EN_MASK, new_state);
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER0_CLK_EN_MASK, new_state);
                 } else {
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER0_CLK_EN_MASK, new_state);
-                    while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                    while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                     toggle_reg_bits!(self, cgr2, RCC_CGR2_LPTIMER0_AON_CLK_EN_MASK, new_state);
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER0_PCLK_EN_MASK, new_state);
                 }
@@ -696,19 +697,19 @@ impl Rcc {
             RCC_PERIPHERAL_LPTIMER1 => {
                 if new_state {
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER1_PCLK_EN_MASK, new_state);
-                    while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                    while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                     toggle_reg_bits!(self, cgr2, RCC_CGR2_LPTIMER1_AON_CLK_EN_MASK, new_state);
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER1_CLK_EN_MASK, new_state);
                 } else {
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER1_CLK_EN_MASK, new_state);
-                    while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                    while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                     toggle_reg_bits!(self, cgr2, RCC_CGR2_LPTIMER1_AON_CLK_EN_MASK, new_state);
                     toggle_reg_bits!(self, cgr1, RCC_CGR1_LPTIMER1_PCLK_EN_MASK, new_state);
                 }
             }
             RCC_PERIPHERAL_IWDG => {
                 toggle_reg_bits!(self, cgr1, RCC_CGR1_IWDG_CLK_EN_MASK, new_state);
-                while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                 toggle_reg_bits!(self, cgr2, RCC_CGR2_IWDG_CLK_EN_MASK, new_state);
             }
             RCC_PERIPHERAL_WDG => {
@@ -717,7 +718,7 @@ impl Rcc {
             }
             RCC_PERIPHERAL_RTC => {
                 toggle_reg_bits!(self, cgr1, RCC_CGR1_RTC_CLK_EN_MASK, new_state);
-                while (self.clone().sr & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
+                while (self.sr.read() & RCC_SR_ALL_DONE) != RCC_SR_ALL_DONE {}
                 toggle_reg_bits!(self, cgr2, RCC_CGR2_RTC_AON_CLK_EN_MASK, new_state);
             }
             RCC_PERIPHERAL_CRC => {
@@ -752,12 +753,12 @@ impl Rcc {
     }
 
     /// Enable/Disable the output of the mco clk
-    pub fn enable_mco_clk_output(&mut self, new_state: bool) {
+    pub fn enable_mco_clk_output(&self, new_state: bool) {
         toggle_reg_bits!(self, cr0, RCC_CR0_MCO_CLK_OUT_EN_MASK, new_state);
     }
 
     /// Reset the register of the specified peripheral to the reset value
-    pub fn rst_peripheral(&mut self, mut peripheral: u32, new_state: bool) {
+    pub fn rst_peripheral(&self, mut peripheral: u32, new_state: bool) {
         if peripheral >= RCC_PERIPHERAL_SYSCFG {
             return;
         }
@@ -782,22 +783,22 @@ impl Rcc {
     }
 
     /// Set the reset mask
-    pub fn set_reset_mask(&mut self, mask: u32) {
+    pub fn set_reset_mask(&self, mask: u32) {
         set_reg_bits!(self, rst_cr, RCC_RST_CR_RESET_REQ_EN_MASK, mask);
     }
 
     /// Get the reset mask
     pub fn get_reset_mask(&self) -> u32 {
-        self.rst_cr & RCC_RST_CR_RESET_REQ_EN_MASK
+        self.rst_cr.read() & RCC_RST_CR_RESET_REQ_EN_MASK
     }
 
     /// Set the divider of the I2S MCLK
-    pub fn set_i2s_mclk_div(&mut self, div: u32) {
+    pub fn set_i2s_mclk_div(&self, div: u32) {
         set_reg_bits!(self, cr3, RCC_CR3_I2S_MCLK_DIV_MASK, div << 8);
     }
 
     /// Set the divider of the I2S SCLK
-    pub fn set_i2s_sclk_div(&mut self, div: u32) {
+    pub fn set_i2s_sclk_div(&self, div: u32) {
         set_reg_bits!(self, cr3, RCC_CR3_I2S_SCLK_DIV_MASK, div);
     }
 }

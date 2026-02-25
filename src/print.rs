@@ -1,11 +1,13 @@
 use core::fmt::Write;
 
-use crate::peripherals::regs::Uart;
+use crate::peripherals::regs::UART0;
 
-impl Write for Uart {
+pub struct SerialWriter;
+
+impl Write for SerialWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for byte in s.bytes() {
-            self.send_data(byte);
+            UART0.send_data(byte);
         }
         Ok(())
     }
@@ -15,8 +17,7 @@ impl Write for Uart {
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {
-        #[allow(unused_unsafe)] // rust bug
-        ::core::fmt::Write::write_fmt(&mut $crate::peripherals::regs::UART0.clone(), format_args!($($arg)*)).unwrap();
+        ::core::fmt::Write::write_fmt(&mut $crate::print::SerialWriter, format_args!($($arg)*)).unwrap();
     };
 }
 
