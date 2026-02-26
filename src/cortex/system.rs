@@ -1,6 +1,5 @@
 use crate::{
-    cortex::{IRQType, SCB, nvic_set_priority},
-    ffi::{__NVIC_PRIO_BITS, configLIBRARY_NORMAL_INTERRUPT_PRIORITY},
+    cortex::{IRQType, LIBRARY_NORMAL_INTERRUPT_PRIORITY, NVIC_PRIO_BITS, SCB, nvic_set_priority},
     peripherals::{
         delay::delay_init,
         regs::{EFC, RCC, RCC_CGR0_AFEC_CLK_EN_MASK},
@@ -11,13 +10,10 @@ use crate::{
 // ! TODO: pretty this up
 
 fn nvic_init() {
-    nvic_set_priority(IRQType::PendSV, (1 << __NVIC_PRIO_BITS) - 1);
+    nvic_set_priority(IRQType::PendSV, (1 << NVIC_PRIO_BITS) - 1);
 
     for i in 0..=IRQType::Iwdg as i32 {
-        nvic_set_priority(
-            IRQType::from_i32(i),
-            configLIBRARY_NORMAL_INTERRUPT_PRIORITY as u32,
-        );
+        nvic_set_priority(IRQType::from_i32(i), LIBRARY_NORMAL_INTERRUPT_PRIORITY);
     }
 }
 

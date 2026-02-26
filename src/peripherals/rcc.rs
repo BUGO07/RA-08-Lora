@@ -1,6 +1,8 @@
 use crate::{
-    analog_read, analog_write, cortex::SYSTICK, ffi::SysTick_CTRL_CLKSOURCE_Msk,
-    peripherals::regs::*, set_reg_bits, toggle_reg_bits,
+    analog_read, analog_write,
+    cortex::{SYSTICK, SYSTICK_CTRL_CLKSOURCE_MSK},
+    peripherals::regs::*,
+    set_reg_bits, toggle_reg_bits,
 };
 
 pub const RCC_FREQ_48M: u32 = 48000000;
@@ -335,7 +337,7 @@ impl Rcc {
     /// Set the source of the SYSTICK
     pub fn set_systick_src(&self, clk_src: u32) {
         if clk_src == RCC_SYSTICK_SOURCE_HCLK {
-            toggle_reg_bits!(SYSTICK, ctrl, SysTick_CTRL_CLKSOURCE_Msk, true);
+            toggle_reg_bits!(SYSTICK, ctrl, SYSTICK_CTRL_CLKSOURCE_MSK, true);
         } else {
             toggle_reg_bits!(self, cr0, RCC_CR0_HCLK_DIV_MASK, false);
         }
@@ -484,7 +486,7 @@ impl Rcc {
 
     /// Get the source of the SYSTICK
     pub fn get_systick_src(&self) -> u32 {
-        if SYSTICK.ctrl.read() & SysTick_CTRL_CLKSOURCE_Msk as u32 != 0 {
+        if SYSTICK.ctrl.read() & SYSTICK_CTRL_CLKSOURCE_MSK != 0 {
             RCC_SYSTICK_SOURCE_HCLK
         } else {
             self.cr0.read() & RCC_CR0_HCLK_DIV_MASK

@@ -1,14 +1,19 @@
 use crate::{
     analog_read, analog_write,
     cortex::{
-        IRQType, SCB,
+        IRQType, SCB, SCB_SCR_SLEEPDEEP_MSK,
         asm::{_sev, _wfe, _wfi},
         nvic_enable_irq,
     },
-    ffi::{PWR_LP_MODE_STOP3, SCB_SCR_SLEEPDEEP_Msk},
     peripherals::regs::{EFC, EFC_CR_PREFETCH_EN_MASK, Pwr},
     set_reg_bits, toggle_reg_bits,
 };
+
+pub const PWR_LP_MODE_STOP0: u32 = 0x00000000;
+pub const PWR_LP_MODE_STOP1: u32 = 0x00000001;
+pub const PWR_LP_MODE_STOP2: u32 = 0x00000002;
+pub const PWR_LP_MODE_STOP3: u32 = 0x00000003;
+pub const PWR_LP_MODE_STANDBY: u32 = 0x00000004;
 
 ///The bits mask of the low power mode register
 pub const PWR_LP_MODE_MASK: u32 = 0x00000003;
@@ -24,11 +29,11 @@ impl Pwr {
             set_reg_bits!(self, cr1, (0xF << 20), (1 << 20));
         }
 
-        toggle_reg_bits!(SCB, scr, SCB_SCR_SLEEPDEEP_Msk, true);
+        toggle_reg_bits!(SCB, scr, SCB_SCR_SLEEPDEEP_MSK, true);
 
         toggle_reg_bits!(self, cr0, 1 << 5, wfi == 0);
 
-        if mode < PWR_LP_MODE_STOP3 as u32 {
+        if mode < PWR_LP_MODE_STOP3 {
             set_reg_bits!(self, cr0, PWR_LP_MODE_MASK, mode);
         } else {
             if EFC.cr.read() & EFC_CR_PREFETCH_EN_MASK != 0 {
@@ -44,12 +49,7 @@ impl Pwr {
             }
 
             set_reg_bits!(self, cr0, PWR_LP_MODE_MASK, PWR_LP_MODE_STOP3);
-            toggle_reg_bits!(
-                self,
-                cr1,
-                PWR_LP_MODE_EXT_MASK,
-                mode == PWR_LP_MODE_STOP3 as u32
-            );
+            toggle_reg_bits!(self, cr1, PWR_LP_MODE_EXT_MASK, mode == PWR_LP_MODE_STOP3);
         }
 
         if wfi != 0 {

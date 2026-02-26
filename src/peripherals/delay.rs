@@ -25,7 +25,7 @@ pub fn delay_init() {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn delay_us(nus: u32) {
+pub extern "C" fn delay_us(micros: u32) {
     if FAC_US.load(Ordering::Relaxed) == 0 {
         return; // TODO: maybe return an error instead of silently doing nothing
     }
@@ -35,7 +35,7 @@ pub extern "C" fn delay_us(nus: u32) {
 
     let reload = SYSTICK.load.read();
 
-    let ticks = nus * FAC_US.load(Ordering::Relaxed) as u32;
+    let ticks = micros * FAC_US.load(Ordering::Relaxed) as u32;
     let mut tpre = SYSTICK.val.read();
 
     loop {
@@ -57,6 +57,6 @@ pub extern "C" fn delay_us(nus: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn delay_ms(nms: u32) {
-    delay_us(nms * 1000);
+pub extern "C" fn delay_ms(millis: u32) {
+    delay_us(millis * 1000);
 }

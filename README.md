@@ -17,6 +17,8 @@ pip install pyserial configparser
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup target add thumbv7em-none-eabi
 
-cd RA-08-Lora/lora-rs
+git clone --depth=1 https://github.com/BUGO07/RA-08-Lora
+
+cd RA-08-Lora
 make flashrs
 ```

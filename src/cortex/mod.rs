@@ -29,13 +29,15 @@ pub const CORTEX_M: u32 = 0x04;
 // ---------------------------------------------------------------------------
 
 /// Number of NVIC priority bits implemented by this device.
-pub const NVIC_PRIO_BITS: u32 = 4;
+pub const NVIC_PRIO_BITS: u32 = 3;
 
 /// Whether an FPU is present (1) or not (0).
 pub const FPU_PRESENT: u32 = 1;
 
 /// Whether an MPU is present (1) or not (0).
-pub const MPU_PRESENT: u32 = 1;
+pub const MPU_PRESENT: u32 = 0;
+
+pub const LIBRARY_NORMAL_INTERRUPT_PRIORITY: u32 = 6;
 
 // ---------------------------------------------------------------------------
 // Core Status and Control Register types
