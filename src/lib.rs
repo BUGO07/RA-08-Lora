@@ -11,6 +11,8 @@ pub mod cortex;
 pub mod ffi;
 /// Interrupts
 pub mod interrupts;
+/// LoRa module
+pub mod lora;
 /// Peripherals
 pub mod peripherals;
 /// Serial printing
@@ -60,10 +62,9 @@ pub fn board_init() {
     RCC.enable_peripheral_clk(RCC_PERIPHERAL_SAC, true);
     RCC.enable_peripheral_clk(RCC_PERIPHERAL_LORA, true);
 
-    delay_ms(1000);
-
     // Turn the white LED on to know the board is alive. It will be turned off in app_start() when the device enters low power mode.
-    GPIOA.init(GpioPin::Pin14, GpioMode::OutputPPHigh);
+    GPIOA.init(GpioPin::COOL_WHITE_LED, GpioMode::OutputPPHigh);
+    GPIOA.init(GpioPin::WARM_WHITE_LED, GpioMode::OutputPPLow);
 
     delay_ms(100);
 

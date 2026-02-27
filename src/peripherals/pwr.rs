@@ -5,7 +5,10 @@ use crate::{
         asm::{_sev, _wfe, _wfi},
         nvic_enable_irq,
     },
-    peripherals::regs::{EFC, EFC_CR_PREFETCH_EN_MASK, Pwr},
+    peripherals::{
+        flash::{flash_cr_lock, flash_cr_unlock},
+        regs::{EFC, EFC_CR_PREFETCH_EN_MASK, Pwr},
+    },
     set_reg_bits, toggle_reg_bits,
 };
 
@@ -26,21 +29,20 @@ pub const AFEC_RAW_SR_RCO48M_READY: u32 = 0x00000004;
 impl Pwr {
     pub fn deep_sleep(&self, mode: u32, wfi: u32) {
         if (unsafe { *(0x10002010 as *const u32) } & 0x3) == 0 {
-            set_reg_bits!(self, cr1, (0xF << 20), (1 << 20));
+            set_reg_bits!(self.cr1, (0xF << 20), (1 << 20));
         }
 
-        toggle_reg_bits!(SCB, scr, SCB_SCR_SLEEPDEEP_MSK, true);
+        toggle_reg_bits!(SCB.scr, SCB_SCR_SLEEPDEEP_MSK, true);
 
-        toggle_reg_bits!(self, cr0, 1 << 5, wfi == 0);
+        toggle_reg_bits!(self.cr0, 1 << 5, wfi == 0);
 
         if mode < PWR_LP_MODE_STOP3 {
-            set_reg_bits!(self, cr0, PWR_LP_MODE_MASK, mode);
+            set_reg_bits!(self.cr0, PWR_LP_MODE_MASK, mode);
         } else {
             if EFC.cr.read() & EFC_CR_PREFETCH_EN_MASK != 0 {
-                // TODO: tremo_flash
-                // flash_cr_unlock!();
-                toggle_reg_bits!(EFC, cr, EFC_CR_PREFETCH_EN_MASK, false);
-                // flash_cr_unlock!();
+                flash_cr_unlock();
+                toggle_reg_bits!(EFC.cr, EFC_CR_PREFETCH_EN_MASK, false);
+                flash_cr_lock();
             }
 
             let value = analog_read!(0x0C);
@@ -48,8 +50,8 @@ impl Pwr {
                 analog_write!(0x0C, value | (1 << 14));
             }
 
-            set_reg_bits!(self, cr0, PWR_LP_MODE_MASK, PWR_LP_MODE_STOP3);
-            toggle_reg_bits!(self, cr1, PWR_LP_MODE_EXT_MASK, mode == PWR_LP_MODE_STOP3);
+            set_reg_bits!(self.cr0, PWR_LP_MODE_MASK, PWR_LP_MODE_STOP3);
+            toggle_reg_bits!(self.cr1, PWR_LP_MODE_EXT_MASK, mode == PWR_LP_MODE_STOP3);
         }
 
         if wfi != 0 {

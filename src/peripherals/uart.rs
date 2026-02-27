@@ -120,7 +120,7 @@ impl Uart {
 
     /// Config the interrupt of the specified UART flag
     pub fn config_interrupt(&self, uart_interrupt: u32, new_state: bool) {
-        toggle_reg_bits!(self, imsc, uart_interrupt, new_state);
+        toggle_reg_bits!(self.imsc, uart_interrupt, new_state);
     }
 
     /// Deinitializes the UART peripheral registers to the reset values
@@ -140,17 +140,17 @@ impl Uart {
 
     /// Set the threshold of RX FIFO
     pub fn set_rx_fifo_threshold(&self, fifo_level: u32) {
-        set_reg_bits!(self, ifls, UART_IFLS_RX, fifo_level);
+        set_reg_bits!(self.ifls, UART_IFLS_RX, fifo_level);
     }
 
     /// Set the threshold of TX FIFO
     pub fn set_tx_fifo_threshold(&self, fifo_level: u32) {
-        set_reg_bits!(self, ifls, UART_IFLS_TX, fifo_level);
+        set_reg_bits!(self.ifls, UART_IFLS_TX, fifo_level);
     }
 
     /// Enable or disable the UART peripheral
     pub fn cmd(&self, new_state: bool) {
-        toggle_reg_bits!(self, cr, UART_CR_UART_EN, new_state);
+        toggle_reg_bits!(self.cr, UART_CR_UART_EN, new_state);
     }
 
     /// Get the interrupt status of the UART interrupt
@@ -169,8 +169,8 @@ impl Uart {
 
     /// Initialize UART
     pub fn init(&self, config: UartConfig) -> Result<(), UartInitError> {
-        toggle_reg_bits!(self, cr, UART_CR_UART_EN, false); // disable UART
-        toggle_reg_bits!(self, lcr_h, UART_LCR_H_FEN, false); // flush fifo
+        toggle_reg_bits!(self.cr, UART_CR_UART_EN, false); // disable UART
+        toggle_reg_bits!(self.lcr_h, UART_LCR_H_FEN, false); // flush fifo
         self.imsc.write(0);
 
         let clk_src = match self.ptr() as u32 {
@@ -202,26 +202,26 @@ impl Uart {
         self.ibrd.write(br_div >> 16);
         self.fbrd.write(br_div & 0x3f);
 
-        set_reg_bits!(self, lcr_h, UART_LCR_H_WLEN, config.data_width);
-        set_reg_bits!(self, lcr_h, UART_LCR_H_STOP, config.stop_bits);
-        toggle_reg_bits!(self, lcr_h, UART_LCR_H_FEN, config.fifo_mode != 0);
+        set_reg_bits!(self.lcr_h, UART_LCR_H_WLEN, config.data_width);
+        set_reg_bits!(self.lcr_h, UART_LCR_H_STOP, config.stop_bits);
+        toggle_reg_bits!(self.lcr_h, UART_LCR_H_FEN, config.fifo_mode != 0);
 
         match config.parity {
             Parity::Odd => {
-                toggle_reg_bits!(self, lcr_h, UART_LCR_H_PEN, true);
-                toggle_reg_bits!(self, lcr_h, UART_LCR_H_EPS_EVEN, false);
+                toggle_reg_bits!(self.lcr_h, UART_LCR_H_PEN, true);
+                toggle_reg_bits!(self.lcr_h, UART_LCR_H_EPS_EVEN, false);
             }
             Parity::Even => {
-                toggle_reg_bits!(self, lcr_h, UART_LCR_H_PEN, true);
-                toggle_reg_bits!(self, lcr_h, UART_LCR_H_EPS_EVEN, true);
+                toggle_reg_bits!(self.lcr_h, UART_LCR_H_PEN, true);
+                toggle_reg_bits!(self.lcr_h, UART_LCR_H_EPS_EVEN, true);
             }
             Parity::None => {
-                toggle_reg_bits!(self, lcr_h, UART_LCR_H_PEN, false);
+                toggle_reg_bits!(self.lcr_h, UART_LCR_H_PEN, false);
             }
         }
 
-        set_reg_bits!(self, cr, UART_CR_UART_MODE, config.mode);
-        set_reg_bits!(self, cr, UART_CR_FLOW_CTRL, config.flow_control);
+        set_reg_bits!(self.cr, UART_CR_UART_MODE, config.mode);
+        set_reg_bits!(self.cr, UART_CR_FLOW_CTRL, config.flow_control);
 
         Ok(())
     }

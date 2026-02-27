@@ -38,21 +38,20 @@ macro_rules! analog_write {
 /// Set bits in a register based on a mask and value
 #[macro_export]
 macro_rules! set_reg_bits {
-    ($obj:expr, $reg:ident, $mask:expr, $value:expr) => {
-        $obj.$reg
-            .write(($obj.$reg.read() & !($mask as u32)) | ($value as u32));
+    ($reg:expr, $mask:expr, $value:expr) => {
+        $reg.write(($reg.read() & !($mask as u32)) | ($value as u32));
     };
 }
 
 /// Enable or disable bits in a register based on a mask
 #[macro_export]
 macro_rules! toggle_reg_bits {
-    ($obj:expr, $reg:ident, $mask:expr, $enable:expr) => {
-        $obj.$reg.write(if $enable {
-            $obj.$reg.read() | ($mask as u32)
+    ($reg:expr, $mask:expr, $enable:expr) => {
+        $reg.write(if $enable {
+            $reg.read() | ($mask as u32)
         } else {
-            $obj.$reg.read() & !($mask as u32)
-        });
+            $reg.read() & !($mask as u32)
+        })
     };
 }
 

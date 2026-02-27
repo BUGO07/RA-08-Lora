@@ -25,7 +25,7 @@ impl Wdg {
         self.control.write(WDG_RESEN | WDG_INTEN);
         self.lock();
 
-        toggle_reg_bits!(RCC, rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
+        toggle_reg_bits!(RCC.rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, true);
     }
 
     pub fn reload(&self) {
@@ -35,7 +35,7 @@ impl Wdg {
     }
 
     pub fn stop(&self) {
-        toggle_reg_bits!(RCC, rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
+        toggle_reg_bits!(RCC.rst_cr, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, false);
 
         self.unlock();
         self.control.write(0x0);

@@ -1,12 +1,10 @@
-use core::arch::asm;
-
 /// Enable IRQ Interrupts
 ///
 /// This function enables IRQ interrupts by clearing the I-bit in the CPSR.
 /// Can only be executed in Privileged modes.
 #[inline(always)]
-pub fn enable_irq() {
-    unsafe { asm!("cpsie i", options(nomem, nostack)) };
+pub fn _enable_irq() {
+    unsafe { core::arch::asm!("cpsie i", options(nomem, nostack)) };
 }
 
 /// Disable IRQ Interrupts
@@ -14,8 +12,8 @@ pub fn enable_irq() {
 /// This function disables IRQ interrupts by setting the I-bit in the CPSR.
 /// Can only be executed in Privileged modes.
 #[inline(always)]
-pub fn disable_irq() {
-    unsafe { asm!("cpsid i", options(nomem, nostack)) };
+pub fn _disable_irq() {
+    unsafe { core::arch::asm!("cpsid i", options(nomem, nostack)) };
 }
 
 /// Get Control Register
@@ -24,9 +22,9 @@ pub fn disable_irq() {
 ///
 /// Returns the Control Register value.
 #[inline(always)]
-pub fn get_control() -> u32 {
+pub fn _get_control() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, control", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, control", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -37,8 +35,8 @@ pub fn get_control() -> u32 {
 /// # Parameters
 /// - `control`: Control Register value to set
 #[inline(always)]
-pub fn set_control(control: u32) {
-    unsafe { asm!("MSR control, {}", in(reg) control, options(nostack)) };
+pub fn _set_control(control: u32) {
+    unsafe { core::arch::asm!("MSR control, {}", in(reg) control, options(nostack)) };
 }
 
 /// Get IPSR Register
@@ -47,9 +45,9 @@ pub fn set_control(control: u32) {
 ///
 /// Returns the IPSR Register value.
 #[inline(always)]
-pub fn get_ipsr() -> u32 {
+pub fn _get_ipsr() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, ipsr", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, ipsr", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -59,9 +57,9 @@ pub fn get_ipsr() -> u32 {
 ///
 /// Returns the APSR Register value.
 #[inline(always)]
-pub fn get_apsr() -> u32 {
+pub fn _get_apsr() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, apsr", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, apsr", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -71,9 +69,9 @@ pub fn get_apsr() -> u32 {
 ///
 /// Returns the xPSR Register value.
 #[inline(always)]
-pub fn get_xpsr() -> u32 {
+pub fn _get_xpsr() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, xpsr", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, xpsr", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -83,9 +81,9 @@ pub fn get_xpsr() -> u32 {
 ///
 /// Returns the PSP Register value.
 #[inline(always)]
-pub fn get_psp() -> u32 {
+pub fn _get_psp() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, psp", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, psp", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -96,8 +94,8 @@ pub fn get_psp() -> u32 {
 /// # Parameters
 /// - `top_of_proc_stack`: Process Stack Pointer value to set
 #[inline(always)]
-pub fn set_psp(top_of_proc_stack: u32) {
-    unsafe { asm!("MSR psp, {}", in(reg) top_of_proc_stack, options(nomem, nostack)) };
+pub fn _set_psp(top_of_proc_stack: u32) {
+    unsafe { core::arch::asm!("MSR psp, {}", in(reg) top_of_proc_stack, options(nomem, nostack)) };
 }
 
 /// Get Main Stack Pointer
@@ -106,9 +104,9 @@ pub fn set_psp(top_of_proc_stack: u32) {
 ///
 /// Returns the MSP Register value.
 #[inline(always)]
-pub fn get_msp() -> u32 {
+pub fn _get_msp() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, msp", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, msp", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -119,8 +117,8 @@ pub fn get_msp() -> u32 {
 /// # Parameters
 /// - `top_of_main_stack`: Main Stack Pointer value to set
 #[inline(always)]
-pub fn set_msp(top_of_main_stack: u32) {
-    unsafe { asm!("MSR msp, {}", in(reg) top_of_main_stack, options(nomem, nostack)) };
+pub fn _set_msp(top_of_main_stack: u32) {
+    unsafe { core::arch::asm!("MSR msp, {}", in(reg) top_of_main_stack, options(nomem, nostack)) };
 }
 
 /// Get Priority Mask
@@ -129,9 +127,9 @@ pub fn set_msp(top_of_main_stack: u32) {
 ///
 /// Returns the Priority Mask value.
 #[inline(always)]
-pub fn get_primask() -> u32 {
+pub fn _get_primask() -> u32 {
     let result: u32;
-    unsafe { asm!("MRS {}, primask", out(reg) result, options(nomem, nostack)) };
+    unsafe { core::arch::asm!("MRS {}, primask", out(reg) result, options(nomem, nostack)) };
     result
 }
 
@@ -142,6 +140,6 @@ pub fn get_primask() -> u32 {
 /// # Parameters
 /// - `pri_mask`: Priority Mask
 #[inline(always)]
-pub fn set_primask(pri_mask: u32) {
-    unsafe { asm!("MSR primask, {}", in(reg) pri_mask, options(nostack)) };
+pub fn _set_primask(pri_mask: u32) {
+    unsafe { core::arch::asm!("MSR primask, {}", in(reg) pri_mask, options(nostack)) };
 }

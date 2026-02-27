@@ -1,5 +1,7 @@
 /// Delay functions
 pub mod delay;
+/// Flash memory
+pub mod flash;
 /// GPIO driver
 pub mod gpio;
 /// Power management

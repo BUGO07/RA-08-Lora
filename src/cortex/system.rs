@@ -20,10 +20,10 @@ fn nvic_init() {
 #[unsafe(no_mangle)]
 pub extern "C" fn system_init() {
     // FPU enable
-    toggle_reg_bits!(SCB, cpacr, ((3 << (10 * 2)) | (3 << (11 * 2))), true);
+    toggle_reg_bits!(SCB.cpacr, ((3 << (10 * 2)) | (3 << (11 * 2))), true);
 
     // enable afec clk
-    toggle_reg_bits!(RCC, cgr0, RCC_CGR0_AFEC_CLK_EN_MASK, true);
+    toggle_reg_bits!(RCC.cgr0, RCC_CGR0_AFEC_CLK_EN_MASK, true);
 
     // set flash read number to 1
     EFC.timing_cfg

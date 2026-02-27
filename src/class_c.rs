@@ -2,7 +2,11 @@
 
 use core::ptr;
 
-use crate::{ffi, print, println};
+use crate::{
+    ffi,
+    peripherals::{delay::delay_ms, gpio::GpioPin, regs::GPIOA},
+    print, println,
+};
 
 /// 30 seconds between transmissions (ms)
 pub const APP_TX_DUTYCYCLE: u32 = 30_000;
@@ -224,11 +228,14 @@ impl App {
     /// MAC layer management confirm callback (e.g. after join attempt)
     fn mlme_confirm(&mut self, mlme_confirm: &ffi::MlmeConfirm_t) {
         if mlme_confirm.MlmeRequest == ffi::MLME_JOIN {
+            GPIOA.write(GpioPin::WARM_WHITE_LED, true);
             if mlme_confirm.Status == ffi::LORAMAC_EVENT_INFO_STATUS_OK {
                 println!("Joined");
                 self.device_state = DeviceState::Send;
             } else {
                 println!("Join failed");
+                delay_ms(250);
+                GPIOA.write(GpioPin::WARM_WHITE_LED, false);
 
                 let mut mlme_req: ffi::MlmeReq_t = Default::default();
                 mlme_req.Type = ffi::MLME_JOIN;

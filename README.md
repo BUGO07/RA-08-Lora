@@ -1,11 +1,21 @@
 # Rust Port of the Ai-thinker RA-08 Lora SDK
 
 ## Ported:
+### Core
+- [Cortex](src/cortex/mod.rs)
+- [System](src/cortex/system.rs)
+- [ARM Functions & Assembly](src/cortex/func.rs)
 ### Peripherals:
-- GPIO
-- UART
-- REGS
-- RCC
+- [Delay](src/peripherals/delay.rs)
+- [Flash](src/peripherals/flash.rs)
+- [GPIO](src/peripherals/gpio.rs)
+- [PWR](src/peripherals/pwr.rs)
+- [RCC](src/peripherals/rcc.rs)
+- [REGS](src/peripherals/regs.rs)
+- [UART](src/peripherals/uart.rs)
+- [WDG](src/peripherals/wdg.rs)
+### ETC
+- [Rust-Style Print Macros](print.rs)
 
 ## Instructions to run on linux (Ubuntu)
 
