@@ -157,6 +157,7 @@ impl Rtc {
     /// Initializes the RTC timer.
     ///
     /// The timer is based on the RTC peripheral.
+    /// TODO: maybe use local variables instead of statics
     pub fn init(&self) {
         if RTC_INITIALIZED.load(Ordering::Relaxed) {
             self.deinit();
