@@ -1,10 +1,9 @@
 use crate::{
-    ffi::SSP0_BASE,
     peripherals::{
         rcc::{
             RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_SSP0, RCC_PERIPHERAL_SSP1, RCC_PERIPHERAL_SSP2,
         },
-        regs::{RCC, SSP1_BASE, SSP2_BASE, Ssp},
+        regs::{RCC, SSP0_BASE, SSP1_BASE, SSP2_BASE, Ssp},
     },
     toggle_reg_bits,
 };
@@ -154,24 +153,16 @@ impl Ssp {
     }
 
     pub fn deinit(&self) {
-        match self.ptr() as u32 {
-            SSP0_BASE => {
-                RCC.enable_peripheral_clk(RCC_PERIPHERAL_SSP0, false);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP0, true);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP0, false);
-            }
-            SSP1_BASE => {
-                RCC.enable_peripheral_clk(RCC_PERIPHERAL_SSP1, false);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP1, true);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP1, false);
-            }
-            SSP2_BASE => {
-                RCC.enable_peripheral_clk(RCC_PERIPHERAL_SSP2, false);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP2, true);
-                RCC.rst_peripheral(RCC_PERIPHERAL_SSP2, false);
-            }
+        let periph = match self.ptr() as u32 {
+            SSP0_BASE => RCC_PERIPHERAL_SSP0,
+            SSP1_BASE => RCC_PERIPHERAL_SSP1,
+            SSP2_BASE => RCC_PERIPHERAL_SSP2,
             _ => unreachable!(),
-        }
+        };
+
+        RCC.enable_peripheral_clk(periph, false);
+        RCC.rst_peripheral(periph, true);
+        RCC.rst_peripheral(periph, false);
     }
 
     pub fn config_interrupt(&self, interrupt: u32, enable: bool) {

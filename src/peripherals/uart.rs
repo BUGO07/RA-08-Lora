@@ -125,7 +125,7 @@ impl Uart {
 
     /// Deinitializes the UART peripheral registers to the reset values
     pub fn deinit(&self) {
-        let peripheral = match self.ptr() as u32 {
+        let periph = match self.ptr() as u32 {
             UART0_BASE => RCC_PERIPHERAL_UART0,
             UART1_BASE => RCC_PERIPHERAL_UART1,
             UART2_BASE => RCC_PERIPHERAL_UART2,
@@ -133,9 +133,9 @@ impl Uart {
             _ => unreachable!(),
         };
 
-        RCC.enable_peripheral_clk(peripheral, false);
-        RCC.rst_peripheral(peripheral, true);
-        RCC.rst_peripheral(peripheral, false);
+        RCC.enable_peripheral_clk(periph, false);
+        RCC.rst_peripheral(periph, true);
+        RCC.rst_peripheral(periph, false);
     }
 
     /// Set the threshold of RX FIFO

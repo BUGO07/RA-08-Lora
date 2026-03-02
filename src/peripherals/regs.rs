@@ -1030,6 +1030,8 @@ define_reg! {
         smcr: VolatileRW<u32>,
         /// TIMER DMA/interrupt enable register, Address offset: 0x0C
         dier: VolatileRW<u32>,
+        /// TIMER status register, Address offset: 0x10
+        sr: VolatileRW<u32>,
         /// TIMER event generation register, Address offset: 0x14
         egr: VolatileRW<u32>,
         /// TIMER  capture/compare mode register 1, Address offset: 0x18

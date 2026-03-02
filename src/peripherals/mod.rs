@@ -16,6 +16,8 @@ pub mod regs;
 pub mod spi;
 /// System
 pub mod system;
+/// Timer
+pub mod timer;
 /// UART driver
 pub mod uart;
 /// Watchdog Timer
