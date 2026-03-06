@@ -7,7 +7,7 @@ edition = "2024"
 panic = "abort"
 
 [profile.release]
-opt-level = 0
+opt-level = 3
 lto = "fat"
 strip = "debuginfo"
 debug = false

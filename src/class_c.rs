@@ -344,6 +344,10 @@ pub extern "C" fn on_tx_next_packet_timer_event() {
 pub fn app_start() -> ! {
     println!("ClassC app start");
 
+    let mut primitives: ffi::LoRaMacPrimitives_t = Default::default();
+    let mut callbacks: ffi::LoRaMacCallback_t = Default::default();
+    let mut mib_req: ffi::MibRequestConfirm_t = Default::default();
+
     unsafe { APP.device_state = DeviceState::Init };
 
     loop {
@@ -353,13 +357,11 @@ pub fn app_start() -> ! {
         match state {
             DeviceState::Init => unsafe {
                 // Setup primitives/callbacks
-                let mut primitives: ffi::LoRaMacPrimitives_t = Default::default();
                 primitives.MacMcpsConfirm = Some(mcps_confirm);
                 primitives.MacMcpsIndication = Some(mcps_indication);
                 primitives.MacMlmeConfirm = Some(mlme_confirm);
                 primitives.MacMlmeIndication = Some(mlme_indication);
 
-                let mut callbacks: ffi::LoRaMacCallback_t = Default::default();
                 callbacks.GetBatteryLevel = Some(board_get_battery_level);
 
                 ffi::LoRaMacInitialization(&mut primitives, &mut callbacks, ACTIVE_REGION);
@@ -370,7 +372,6 @@ pub fn app_start() -> ! {
                 );
 
                 // ADR
-                let mut mib_req: ffi::MibRequestConfirm_t = Default::default();
                 mib_req.Type = ffi::MIB_ADR;
                 mib_req.Param.AdrEnable = LORAWAN_ADR_ON;
                 ffi::LoRaMacMibSetRequestConfirm(&mut mib_req);

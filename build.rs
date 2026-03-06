@@ -1,7 +1,8 @@
 use std::{env, error::Error, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let bindings = bindgen::Builder::default()
+    let out_path = PathBuf::from(env::var("OUT_DIR")?);
+    bindgen::Builder::default()
         .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .clang_args(&[
@@ -32,13 +33,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .derive_debug(true)
         .derive_copy(true)
         .generate_cstr(true)
-        .generate()
-        .expect("Unable to generate bindings");
-
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings
-        .write_to_file(out_path.join("bindings.rs"))
-        .expect("Couldn't write bindings!");
+        .generate()?
+        .write_to_file(out_path.join("bindings.rs"))?;
 
     Ok(())
 }

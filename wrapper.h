@@ -26,6 +26,8 @@
 // * TO HERE
 #include "rtc-board.h" // ! Rewritten, but Needed for RtcInit();
 // * REWRITTEN IN RUST FROM HERE
+// #include "sx126x-board.h"
+// #include "sx126x.h"
 // #include "tremo_i2c.h"
 // #include "tremo_i2s.h"
 // #include "tremo_lptimer.h"
