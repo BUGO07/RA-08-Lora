@@ -1,140 +1,230 @@
 use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU32, Ordering};
 
 use crate::{
-    cortex::{IRQType, nvic_enable_irq},
+    cortex::{IRQType, VolatileRO, VolatileRW, nvic_enable_irq},
+    define_reg,
     peripherals::{
         pwr::PWR_LP_MODE_STOP3,
         rcc::{RCC_PERIPHERAL_RTC, RCC_RTC_CLK_SOURCE_RCO32K},
-        regs::{PWR, RCC, Rtc},
+        regs::{PWR, RCC},
     },
     toggle_reg_bits,
 };
 
+/// Number of seconds in a minute.
 pub const SECONDS_IN_MINUTE: u64 = 60;
+/// Number of seconds in an hour.
 pub const SECONDS_IN_HOUR: u64 = 60 * SECONDS_IN_MINUTE;
+/// Number of seconds in a day.
 pub const SECONDS_IN_DAY: u64 = 24 * SECONDS_IN_HOUR;
+/// Number of seconds in a leap year.
 pub const SECONDS_IN_LEAP_YEAR: u64 = 366 * SECONDS_IN_DAY;
+/// Number of seconds in a year.
 pub const SECONDS_IN_NON_LEAP_YEAR: u64 = 365 * SECONDS_IN_DAY;
+/// Number of days in each month on a normal year.
 pub const DAYS_IN_MONTH: [u8; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+/// Number of days in each month on a leap year.
 pub const DAYS_IN_MONTH_LEAP_YEAR: [u8; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
+/// Microsecond constant.
 pub const RTC_MICROSECOND: u32 = 1000000;
+/// Enable time flag.
 pub const RTC_ENABLE_TIME: u32 = 0x10000000;
+/// Enable alarm flag.
 pub const RTC_ENABLE_ALARM: u32 = 0x80000000;
 
+/// RTC alarm wakeup flag.
 #[repr(u32)]
 pub enum RtcAlarmWakeup {
+    /// Alarm 0 wakeup flag.
     Alarm0WkEn = 0x8000000,
+    /// Alarm 1 wakeup flag.
     Alarm1WkEn = 0x4000000,
 }
 
+/// RTC cyc control information.
 #[repr(u32)]
 pub enum RtcCycControl {
+    /// Cyc wakeup flag.
     CycWkEn = 0x2000000,
+    /// Cyc counter flag.
     CycCounter = 0x1000000,
 }
 
+/// RTC tamper control information.
 #[repr(u32)]
 pub enum RtcTamperControl {
+    /// Tamper flag.
     Tamper = 0x800000,
+    /// Tamper high level flag.
     TamperLevel = 0x400000,
+    /// Tamper level wakeup flag.
     TamperWkEn0 = 0x200000,
+    /// Tamper wakeup flag.
     TamperWkEn1 = 0x100000,
 }
 
+/// RTC wakeup control information.
 pub enum RtcWakeupControl {
+    /// Wakeup 0 flag.
     Wakeup0 = 0x20000,
+    /// Wakeup 0 high level flag.
     Wakeup0Level = 0x10000,
+    /// Wakeup 0 level wakeup flag.
     Wakeup0Wken0 = 0x8000,
+    /// Wakeup 0 wakeup flag.
     Wakeup0Wken1 = 0x4000,
+    /// Wakeup 1 flag.
     Wakeup1 = 0x800,
+    /// Wakeup 1 high level flag.
     Wakeup1Level = 0x400,
+    /// Wakeup 1 level wakeup flag.
     Wakeup1Wken0 = 0x200,
+    /// Wakeup 1 wakeup flag.
     Wakeup1Wken1 = 0x100,
+    /// Wakeup 2 flag.
     Wakeup2 = 0x20,
+    /// Wakeup 2 high level flag.
     Wakeup2Level = 0x10,
+    /// Wakeup 2 level wakeup flag.
     Wakeup2Wken0 = 0x8,
+    /// Wakeup 2 wakeup flag.
     Wakeup2Wken1 = 0x4,
 }
 
+/// RTC filter.
 #[repr(u32)]
 pub enum RtcFilter {
+    /// No filter.
     NoFilter,
+    /// Filter 1.
     Filter1,
+    /// Filter 3.
     Filter3,
+    /// Filter 7.
     Filter7,
 }
 
+/// RTC status.
 #[repr(u32)]
 #[derive(Clone, Copy)]
 pub enum RtcStatus {
+    /// Alarm 0 status.
     Alarm0Sr = 0x40,
+    /// Alarm 1 status.
     Alarm1Sr = 0x20,
+    /// Cyc status.
     CycSr = 0x10,
+    /// Tamper status.
     TamperSr = 0x8,
+    /// Wakeup 0 status.
     Wakeup0Sr = 0x4,
+    /// Wakeup 1 status.
     Wakeup1Sr = 0x2,
+    /// Wakeup 2 status.
     Wakeup2Sr = 0x1,
 }
 
+/// RTC interrupt enable flag.
 #[repr(u32)]
 pub enum RtcInterruptFlag {
+    /// Second interrupt.
     Sec = 0x80,
+    /// Alarm 0 interrupt.
     Alarm0 = 0x40,
+    /// Alarm 1 interrupt.
     Alarm1 = 0x20,
+    /// Cyc interrupt.
     Cyc = 0x10,
+    /// Tamper interrupt.
     Tamper = 0x8,
+    /// Wakeup 0 interrupt.
     Wakeup0 = 0x4,
+    /// Wakeup 1 interrupt.
     Wakeup1 = 0x2,
+    /// Wakeup 2 interrupt.
     Wakeup2 = 0x1,
 }
 
+/// RTC calendar.
 pub struct RtcCalendar {
+    /// Year.
     pub year: AtomicU16,
+    /// Week.
     pub week: AtomicU8,
+    /// Month.
     pub month: AtomicU8,
+    /// Day.
     pub day: AtomicU8,
+    /// Hour.
     pub hour: AtomicU8,
+    /// Minute.
     pub minute: AtomicU8,
+    /// Second.
     pub second: AtomicU8,
+    /// Subsecond, in microseconds.
     pub subsecond: AtomicU32,
 }
 
+/// RTC alarm mask.
 pub struct RtcAlarmMask {
+    /// Day mask.
     pub day_mask: bool,
+    /// Week mask.
     pub week_mask: bool,
+    /// Hour mask.
     pub hour_mask: bool,
+    /// Minute mask.
     pub minute_mask: bool,
+    /// Second mask.
     pub second_mask: bool,
+    /// Subsecond mask.
     pub subsecond_mask: bool,
 }
 
+/// RTC IO output level.
 #[repr(u32)]
 pub enum RtcIoLevel {
+    /// IO output level not inverted.
     NoInvert = 0x0,
+    /// IO output level inverted.
     Invert = 0x80,
 }
 
+/// RTC IO output selection.
 #[repr(u32)]
 pub enum RtcIo {
+    /// Low level output.
     LowLevel = 0x30,
+    /// Alarm 0 output.
     Alarm0 = 0x40,
+    /// Alarm 1 output.
     Alarm1 = 0x50,
+    /// Cyc output.
     Cyc = 0x60,
+    /// Second output.
     Sec = 0x70,
 }
 
+/// RTC erase retention SRAM source.
 #[repr(u32)]
 pub enum RtcRetSramErase {
+    /// Enable wakeup 0 erase.
     Wakeup0Enable = 0x1,
+    /// Enable wakeup 1 erase.
     Wakeup1Enable = 0x2,
+    /// Enable wakeup 2 erase.
     Wakeup2Enable = 0x4,
+    /// Enable tamper erase.
     TamperEnable = 0x8,
 }
 
+/// Maximum number of RTC alarms.
 pub const RTC_ALARM_MAX_NUM: u32 = 2;
+/// Maximum number of RTC wakeup sources.
 pub const RTC_WAKEUP_MAX_NUM: u32 = 3;
 
+/// Current RTC calendar context.
 static RTC_CALENDAR_CTX: RtcCalendar = RtcCalendar {
     year: AtomicU16::new(0),
     week: AtomicU8::new(0),
@@ -146,12 +236,45 @@ static RTC_CALENDAR_CTX: RtcCalendar = RtcCalendar {
     subsecond: AtomicU32::new(0),
 };
 
+/// RTC timer context.
 static mut RTC_TIMER_CTX: u64 = 0;
+/// Flag to indicate if the timestamp until the next event is long enough
+/// to set the MCU into low power mode.
 static RTC_TIMER_EVENT_ALLOWS_LOW_POWER: AtomicBool = AtomicBool::new(false);
+/// Flag to disable the low power mode even if the timestamp until the
+/// next event is long enough to allow low power mode.
 static LOW_POWER_DISABLE_DURING_TASK: AtomicBool = AtomicBool::new(false);
+/// Indicates if the RTC is already initialized or not.
 static RTC_INITIALIZED: AtomicBool = AtomicBool::new(false);
+/// Hold the wake-up time duration in milliseconds.
 static MCU_WAKEUP_TIME: AtomicU32 = AtomicU32::new(0);
+/// Flag used to indicate the MCU has woken up from an external IRQ.
 static NON_SCHEDULED_WAKE_UP: AtomicBool = AtomicBool::new(false);
+
+define_reg! {
+    Rtc
+    __Rtc {
+        ctrl: VolatileRW<u32>,
+        alarm0: VolatileRW<u32>,
+        alarm1: VolatileRW<u32>,
+        ppm_adjust: VolatileRW<u32>,
+        calendar: VolatileRW<u32>,
+        calendar_h: VolatileRW<u32>,
+        cyc_max: VolatileRW<u32>,
+        sr: VolatileRW<u32>,
+        asyn_data: VolatileRO<u32>,
+        asyn_data_h: VolatileRO<u32>,
+        cr1: VolatileRW<u32>,
+        sr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        sub_second_cnt: VolatileRO<u32>,
+        cyc_cnt: VolatileRO<u32>,
+        alarm0_subsecond: VolatileRW<u32>,
+        alarm1_subsecond: VolatileRW<u32>,
+        calendar_r: VolatileRW<u32>,
+        calendar_r_h: VolatileRW<u32>,
+    }
+}
 
 impl Rtc {
     /// Initializes the RTC timer.

@@ -1,13 +1,14 @@
 use crate::{
     analog_read, analog_write,
     cortex::{
-        IRQType, SCB, SCB_SCR_SLEEPDEEP_MSK,
+        IRQType, SCB, SCB_SCR_SLEEPDEEP_MSK, VolatileRW,
         asm::{_sev, _wfe, _wfi},
         nvic_enable_irq,
     },
+    define_reg,
     peripherals::{
         flash::{flash_cr_lock, flash_cr_unlock},
-        regs::{EFC, EFC_CR_PREFETCH_EN_MASK, Pwr},
+        regs::{EFC, EFC_CR_PREFETCH_EN_MASK},
     },
     set_reg_bits, toggle_reg_bits,
 };
@@ -25,6 +26,30 @@ pub const PWR_LP_MODE_EXT_MASK: u32 = 1 << 24;
 
 pub const REG_AFEC_RAW_SR: u32 = 0x40008208;
 pub const AFEC_RAW_SR_RCO48M_READY: u32 = 0x00000004;
+
+define_reg! {
+    /// Wrapper over the raw PWR struct [`__Pwr`]
+    Pwr
+    /// Raw PWR struct
+    __Pwr {
+        /// control register 0, offset 0x00
+        cr0: VolatileRW<u32>,
+        /// control register 1, offset 0x04
+        cr1: VolatileRW<u32>,
+        /// status register 0, offset 0x08
+        sr0: VolatileRW<u32>,
+        /// status register 2, offset 0x0C
+        sr1: VolatileRW<u32>,
+        /// control register 3, offset 0x10
+        cr2: VolatileRW<u32>,
+        /// control register 4, offset 0x14
+        cr3: VolatileRW<u32>,
+        /// control register 5, offset 0x18
+        cr4: VolatileRW<u32>,
+        /// control register 6, offset 0x1C
+        cr5: VolatileRW<u32>,
+    }
+}
 
 impl Pwr {
     pub fn deep_sleep(&self, mode: u32, wfi: u32) {

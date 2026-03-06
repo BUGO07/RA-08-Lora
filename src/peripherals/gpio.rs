@@ -1,9 +1,11 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::{
             RCC_PERIPHERAL_GPIOA, RCC_PERIPHERAL_GPIOB, RCC_PERIPHERAL_GPIOC, RCC_PERIPHERAL_GPIOD,
         },
-        regs::{GPIOA_BASE, GPIOD_BASE, Gpio, RCC, SetStatus},
+        regs::{GPIOA_BASE, GPIOD_BASE, RCC},
     },
     set_reg_bits, toggle_reg_bits,
 };
@@ -93,6 +95,46 @@ pub enum IntType {
     FallingEdge,
     /// Interrupt on Rising and Falling Edge
     RisingFallingEdge,
+}
+
+define_reg! {
+    Gpio
+    __Gpio {
+        ///  output enable register
+        oer: VolatileRW<u32>,
+        ///  output type register
+        otyper: VolatileRW<u32>,
+        ///  input enable register
+        ier: VolatileRW<u32>,
+        ///  pull enable register
+        per: VolatileRW<u32>,
+        ///  pull select register
+        psr: VolatileRW<u32>,
+        ///  input data register
+        idr: VolatileRO<u32>,
+        ///  output data register
+        odr: VolatileRW<u32>,
+        ///  bit reset register
+        brr: VolatileRW<u32>,
+        ///  bit set register
+        bsr: VolatileRW<u32>,
+        ///  dirve set register
+        dsr: VolatileRW<u32>,
+        ///  interrupt control register
+        icr: VolatileRW<u32>,
+        ///  interrupt flag register
+        ifr: VolatileRW<u32>,
+        ///  wakeup control register
+        wucr: VolatileRW<u32>,
+        ///  wakeup level register
+        wulvl: VolatileRW<u32>,
+        ///  alternate function low register
+        afrl: VolatileRW<u32>,
+        ///  alternate function high register
+        afrh: VolatileRW<u32>,
+        ///  stop3 wakeup control register
+        stop3_wucr: VolatileRW<u32>,
+    }
 }
 
 impl Gpio {
@@ -242,12 +284,8 @@ impl Gpio {
     }
 
     /// get the interrupt status of the specified GPIO pin
-    pub fn get_interrupt_status(&self, gpio_pin: GpioPin) -> SetStatus {
-        if self.ifr.read() & (0x3 << (2 * gpio_pin as u32)) != 0 {
-            SetStatus::Set
-        } else {
-            SetStatus::Reset
-        }
+    pub fn get_interrupt_status(&self, gpio_pin: GpioPin) -> bool {
+        self.ifr.read() & (0x3 << (2 * gpio_pin as u32)) != 0
     }
 
     /// Config the wakeup setting of the specified GPIO pin
@@ -309,5 +347,5 @@ pub fn deinit() {
     RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOC, false);
     RCC.enable_peripheral_clk(RCC_PERIPHERAL_GPIOD, false);
     RCC.rst_peripheral(RCC_PERIPHERAL_GPIOA, true);
-    RCC.rst_peripheral(RCC_PERIPHERAL_GPIOB, false);
+    RCC.rst_peripheral(RCC_PERIPHERAL_GPIOA, false);
 }

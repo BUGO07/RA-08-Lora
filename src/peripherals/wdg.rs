@@ -1,7 +1,9 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::RCC_PERIPHERAL_WDG,
-        regs::{RCC, RCC_RST_CR_WDG_RESET_REQ_EN_MASK, Wdg},
+        regs::{RCC, RCC_RST_CR_WDG_RESET_REQ_EN_MASK},
     },
     toggle_reg_bits,
 };
@@ -9,6 +11,36 @@ use crate::{
 pub const WDG_LOCK_TOKEN: u32 = 0x1ACCE551;
 pub const WDG_RESEN: u32 = 1 << 1;
 pub const WDG_INTEN: u32 = 1;
+
+define_reg! {
+    Wdg
+    __Wdg {
+        load: VolatileRW<u32>,
+        value: VolatileRO<u32>,
+        control: VolatileRW<u32>,
+        intclr: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        dummy0: [VolatileRO<u32>; 0x2FA],
+        lock: VolatileRW<u32>,
+        dummy1: [VolatileRO<u32>; 0xBF],
+        itcr: VolatileRW<u32>,
+        itop: VolatileRW<u32>,
+        dummy2: [VolatileRO<u32>; 0x32],
+        periphid4: VolatileRO<u32>,
+        periphid5: VolatileRO<u32>,
+        periphid6: VolatileRO<u32>,
+        periphid7: VolatileRO<u32>,
+        periphid0: VolatileRO<u32>,
+        periphid1: VolatileRO<u32>,
+        periphid2: VolatileRO<u32>,
+        periphid3: VolatileRO<u32>,
+        pcellid0: VolatileRO<u32>,
+        pcellid1: VolatileRO<u32>,
+        pcellid2: VolatileRO<u32>,
+        pcellid3: VolatileRO<u32>,
+    }
+}
 
 impl Wdg {
     pub fn lock(&self) {

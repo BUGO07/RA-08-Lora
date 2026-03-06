@@ -1,4 +1,6 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::{
             RCC_FREQ_4M, RCC_FREQ_24M, RCC_FREQ_32768, RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_UART0,
@@ -96,25 +98,45 @@ pub enum Mode {
 #[derive(Debug)]
 pub struct UartInitError;
 
+define_reg! {
+    Uart
+    __Uart {
+        dr: VolatileRW<u32>,
+        rsc_ecr: VolatileRW<u32>,
+        rsv0: [VolatileRO<u32>; 4],
+        fr: VolatileRO<u32>,
+        rsv1: VolatileRO<u32>,
+        ilpr: VolatileRW<u32>,
+        ibrd: VolatileRW<u32>,
+        fbrd: VolatileRW<u32>,
+        lcr_h: VolatileRW<u32>,
+        cr: VolatileRW<u32>,
+        ifls: VolatileRW<u32>,
+        imsc: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        icr: VolatileRW<u32>,
+        dmacr: VolatileRW<u32>,
+        rsv2: [VolatileRO<u32>; 997],
+        id: [VolatileRO<u32>; 8],
+    }
+}
+
 impl Uart {
     /// Get UART flag status
-    pub fn get_flag_status(&self, flag: UartFlag) -> SetStatus {
-        if (self.fr.read() & flag as u32) != 0 {
-            SetStatus::Set
-        } else {
-            SetStatus::Reset
-        }
+    pub fn get_flag_status(&self, flag: UartFlag) -> bool {
+        (self.fr.read() & flag as u32) != 0
     }
     /// Send a byte through UART
     pub fn send_data(&self, data: u8) {
         // wait till tx fifo is not full
-        while matches!(self.get_flag_status(UartFlag::TxFifoFull), SetStatus::Set) {}
+        while self.get_flag_status(UartFlag::TxFifoFull) {}
         self.dr.write(data as u32);
     }
     /// Receive a byte through UART
     pub fn receive_data(&self) -> u8 {
         /* wait till rx fifo is not empty */
-        while matches!(self.get_flag_status(UartFlag::RxFifoEmpty), SetStatus::Set) {}
+        while self.get_flag_status(UartFlag::RxFifoEmpty) {}
         (self.dr.read() & 0xFF) as u8
     }
 
@@ -154,12 +176,8 @@ impl Uart {
     }
 
     /// Get the interrupt status of the UART interrupt
-    pub fn get_interrupt_status(&self, interrupt: u32) -> SetStatus {
-        if self.mis.read() & interrupt != 0 {
-            SetStatus::Set
-        } else {
-            SetStatus::Reset
-        }
+    pub fn get_interrupt_status(&self, interrupt: u32) -> bool {
+        self.mis.read() & interrupt != 0
     }
 
     /// Get the interrupt status of the UART interrupt

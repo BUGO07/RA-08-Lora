@@ -1,6 +1,7 @@
 use crate::{
     analog_read, analog_write,
-    cortex::{SYSTICK, SYSTICK_CTRL_CLKSOURCE_MSK},
+    cortex::{SYSTICK, SYSTICK_CTRL_CLKSOURCE_MSK, VolatileRO, VolatileRW},
+    define_reg,
     peripherals::regs::*,
     set_reg_bits, toggle_reg_bits,
 };
@@ -205,6 +206,25 @@ pub const RCC_RESET_MASK_EFC: u32 = 0x08;
 pub const RCC_RESET_MASK_WDG: u32 = 0x10;
 pub const RCC_RESET_MASK_IWDG: u32 = 0x20;
 pub const RCC_RESET_MASK_ALL: u32 = 0x3E;
+
+define_reg! {
+    Rcc
+    __Rcc {
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        cr2: VolatileRW<u32>,
+        cgr0: VolatileRW<u32>,
+        cgr1: VolatileRW<u32>,
+        cgr2: VolatileRW<u32>,
+        rst0: VolatileRW<u32>,
+        rst1: VolatileRW<u32>,
+        rst_sr: VolatileRW<u32>,
+        rst_cr: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        sr1: VolatileRO<u32>,
+        cr3: VolatileRW<u32>,
+    }
+}
 
 impl Rcc {
     /// Get the frequency of the specified clock

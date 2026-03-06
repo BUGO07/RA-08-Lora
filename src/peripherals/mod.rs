@@ -4,8 +4,16 @@ pub mod delay;
 pub mod flash;
 /// GPIO driver
 pub mod gpio;
+/// I2C Driver
+pub mod i2c;
+/// I2S Driver
+pub mod i2s;
 /// Independent Watchdog Timer
 pub mod iwdg;
+/// Low Power Timer
+pub mod lptimer;
+/// Low Power UART
+pub mod lpuart;
 /// Power management
 pub mod pwr;
 /// RCC

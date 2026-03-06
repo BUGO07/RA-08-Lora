@@ -1,9 +1,11 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::{
             RCC_PCLK0, RCC_PCLK1, RCC_PERIPHERAL_SSP0, RCC_PERIPHERAL_SSP1, RCC_PERIPHERAL_SSP2,
         },
-        regs::{RCC, SSP0_BASE, SSP1_BASE, SSP2_BASE, Ssp},
+        regs::{RCC, SSP0_BASE, SSP1_BASE, SSP2_BASE},
     },
     toggle_reg_bits,
 };
@@ -89,6 +91,31 @@ impl Default for SspConfig {
             dma_tx_en: false,
             dma_rx_en: false,
         }
+    }
+}
+
+define_reg! {
+    Ssp
+    __Ssp {
+        cr0: VolatileRW<u32>,
+        cr1: VolatileRW<u32>,
+        dr: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        cpsr: VolatileRW<u32>,
+        imsc: VolatileRW<u32>,
+        ris: VolatileRO<u32>,
+        mis: VolatileRO<u32>,
+        icr: VolatileRW<u32>,
+        dma_cr: VolatileRW<u32>,
+        resv: [VolatileRO<u32>; 1006],
+        periph_id0: VolatileRO<u32>,
+        periph_id1: VolatileRO<u32>,
+        periph_id2: VolatileRO<u32>,
+        periph_id3: VolatileRO<u32>,
+        pcell_id0: VolatileRO<u32>,
+        pcell_id1: VolatileRO<u32>,
+        pcell_id2: VolatileRO<u32>,
+        pcell_id3: VolatileRO<u32>,
     }
 }
 

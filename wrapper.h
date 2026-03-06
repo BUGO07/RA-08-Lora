@@ -1,29 +1,35 @@
-#include <stdlib.h>
+// #include <stdlib.h>
+// ! MAIN HEADER FILE FOR LoRaWAN
 #include "LoRaMac.h"
-#include "utilities.h"
-#include "aes.h"
-#include "algorithm.h"
-#include "des.h"
-#include "drv.h"
-#include "ecc.h"
-#include "rng.h"
-#include "rsa.h"
-#include "sec_regs.h"
-#include "sha224_sha256.h"
+// * UNUSED (FOR NOW) FROM HERE
+// #include "utilities.h"
+// #include "algorithm.h"
+// #include "des.h"
+// #include "drv.h"
+// #include "ecc.h"
+// #include "rng.h"
+// #include "sec_regs.h"
+// #include "aes.h"
+// #include "rsa.h"
+// #include "sha224_sha256.h"
+// * TO HERE
+// * PLANNED FOR REWRITE FROM HERE
+#include "timer.h"
+#include "radio.h"
 #include "tremo_adc.h"
 #include "tremo_bstimer.h"
 #include "tremo_crc.h"
 #include "tremo_dac.h"
 #include "tremo_dma.h"
 #include "tremo_dma_handshake.h"
-#include "tremo_i2c.h"
-#include "tremo_i2s.h"
 #include "tremo_lcd.h"
-#include "tremo_lptimer.h"
-#include "tremo_lpuart.h"
-#include "timer.h"
-#include "radio.h"
-#include "rtc-board.h" // ! Needed for RtcInit();
+// * TO HERE
+#include "rtc-board.h" // ! Rewritten, but Needed for RtcInit();
+// * REWRITTEN IN RUST FROM HERE
+// #include "tremo_i2c.h"
+// #include "tremo_i2s.h"
+// #include "tremo_lptimer.h"
+// #include "tremo_lpuart.h"
 // #include "tremo_timer.h"
 // #include "tremo_flash.h"
 // #include "tremo_rtc.h"
@@ -38,3 +44,4 @@
 // #include "tremo_rcc.h"
 // #include "tremo_regs.h"
 // #include "tremo_uart.h"
+// * TO HERE

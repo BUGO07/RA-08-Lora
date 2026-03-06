@@ -1,10 +1,12 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::{
             RCC_PERIPHERAL_TIMER0, RCC_PERIPHERAL_TIMER1, RCC_PERIPHERAL_TIMER2,
             RCC_PERIPHERAL_TIMER3,
         },
-        regs::{RCC, TIMER0_SFR_BASE, TIMER1_SFR_BASE, TIMER2_SFR_BASE, TIMER3_SFR_BASE, TimerGp},
+        regs::{RCC, TIMER0_SFR_BASE, TIMER1_SFR_BASE, TIMER2_SFR_BASE, TIMER3_SFR_BASE},
     },
     toggle_reg_bits,
 };
@@ -881,6 +883,54 @@ pub enum TimerTim3EtrOr {
 
 pub const TIMER_OK: i32 = 0;
 pub const TIMER_ERROR: i32 = -1;
+
+define_reg! {
+    TimerGp
+    __TimerGp {
+        /// TIMER control register 1, Address offset: 0x00
+        cr1: VolatileRW<u32>,
+        /// TIMER control register 2, Address offset: 0x04
+        cr2: VolatileRW<u32>,
+        /// TIMER slave Mode Control register, Address offset: 0x08
+        smcr: VolatileRW<u32>,
+        /// TIMER DMA/interrupt enable register, Address offset: 0x0C
+        dier: VolatileRW<u32>,
+        /// TIMER status register, Address offset: 0x10
+        sr: VolatileRW<u32>,
+        /// TIMER event generation register, Address offset: 0x14
+        egr: VolatileRW<u32>,
+        /// TIMER  capture/compare mode register 1, Address offset: 0x18
+        ccmr1: VolatileRW<u32>,
+        /// TIMER  capture/compare mode register 2, Address offset: 0x1C
+        ccmr2: VolatileRW<u32>,
+        /// TIMER capture/compare enable register, Address offset: 0x20
+        ccer: VolatileRW<u32>,
+        /// TIMER counter register, Address offset: 0x24
+        cnt: VolatileRW<u32>,
+        /// TIMER prescaler register, Address offset: 0x28
+        psc: VolatileRW<u32>,
+        /// TIMER auto-reload register, Address offset: 0x2C
+        arr: VolatileRW<u32>,
+        /// Reserved Address offset: 0x30
+        resv1: VolatileRO<u32>,
+        /// TIMER capture/compare register 0, Address offset: 0x34
+        ccr0: VolatileRW<u32>,
+        /// TIMER capture/compare register 1, Address offset: 0x38
+        ccr1: VolatileRW<u32>,
+        /// TIMER capture/compare register 2, Address offset: 0x3C
+        ccr2: VolatileRW<u32>,
+        /// TIMER capture/compare register 3, Address offset: 0x40
+        ccr3: VolatileRW<u32>,
+        /// Reserved, Address offset: 0x44
+        resv2: VolatileRO<u32>,
+        /// TIMER DMA control register, Address offset: 0x48
+        dcr: VolatileRW<u32>,
+        /// TIMER DMA address for full transfer register, Address offset: 0x4C
+        dmar: VolatileRW<u32>,
+        /// TIMER option register, Address offset: 0x50
+        or: VolatileRW<u32>,
+    }
+}
 
 impl TimerGp {
     pub fn init(&self, config: TimerConfig) {

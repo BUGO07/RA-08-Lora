@@ -1,10 +1,12 @@
 use crate::{
+    cortex::{VolatileRO, VolatileRW},
+    define_reg,
     peripherals::{
         rcc::RCC_PERIPHERAL_IWDG,
         regs::{
             IWDG_CR_PREDIV_MASK, IWDG_CR_RSTEN_MASK, IWDG_CR_START_MASK, IWDG_CR_WKEN_MASK,
             IWDG_CR1_RESET_REQ_INT_EN_MASK, IWDG_SR_WRITE_CR_DONE, IWDG_SR_WRITE_SR2_DONE,
-            IWDG_SR2_RESET_REQ_SR_MASK, Iwdg, RCC, RCC_RST_CR_IWDG_RESET_REQ_EN_MASK,
+            IWDG_SR2_RESET_REQ_SR_MASK, RCC, RCC_RST_CR_IWDG_RESET_REQ_EN_MASK,
         },
     },
     set_reg_bits, toggle_reg_bits,
@@ -22,6 +24,19 @@ pub enum IwdgPrescaler {
     Div64 = 0x00000008,
     Div128 = 0x0000000A,
     Div256 = 0x0000000C,
+}
+
+define_reg! {
+    Iwdg
+    __Iwdg {
+        cr: VolatileRW<u32>,
+        max: VolatileRW<u32>,
+        win: VolatileRW<u32>,
+        sr: VolatileRO<u32>,
+        sr1: VolatileRO<u32>,
+        cr1: VolatileRW<u32>,
+        sr2: VolatileRW<u32>,
+    }
 }
 
 impl Iwdg {

@@ -8,8 +8,8 @@ use crate::{
 };
 
 // ! TODO: pretty this up
-
-fn nvic_init() {
+/// NVIC initialization.
+pub fn nvic_init() {
     nvic_set_priority(IRQType::PendSV, (1 << NVIC_PRIO_BITS) - 1);
 
     for i in 0..=IRQType::Iwdg as i32 {
@@ -17,6 +17,8 @@ fn nvic_init() {
     }
 }
 
+/// System initialization.
+/// This function is called at the beginning of the program, before main, to set up the system.
 #[unsafe(no_mangle)]
 pub extern "C" fn system_init() {
     // FPU enable
