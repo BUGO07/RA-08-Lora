@@ -13,6 +13,8 @@ pub mod ffi;
 pub mod interrupts;
 /// LoRa module
 pub mod lora;
+/// LoRa Configuration
+pub mod lora_config;
 /// Peripherals
 pub mod peripherals;
 /// Serial printing
