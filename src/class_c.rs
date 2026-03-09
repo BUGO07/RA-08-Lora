@@ -5,7 +5,7 @@ use core::ptr;
 use crate::{
     ffi,
     lora::{
-        radio::{Radio, radio_irq_process},
+        radio::radio_irq_process,
         timer::{TimerEvent, timer_init, timer_set_value, timer_start, timer_stop},
     },
     peripherals::{delay::delay_ms, gpio::GpioPin, regs::GPIOA},

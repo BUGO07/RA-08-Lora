@@ -66,3 +66,8 @@ pub extern "C" fn delay_us(micros: u32) {
 pub extern "C" fn delay_ms(millis: u32) {
     delay_us(millis * 1000);
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn DelayMs(millis: u32) {
+    delay_ms(millis);
+}

@@ -3,6 +3,8 @@
 #![allow(static_mut_refs)]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
+core::arch::global_asm!(include_str!("startup.S"));
+
 use crate::{
     class_c::app_start,
     peripherals::{

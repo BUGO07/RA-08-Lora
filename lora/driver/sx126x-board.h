@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "sx126x/sx126x.h"
+#include "sx126x.h"
 
 
 void SX126xLoracInit();

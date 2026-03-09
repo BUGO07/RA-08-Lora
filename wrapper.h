@@ -14,13 +14,12 @@
 // #include "sha224_sha256.h"
 // * TO HERE
 // * PLANNED FOR REWRITE FROM HERE
-#include "tremo_adc.h"
-#include "tremo_bstimer.h"
-#include "tremo_crc.h"
-#include "tremo_dac.h"
-#include "tremo_dma.h"
-#include "tremo_dma_handshake.h"
-#include "tremo_lcd.h"
+// #include "tremo_adc.h"
+// #include "tremo_bstimer.h"
+// #include "tremo_crc.h"
+// #include "tremo_dac.h"
+// #include "tremo_dma.h"
+// #include "tremo_dma_handshake.h"
 // * TO HERE
 // * REWRITTEN IN RUST FROM HERE
 // #include "rtc-board.h"
@@ -39,6 +38,7 @@
 // #include "tremo_delay.h"
 // #include "tremo_pwr.h"
 // #include "tremo_system.h"
+// #include "tremo_lcd.h"
 // #include "delay.h"
 // #include "tremo_iwdg.h"
 // #include "tremo_wdg.h"

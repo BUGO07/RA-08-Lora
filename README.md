@@ -3,6 +3,10 @@
 ## There's some unsafe rust code for C compatibility, once everything is ported, it will no longer be necessary, and will be removed.
 
 ## Ported:
+- drivers/peripheral/*
+- lora/driver/*
+- lora/radio/*
+- lora/system/*
 ### Core
 - [Cortex](src/cortex/mod.rs)
 - [System](src/cortex/system.rs)
@@ -16,6 +20,7 @@
 - [I2C](src/peripherals/i2c.rs)
 - [I2S](src/peripherals/i2s.rs)
 - [IWDG](src/peripherals/iwdg.rs)
+- [LCD](src/peripherals/lcd.rs)
 - [LP Timer](src/peripherals/lptimer.rs)
 - [LP UART](src/peripherals/lpuart.rs)
 - [PWR](src/peripherals/pwr.rs)

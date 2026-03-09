@@ -46,16 +46,111 @@ pub extern "C" fn PendSV_Handler() {}
 #[unsafe(no_mangle)]
 pub extern "C" fn SysTick_Handler() {}
 
-/// This function handles PWR Handler.
 #[unsafe(no_mangle)]
-pub extern "C" fn PWR_IRQHandler() {}
+pub extern "C" fn SEC_IRQHandler() {
+    loop {}
+}
 
-/******************************************************************************/
-/*                 Tremo Peripherals Interrupt Handlers                   */
-/*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
-/*  available peripheral interrupt handler's name please refer to the startup */
-/*  file (startup_cm4.S).                                               */
-/******************************************************************************/
+/// This function handles RTC Interrupts.
+#[unsafe(no_mangle)]
+pub extern "C" fn RTC_IRQHandler() {
+    RTC.on_irq();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn WDG_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn EFC_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn UART3_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn I2C2_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn UART0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn UART1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn UART2_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn LPUART_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SSP0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SSP1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn QSPI_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn I2C0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn I2C1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SCC_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn ADC_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn AFEC_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SSP2_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn DMA1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn DAC_IRQHandler() {
+    loop {}
+}
 
 /// This function handles LORA Interrupts.
 #[unsafe(no_mangle)]
@@ -63,8 +158,76 @@ pub extern "C" fn LORA_IRQHandler() {
     radio_on_dio_irq();
 }
 
-/// This function handles RTC Interrupts.
 #[unsafe(no_mangle)]
-pub extern "C" fn RTC_IRQHandler() {
-    RTC.on_irq();
+pub extern "C" fn GPIO_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn TIMER0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn TIMER1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn TIMER2_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn TIMER3_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn BSTIMER0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn BSTIMER1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn LPTIMER0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SAC_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn DMA0_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn I2S_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn LCD_IRQHandler() {
+    loop {}
+}
+
+/// This function handles PWR Handler.
+#[unsafe(no_mangle)]
+pub extern "C" fn PWR_IRQHandler() {}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn LPTIMER1_IRQHandler() {
+    loop {}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn IWDG_IRQHandler() {
+    loop {}
 }
