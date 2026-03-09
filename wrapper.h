@@ -14,8 +14,6 @@
 // #include "sha224_sha256.h"
 // * TO HERE
 // * PLANNED FOR REWRITE FROM HERE
-#include "timer.h"
-#include "radio.h"
 #include "tremo_adc.h"
 #include "tremo_bstimer.h"
 #include "tremo_crc.h"
@@ -24,8 +22,10 @@
 #include "tremo_dma_handshake.h"
 #include "tremo_lcd.h"
 // * TO HERE
-#include "rtc-board.h" // ! Rewritten, but Needed for RtcInit();
 // * REWRITTEN IN RUST FROM HERE
+// #include "rtc-board.h"
+// #include "timer.h"
+// #include "radio.h"
 // #include "sx126x-board.h"
 // #include "sx126x.h"
 // #include "tremo_i2c.h"

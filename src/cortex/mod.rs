@@ -138,7 +138,7 @@ define_reg! {
         ip: [VolatileRW<u8>; 240],
         _reserved5: [u32; 644],
         /// Software Trigger Interrupt Register (offset 0xE00, write-only)
-        stir: VolatileWO<u32>,
+        stir: VolatileRW<u32>,
     }
 }
 
@@ -553,11 +553,11 @@ pub const SYSTICK_CALIB_TENMS_MSK: u32 = 0xFFFFFF << SYSTICK_CALIB_TENMS_POS;
 #[repr(C)]
 pub union ItmStimPort {
     /// 8-bit write access
-    pub u8: VolatileWO<u8>,
+    pub u8: VolatileRW<u8>,
     /// 16-bit write access
-    pub u16: VolatileWO<u16>,
+    pub u16: VolatileRW<u16>,
     /// 32-bit write access
-    pub u32: VolatileWO<u32>,
+    pub u32: VolatileRW<u32>,
 }
 
 define_reg! {
@@ -577,14 +577,14 @@ define_reg! {
         tcr: VolatileRW<u32>,
         _reserved3: [u32; 29],
         /// ITM Integration Write Register (offset 0xEF8, write-only)
-        iwr: VolatileWO<u32>,
+        iwr: VolatileRW<u32>,
         /// ITM Integration Read Register (offset 0xEFC, read-only)
         irr: VolatileRO<u32>,
         /// ITM Integration Mode Control Register (offset 0xF00)
         imcr: VolatileRW<u32>,
         _reserved4: [u32; 43],
         /// ITM Lock Access Register (offset 0xFB0, write-only)
-        lar: VolatileWO<u32>,
+        lar: VolatileRW<u32>,
         /// ITM Lock Status Register (offset 0xFB4, read-only)
         lsr: VolatileRO<u32>,
         _reserved5: [u32; 6],
@@ -1246,7 +1246,7 @@ define_reg! {
         /// Debug Halting Control and Status Register (offset 0x000)
         dhcsr: VolatileRW<u32>,
         /// Debug Core Register Selector Register (offset 0x004, write-only)
-        dcrsr: VolatileWO<u32>,
+        dcrsr: VolatileRW<u32>,
         /// Debug Core Register Data Register (offset 0x008)
         dcrdr: VolatileRW<u32>,
         /// Debug Exception and Monitor Control Register (offset 0x00C)
@@ -1369,6 +1369,7 @@ pub const CORE_DEBUG_DEMCR_VC_CORERESET_MSK: u32 = 1 << CORE_DEBUG_DEMCR_VC_CORE
 
 /// A read-write volatile register.
 #[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct VolatileRW<T: Copy> {
     value: T,
 }
@@ -1390,6 +1391,7 @@ impl<T: Copy> VolatileRW<T> {
 
 /// A read-only volatile register.
 #[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct VolatileRO<T: Copy> {
     value: T,
 }
@@ -1399,22 +1401,6 @@ impl<T: Copy> VolatileRO<T> {
     #[inline]
     pub fn read(&self) -> T {
         unsafe { ptr::read_volatile(&self.value) }
-    }
-}
-
-/// A write-only volatile register.
-#[repr(transparent)]
-#[derive(Clone, Copy)]
-pub struct VolatileWO<T: Copy> {
-    value: T,
-}
-
-impl<T: Copy> VolatileWO<T> {
-    /// Write a value to the register.
-    #[inline]
-    #[allow(invalid_reference_casting)]
-    pub fn write(&self, val: T) {
-        unsafe { ptr::write_volatile(&self.value as *const T as *mut T, val) }
     }
 }
 
@@ -1829,18 +1815,8 @@ pub const ITM_RXBUFFER_EMPTY: i32 = 0x5AA5_5AA5u32 as i32;
 #[inline]
 pub fn itm_send_char(ch: u32) -> u32 {
     if (ITM.tcr.read() & ITM_TCR_ITMENA_MSK) != 0 && (ITM.ter.read() & 1) != 0 {
-        while unsafe { ITM.port[0].u32.read_like_ro() } == 0 {}
+        while unsafe { ITM.port[0].u32.read() } == 0 {}
         unsafe { ITM.port[0].u8.write(ch as u8) };
     }
     ch
-}
-
-// Internal helper: read through a write-only port (the hardware actually
-// supports reads on stimulus ports to check readiness).
-impl VolatileWO<u32> {
-    /// Read the register value (used for ITM stimulus port readiness check).
-    #[inline]
-    unsafe fn read_like_ro(&self) -> u32 {
-        unsafe { ptr::read_volatile(&self.value) }
-    }
 }

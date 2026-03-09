@@ -1,9 +1,6 @@
 #![allow(clippy::empty_loop)]
 
-unsafe extern "C" {
-    fn RadioOnDioIrq();
-    fn RtcOnIrq();
-}
+use crate::{lora::radio::radio_on_dio_irq, peripherals::regs::RTC};
 
 /// This function handles the NMI exception
 #[unsafe(no_mangle)]
@@ -63,11 +60,11 @@ pub extern "C" fn PWR_IRQHandler() {}
 /// This function handles LORA Interrupts.
 #[unsafe(no_mangle)]
 pub extern "C" fn LORA_IRQHandler() {
-    unsafe { RadioOnDioIrq() };
+    radio_on_dio_irq();
 }
 
 /// This function handles RTC Interrupts.
 #[unsafe(no_mangle)]
 pub extern "C" fn RTC_IRQHandler() {
-    unsafe { RtcOnIrq() };
+    RTC.on_irq();
 }

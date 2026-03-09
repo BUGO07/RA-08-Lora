@@ -10,6 +10,8 @@ pub mod i2c;
 pub mod i2s;
 /// Independent Watchdog Timer
 pub mod iwdg;
+/// LCD
+pub mod lcd;
 /// Low Power Timer
 pub mod lptimer;
 /// Low Power UART

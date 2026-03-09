@@ -18,3 +18,7 @@ crate-type = ["staticlib"]
 
 [build-dependencies]
 bindgen = "0.72.1"
+
+[dependencies]
+heapless = "0.9.2"
+libm = "0.2"

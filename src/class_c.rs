@@ -4,6 +4,10 @@ use core::ptr;
 
 use crate::{
     ffi,
+    lora::{
+        radio::{Radio, radio_irq_process},
+        timer::{TimerEvent, timer_init, timer_set_value, timer_start, timer_stop},
+    },
     peripherals::{delay::delay_ms, gpio::GpioPin, regs::GPIOA},
     print, println,
 };
@@ -67,7 +71,7 @@ struct App {
     device_state: DeviceState,
 
     /// timer for scheduling next packet transmission
-    tx_next_packet_timer: ffi::TimerEvent_t,
+    tx_next_packet_timer: TimerEvent,
 }
 
 impl App {
@@ -89,12 +93,12 @@ impl App {
             next_tx: true,
             device_state: DeviceState::Init,
 
-            tx_next_packet_timer: ffi::TimerEvent_s {
-                Timestamp: 0,
-                ReloadValue: 0,
-                IsRunning: false,
-                Callback: None,
-                Next: ptr::null_mut(),
+            tx_next_packet_timer: TimerEvent {
+                id: 0,
+                timestamp: 0,
+                reload_value: 0,
+                is_running: false,
+                callback: None,
             },
         }
     }
@@ -150,7 +154,7 @@ impl App {
             ..Default::default()
         };
 
-        unsafe { ffi::TimerStop(&mut self.tx_next_packet_timer) };
+        timer_stop(&mut self.tx_next_packet_timer);
 
         let status = unsafe { ffi::LoRaMacMibGetRequestConfirm(&mut mib_req) };
         if status == ffi::LORAMAC_STATUS_OK {
@@ -336,7 +340,7 @@ pub extern "C" fn mlme_indication(mlme_indication: *mut ffi::MlmeIndication_t) {
 }
 
 /// called when it's time to send next packet
-pub extern "C" fn on_tx_next_packet_timer_event() {
+pub fn on_tx_next_packet_timer_event() {
     unsafe { APP.on_tx_next_packet_timer_event() }
 }
 
@@ -366,10 +370,7 @@ pub fn app_start() -> ! {
 
                 ffi::LoRaMacInitialization(&mut primitives, &mut callbacks, ACTIVE_REGION);
 
-                ffi::TimerInit(
-                    &mut APP.tx_next_packet_timer,
-                    Some(on_tx_next_packet_timer_event),
-                );
+                timer_init(&mut APP.tx_next_packet_timer, on_tx_next_packet_timer_event);
 
                 // ADR
                 mib_req.Type = ffi::MIB_ADR;
@@ -415,14 +416,15 @@ pub fn app_start() -> ! {
 
             DeviceState::Cycle => unsafe {
                 APP.device_state = DeviceState::Sleep;
-                ffi::TimerSetValue(&mut APP.tx_next_packet_timer, APP.tx_duty_cycle_time);
-                ffi::TimerStart(&mut APP.tx_next_packet_timer);
+                timer_set_value(&mut APP.tx_next_packet_timer, APP.tx_duty_cycle_time);
+                timer_start(&mut APP.tx_next_packet_timer);
             },
 
-            DeviceState::Sleep => unsafe {
-                // Process Radio IRQ
-                (ffi::Radio.IrqProcess.unwrap())(); // assume ffi wraps `Radio.IrqProcess()`
-            },
+            DeviceState::Sleep =>
+            // Process Radio IRQ
+            {
+                radio_irq_process();
+            }
         }
     }
 }

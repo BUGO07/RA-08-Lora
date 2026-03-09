@@ -846,15 +846,19 @@ pub fn sx126x_set_payload(payload: &[u8]) {
     sx126x_write_buffer(0x00, payload);
 }
 
-pub fn sx126x_get_payload(buffer: &mut [u8], max_size: u8) -> Result<(), ()> {
-    let mut offset = 0;
-    get_rx_buffer_status(buffer.len() as u8, &mut offset);
-    if buffer.len() as u8 > max_size {
-        return Err(());
-    }
-    sx126x_read_buffer(offset, buffer);
+pub enum Sx126xError {
+    PayloadBufferTooSmall,
+}
 
-    Ok(())
+pub fn sx126x_get_payload(buffer: &mut [u8], max_size: u8) -> Result<u8, Sx126xError> {
+    let mut offset = 0;
+    let length = get_rx_buffer_status(buffer.len() as u8, &mut offset);
+    if length > max_size {
+        return Err(Sx126xError::PayloadBufferTooSmall);
+    }
+    sx126x_read_buffer(offset, &mut buffer[..length as usize]);
+
+    Ok(length)
 }
 
 pub fn sx126x_send_payload(payload: &[u8], timeout: u32) {
@@ -1255,8 +1259,8 @@ pub fn sx126x_get_packet_status() -> PacketStatus {
     match sx126x_get_packet_type() {
         RadioPacketTypes::Gfsk => PacketStatus::Gfsk(GfskPacketStatus {
             rx_status: status[0],
-            rssi_sync: -(status[1] as i8 >> 1),
-            rssi_avg: -(status[2] as i8 >> 1),
+            rssi_sync: (-(status[1] as i32 >> 1)) as i8,
+            rssi_avg: (-(status[2] as i32 >> 1)) as i8,
             freq_error: 0,
         }),
         RadioPacketTypes::LoRa => {
@@ -1266,9 +1270,9 @@ pub fn sx126x_get_packet_status() -> PacketStatus {
                 ((status[1] as i16 - 256) >> 2) as i8
             };
             PacketStatus::LoRa(LoRaPacketStatus {
-                rssi_pkt: -(status[0] as i8 >> 1),
+                rssi_pkt: (-(status[0] as i32 >> 1)) as i8,
                 snr_pkt,
-                signal_rssi_pkt: -(status[2] as i8 >> 1),
+                signal_rssi_pkt: (-(status[2] as i32 >> 1)) as i8,
                 freq_error: unsafe { FREQUENCY_ERROR },
             })
         }

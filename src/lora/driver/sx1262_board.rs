@@ -242,3 +242,120 @@ pub fn sx126x_set_pa_opt(opt: u8) {
 
     G_PA_OPT_SETTING.store(opt, Ordering::Relaxed);
 }
+
+// ── extern "C" wrappers matching sx126x-board.h ──────────────────────────
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xLoracInit() {
+    sx126x_lorac_init();
+}
+
+/// No-op on this platform; I/O is initialised in `SX126xLoracInit`.
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xIoInit() {}
+
+/// `DioIrqHandler` in C is `void (*)(void)`.
+/// On this platform the LoRa IRQ is enabled in `SX126xLoracInit`; this
+/// wrapper is present for link-compatibility.  The handler pointer is unused
+/// because the Rust interrupt handler (`radio_on_dio_irq`) is installed
+/// statically.
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xIoIrqInit(_dio_irq: Option<extern "C" fn()>) {}
+
+/// No-op on this platform.
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xIoDeInit() {}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xReset() {
+    sx126x_reset();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xWaitOnBusy() {
+    sx126x_wait_on_busy();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xWakeup() {
+    sx126x_wakeup();
+}
+
+/// # Safety
+/// `buffer` must be a valid pointer to at least `size` bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SX126xWriteCommand(opcode: u8, buffer: *const u8, size: u16) {
+    let cmd: RadioCommands = unsafe { core::mem::transmute(opcode) };
+    let data = unsafe { core::slice::from_raw_parts(buffer, size as usize) };
+    sx126x_write_command(cmd, data);
+}
+
+/// # Safety
+/// `buffer` must be a valid pointer to at least `size` bytes of writable memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SX126xReadCommand(opcode: u8, buffer: *mut u8, size: u16) {
+    let cmd: RadioCommands = unsafe { core::mem::transmute(opcode) };
+    let data = unsafe { core::slice::from_raw_parts_mut(buffer, size as usize) };
+    sx126x_read_command(cmd, data);
+}
+
+/// Single-byte register write matching `SX126xWriteRegister` in C.
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xWriteRegister(address: u16, value: u8) {
+    sx126x_write_registers(address, &[value]);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xReadRegister(address: u16) -> u8 {
+    sx126x_read_register(address)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xSetRfTxPower(power: i8) {
+    sx126x_set_rf_tx_power(power);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xGetPaSelect(channel: u32) -> u8 {
+    sx126x_get_pa_select(channel)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xAntSwOn() {
+    sx126x_ant_sw_on();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xAntSwOff() {
+    sx126x_ant_sw_off();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xCheckRfFrequency(frequency: u32) -> bool {
+    sx126x_check_rf_freq(frequency)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xGetBoardTcxoWakeupTime() -> u32 {
+    sx126x_get_board_tcxo_wakeup_time()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xGetPaOpt() -> u8 {
+    sx126x_get_pa_opt()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn SX126xSetPaOpt(opt: u8) {
+    sx126x_set_pa_opt(opt);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn BoardDisableIrq() {
+    _disable_irq();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn BoardEnableIrq() {
+    _enable_irq();
+}

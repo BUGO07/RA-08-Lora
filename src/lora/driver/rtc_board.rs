@@ -3,6 +3,7 @@ use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU32, Ordering};
 use crate::{
     cortex::{IRQType, VolatileRO, VolatileRW, nvic_enable_irq},
     define_reg,
+    lora::timer::timer_irq_handler,
     peripherals::{
         pwr::PWR_LP_MODE_STOP3,
         rcc::{RCC_PERIPHERAL_RTC, RCC_RTC_CLK_SOURCE_RCO32K},
@@ -10,6 +11,8 @@ use crate::{
     },
     toggle_reg_bits,
 };
+
+// ! TODO: pretty this up by using less mutable statics and atomics (statics in general)
 
 /// Number of seconds in a minute.
 pub const SECONDS_IN_MINUTE: u64 = 60;
@@ -65,6 +68,7 @@ pub enum RtcTamperControl {
 }
 
 /// RTC wakeup control information.
+#[repr(u32)]
 pub enum RtcWakeupControl {
     /// Wakeup 0 flag.
     Wakeup0 = 0x20000,
@@ -282,7 +286,7 @@ impl Rtc {
     /// The timer is based on the RTC peripheral.
     /// TODO: maybe use local variables instead of statics
     pub fn init(&self) {
-        if RTC_INITIALIZED.load(Ordering::Relaxed) {
+        if !RTC_INITIALIZED.load(Ordering::Relaxed) {
             self.deinit();
             RCC.enable_peripheral_clk(RCC_PERIPHERAL_RTC, true);
 
@@ -459,12 +463,14 @@ impl Rtc {
         }
         let month = now.month.load(Ordering::Relaxed);
 
-        for i in 0..month - 1 {
-            total_time += if i == 1 && year % 4 == 0 {
-                DAYS_IN_MONTH_LEAP_YEAR[i as usize] as u64 * SECONDS_IN_DAY
-            } else {
-                DAYS_IN_MONTH[i as usize] as u64 * SECONDS_IN_DAY
-            };
+        if year % 4 == 0 {
+            for i in 0..(month - 1) {
+                total_time += DAYS_IN_MONTH_LEAP_YEAR[i as usize] as u64 * SECONDS_IN_DAY;
+            }
+        } else {
+            for i in 0..(month - 1) {
+                total_time += DAYS_IN_MONTH[i as usize] as u64 * SECONDS_IN_DAY;
+            }
         }
 
         total_time += now.second.load(Ordering::Relaxed) as u64
@@ -489,8 +495,7 @@ impl Rtc {
             32768
         };
 
-        // TODO: maybe use float rounding
-        (ticks * tps + 500/* round to the nearest integer */) / 1000
+        libm::round(ticks as f64 * tps as f64 / 1000.0) as u64
     }
 
     /// RTC IRQ handler for RTC cyc events.
@@ -500,8 +505,7 @@ impl Rtc {
             self.config_interrupt(RtcInterruptFlag::Cyc, false);
             self.set_status(RtcStatus::CycSr, false);
 
-            // TODO
-            // TimerIrqHandler();
+            timer_irq_handler();
 
             self.config_interrupt(RtcInterruptFlag::Cyc, true);
         }
@@ -754,15 +758,15 @@ impl Rtc {
         loop {
             let cnt = self.get_subsecond_count();
             loop {
-                let data = self.calendar.read();
-                if data == self.calendar.read() {
+                let data = self.calendar_r.read();
+                if data == self.calendar_r.read() {
                     syn_data = data;
                     break;
                 }
             }
             loop {
-                let data_h = self.calendar_h.read();
-                if data_h == self.calendar_h.read() {
+                let data_h = self.calendar_r_h.read();
+                if data_h == self.calendar_r_h.read() {
                     syn_data_h = data_h;
                     break;
                 }
