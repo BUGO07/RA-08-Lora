@@ -14,7 +14,7 @@ use crate::{
 /// UART configuration
 pub struct UartConfig {
     /// Baud rate
-    pub baudrate: u32,
+    pub baudrate: usize,
     /// Data width
     pub data_width: DataWidth,
     /// Parity type
@@ -44,7 +44,7 @@ impl Default for UartConfig {
 }
 
 /// UART flags
-#[repr(u32)]
+#[repr(usize)]
 pub enum UartFlag {
     TxFifoEmpty = 1 << 7,
     RxFifoFull = 1 << 6,
@@ -54,7 +54,7 @@ pub enum UartFlag {
 }
 
 /// UART parity
-#[repr(u32)]
+#[repr(usize)]
 pub enum Parity {
     None,
     Even,
@@ -62,7 +62,7 @@ pub enum Parity {
 }
 
 /// UART data width
-#[repr(u32)]
+#[repr(usize)]
 pub enum DataWidth {
     Five = 0x00000000,
     Six = 0x00000020,
@@ -71,14 +71,14 @@ pub enum DataWidth {
 }
 
 /// UART stop bits
-#[repr(u32)]
+#[repr(usize)]
 pub enum StopBits {
     One = 0x00000000,
     Two = 0x00000008,
 }
 
 /// UART flow control
-#[repr(u32)]
+#[repr(usize)]
 pub enum FlowControl {
     Disabled = 0x00000000,
     Rts = 0x00004000,
@@ -87,7 +87,7 @@ pub enum FlowControl {
 }
 
 /// UART mode
-#[repr(u32)]
+#[repr(usize)]
 pub enum Mode {
     Tx = 0x00000010,
     Rx = 0x00000020,
@@ -101,37 +101,37 @@ pub struct UartInitError;
 define_reg! {
     Uart
     __Uart {
-        dr: VolatileRW<u32>,
-        rsc_ecr: VolatileRW<u32>,
-        rsv0: [VolatileRO<u32>; 4],
-        fr: VolatileRO<u32>,
-        rsv1: VolatileRO<u32>,
-        ilpr: VolatileRW<u32>,
-        ibrd: VolatileRW<u32>,
-        fbrd: VolatileRW<u32>,
-        lcr_h: VolatileRW<u32>,
-        cr: VolatileRW<u32>,
-        ifls: VolatileRW<u32>,
-        imsc: VolatileRW<u32>,
-        ris: VolatileRO<u32>,
-        mis: VolatileRO<u32>,
-        icr: VolatileRW<u32>,
-        dmacr: VolatileRW<u32>,
-        rsv2: [VolatileRO<u32>; 997],
-        id: [VolatileRO<u32>; 8],
+        dr: VolatileRW<usize>,
+        rsc_ecr: VolatileRW<usize>,
+        rsv0: [VolatileRO<usize>; 4],
+        fr: VolatileRO<usize>,
+        rsv1: VolatileRO<usize>,
+        ilpr: VolatileRW<usize>,
+        ibrd: VolatileRW<usize>,
+        fbrd: VolatileRW<usize>,
+        lcr_h: VolatileRW<usize>,
+        cr: VolatileRW<usize>,
+        ifls: VolatileRW<usize>,
+        imsc: VolatileRW<usize>,
+        ris: VolatileRO<usize>,
+        mis: VolatileRO<usize>,
+        icr: VolatileRW<usize>,
+        dmacr: VolatileRW<usize>,
+        rsv2: [VolatileRO<usize>; 997],
+        id: [VolatileRO<usize>; 8],
     }
 }
 
 impl Uart {
     /// Get UART flag status
     pub fn get_flag_status(&self, flag: UartFlag) -> bool {
-        (self.fr.read() & flag as u32) != 0
+        (self.fr.read() & flag as usize) != 0
     }
     /// Send a byte through UART
     pub fn send_data(&self, data: u8) {
         // wait till tx fifo is not full
         while self.get_flag_status(UartFlag::TxFifoFull) {}
-        self.dr.write(data as u32);
+        self.dr.write(data as usize);
     }
     /// Receive a byte through UART
     pub fn receive_data(&self) -> u8 {
@@ -141,13 +141,13 @@ impl Uart {
     }
 
     /// Config the interrupt of the specified UART flag
-    pub fn config_interrupt(&self, uart_interrupt: u32, new_state: bool) {
+    pub fn config_interrupt(&self, uart_interrupt: usize, new_state: bool) {
         toggle_reg_bits!(self.imsc, uart_interrupt, new_state);
     }
 
     /// Deinitializes the UART peripheral registers to the reset values
     pub fn deinit(&self) {
-        let periph = match self.ptr() as u32 {
+        let periph = match self.ptr() as usize {
             UART0_BASE => RCC_PERIPHERAL_UART0,
             UART1_BASE => RCC_PERIPHERAL_UART1,
             UART2_BASE => RCC_PERIPHERAL_UART2,
@@ -161,12 +161,12 @@ impl Uart {
     }
 
     /// Set the threshold of RX FIFO
-    pub fn set_rx_fifo_threshold(&self, fifo_level: u32) {
+    pub fn set_rx_fifo_threshold(&self, fifo_level: usize) {
         set_reg_bits!(self.ifls, UART_IFLS_RX, fifo_level);
     }
 
     /// Set the threshold of TX FIFO
-    pub fn set_tx_fifo_threshold(&self, fifo_level: u32) {
+    pub fn set_tx_fifo_threshold(&self, fifo_level: usize) {
         set_reg_bits!(self.ifls, UART_IFLS_TX, fifo_level);
     }
 
@@ -176,12 +176,12 @@ impl Uart {
     }
 
     /// Get the interrupt status of the UART interrupt
-    pub fn get_interrupt_status(&self, interrupt: u32) -> bool {
+    pub fn get_interrupt_status(&self, interrupt: usize) -> bool {
         self.mis.read() & interrupt != 0
     }
 
     /// Get the interrupt status of the UART interrupt
-    pub fn clear_interrupt(&self, interrupt: u32) {
+    pub fn clear_interrupt(&self, interrupt: usize) {
         self.icr.write(interrupt);
     }
 
@@ -191,7 +191,7 @@ impl Uart {
         toggle_reg_bits!(self.lcr_h, UART_LCR_H_FEN, false); // flush fifo
         self.imsc.write(0);
 
-        let clk_src = match self.ptr() as u32 {
+        let clk_src = match self.ptr() as usize {
             UART0_BASE => RCC.get_uart0_clk_src() >> 15,
             UART1_BASE => RCC.get_uart0_clk_src() >> 13,
             UART2_BASE => RCC.get_uart0_clk_src() >> 11,
@@ -204,7 +204,7 @@ impl Uart {
             2 => RCC_FREQ_32768,
             3 => RCC_FREQ_24M,
             _ => {
-                if self.ptr() as u32 == UART0_BASE || self.ptr() as u32 == UART1_BASE {
+                if self.ptr() as usize == UART0_BASE || self.ptr() as usize == UART1_BASE {
                     RCC.get_clk_freq(RCC_PCLK0)
                 } else {
                     RCC.get_clk_freq(RCC_PCLK1)
@@ -246,7 +246,7 @@ impl Uart {
 }
 
 /// Calculate baud rate divisor
-fn calc_uart_baud(uart_clk: u32, baud: u32) -> u32 {
+fn calc_uart_baud(uart_clk: usize, baud: usize) -> usize {
     let mut temp = 16 * baud;
     if baud == 0 || uart_clk < temp {
         return 0;

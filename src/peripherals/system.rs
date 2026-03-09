@@ -4,6 +4,6 @@ pub fn system_reset() {
     nvic_system_reset();
 }
 
-pub fn system_get_chip_id() -> [u32; 2] {
+pub fn system_get_chip_id() -> [usize; 2] {
     [EFC.sn_l.read(), EFC.sn_h.read()]
 }

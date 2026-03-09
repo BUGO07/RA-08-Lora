@@ -6,229 +6,229 @@ use crate::{
     set_reg_bits, toggle_reg_bits,
 };
 
-pub const RCC_FREQ_48M: u32 = 48000000;
-pub const RCC_FREQ_40M: u32 = 40000000;
-pub const RCC_FREQ_32M: u32 = 32000000;
-pub const RCC_FREQ_30M: u32 = 30000000;
-pub const RCC_FREQ_24M: u32 = 24000000;
-pub const RCC_FREQ_4M: u32 = 3600000;
-pub const RCC_FREQ_32768: u32 = 32768;
-pub const RCC_FREQ_32000: u32 = 32000;
+pub const RCC_FREQ_48M: usize = 48000000;
+pub const RCC_FREQ_40M: usize = 40000000;
+pub const RCC_FREQ_32M: usize = 32000000;
+pub const RCC_FREQ_30M: usize = 30000000;
+pub const RCC_FREQ_24M: usize = 24000000;
+pub const RCC_FREQ_4M: usize = 3600000;
+pub const RCC_FREQ_32768: usize = 32768;
+pub const RCC_FREQ_32000: usize = 32000;
 
 /// RCC CLK type
-pub const RCC_SYS_CLK: u32 = 0;
-pub const RCC_HCLK: u32 = 1;
-pub const RCC_PCLK0: u32 = 2;
-pub const RCC_PCLK1: u32 = 3;
+pub const RCC_SYS_CLK: usize = 0;
+pub const RCC_HCLK: usize = 1;
+pub const RCC_PCLK0: usize = 2;
+pub const RCC_PCLK1: usize = 3;
 
 /// RCC oscillator type
-pub const RCC_OSC_RCO48M: u32 = 0;
-pub const RCC_OSC_RCO32K: u32 = 1;
-pub const RCC_OSC_XO32K: u32 = 2;
-pub const RCC_OSC_XO24M: u32 = 3;
-pub const RCC_OSC_XO32M: u32 = 4;
-pub const RCC_OSC_RCO4M: u32 = 5;
+pub const RCC_OSC_RCO48M: usize = 0;
+pub const RCC_OSC_RCO32K: usize = 1;
+pub const RCC_OSC_XO32K: usize = 2;
+pub const RCC_OSC_XO24M: usize = 3;
+pub const RCC_OSC_XO32M: usize = 4;
+pub const RCC_OSC_RCO4M: usize = 5;
 
 /// The source of the SYSCLK
-pub const RCC_SYS_CLK_SOURCE_RCO48M_DIV2: u32 = RCC_CR0_SYSCLK_SEL_RCO48M_DIV2;
-pub const RCC_SYS_CLK_SOURCE_RCO48M: u32 = RCC_CR0_SYSCLK_SEL_RCO48M;
-pub const RCC_SYS_CLK_SOURCE_RCO32K: u32 = RCC_CR0_SYSCLK_SEL_RCO32K;
-pub const RCC_SYS_CLK_SOURCE_XO32K: u32 = RCC_CR0_SYSCLK_SEL_XO32K;
-pub const RCC_SYS_CLK_SOURCE_XO24M: u32 = RCC_CR0_SYSCLK_SEL_XO24M;
-pub const RCC_SYS_CLK_SOURCE_XO32M: u32 = RCC_CR0_SYSCLK_SEL_XO32M;
-pub const RCC_SYS_CLK_SOURCE_RCO4M: u32 = RCC_CR0_SYSCLK_SEL_RCO4M;
+pub const RCC_SYS_CLK_SOURCE_RCO48M_DIV2: usize = RCC_CR0_SYSCLK_SEL_RCO48M_DIV2;
+pub const RCC_SYS_CLK_SOURCE_RCO48M: usize = RCC_CR0_SYSCLK_SEL_RCO48M;
+pub const RCC_SYS_CLK_SOURCE_RCO32K: usize = RCC_CR0_SYSCLK_SEL_RCO32K;
+pub const RCC_SYS_CLK_SOURCE_XO32K: usize = RCC_CR0_SYSCLK_SEL_XO32K;
+pub const RCC_SYS_CLK_SOURCE_XO24M: usize = RCC_CR0_SYSCLK_SEL_XO24M;
+pub const RCC_SYS_CLK_SOURCE_XO32M: usize = RCC_CR0_SYSCLK_SEL_XO32M;
+pub const RCC_SYS_CLK_SOURCE_RCO4M: usize = RCC_CR0_SYSCLK_SEL_RCO4M;
 
 /// The source of the SYSTICK
-pub const RCC_SYSTICK_SOURCE_XO32K: u32 = RCC_CR0_STCLKEN_SEL_XO32K;
-pub const RCC_SYSTICK_SOURCE_RCO32K: u32 = RCC_CR0_STCLKEN_SEL_RCO32K;
-pub const RCC_SYSTICK_SOURCE_HCLK: u32 = RCC_CR0_STCLKEN_SEL_RCO32K + 1;
+pub const RCC_SYSTICK_SOURCE_XO32K: usize = RCC_CR0_STCLKEN_SEL_XO32K;
+pub const RCC_SYSTICK_SOURCE_RCO32K: usize = RCC_CR0_STCLKEN_SEL_RCO32K;
+pub const RCC_SYSTICK_SOURCE_HCLK: usize = RCC_CR0_STCLKEN_SEL_RCO32K + 1;
 
 /// The source of the MCOCLK
-pub const RCC_MCO_CLK_SOURCE_RCO32K: u32 = RCC_CR0_MCO_CLK_SEL_RCO32K;
-pub const RCC_MCO_CLK_SOURCE_XO32K: u32 = RCC_CR0_MCO_CLK_SEL_XO32K;
-pub const RCC_MCO_CLK_SOURCE_RCO4M: u32 = RCC_CR0_MCO_CLK_SEL_RCO4M;
-pub const RCC_MCO_CLK_SOURCE_XO24M: u32 = RCC_CR0_MCO_CLK_SEL_XO24M;
-pub const RCC_MCO_CLK_SOURCE_XO32M: u32 = RCC_CR0_MCO_CLK_SEL_XO32M;
-pub const RCC_MCO_CLK_SOURCE_RCO48M: u32 = RCC_CR0_MCO_CLK_SEL_RCO48M;
-pub const RCC_MCO_CLK_SOURCE_SYSCLK: u32 = RCC_CR0_MCO_CLK_SEL_SYSCLCK;
+pub const RCC_MCO_CLK_SOURCE_RCO32K: usize = RCC_CR0_MCO_CLK_SEL_RCO32K;
+pub const RCC_MCO_CLK_SOURCE_XO32K: usize = RCC_CR0_MCO_CLK_SEL_XO32K;
+pub const RCC_MCO_CLK_SOURCE_RCO4M: usize = RCC_CR0_MCO_CLK_SEL_RCO4M;
+pub const RCC_MCO_CLK_SOURCE_XO24M: usize = RCC_CR0_MCO_CLK_SEL_XO24M;
+pub const RCC_MCO_CLK_SOURCE_XO32M: usize = RCC_CR0_MCO_CLK_SEL_XO32M;
+pub const RCC_MCO_CLK_SOURCE_RCO48M: usize = RCC_CR0_MCO_CLK_SEL_RCO48M;
+pub const RCC_MCO_CLK_SOURCE_SYSCLK: usize = RCC_CR0_MCO_CLK_SEL_SYSCLCK;
 
 /// The source of the UART0 CLK
-pub const RCC_UART0_CLK_SOURCE_PCLK0: u32 = RCC_CR2_UART0_CLK_SEL_PCLK0;
-pub const RCC_UART0_CLK_SOURCE_RCO4M: u32 = RCC_CR2_UART0_CLK_SEL_RCO4M;
-pub const RCC_UART0_CLK_SOURCE_XO32K: u32 = RCC_CR2_UART0_CLK_SEL_XO32K;
-pub const RCC_UART0_CLK_SOURCE_XO24M: u32 = RCC_CR2_UART0_CLK_SEL_XO24M;
+pub const RCC_UART0_CLK_SOURCE_PCLK0: usize = RCC_CR2_UART0_CLK_SEL_PCLK0;
+pub const RCC_UART0_CLK_SOURCE_RCO4M: usize = RCC_CR2_UART0_CLK_SEL_RCO4M;
+pub const RCC_UART0_CLK_SOURCE_XO32K: usize = RCC_CR2_UART0_CLK_SEL_XO32K;
+pub const RCC_UART0_CLK_SOURCE_XO24M: usize = RCC_CR2_UART0_CLK_SEL_XO24M;
 
 /// The source of the UART1 CLK
-pub const RCC_UART1_CLK_SOURCE_PCLK0: u32 = RCC_CR2_UART1_CLK_SEL_PCLK0;
-pub const RCC_UART1_CLK_SOURCE_RCO4M: u32 = RCC_CR2_UART1_CLK_SEL_RCO4M;
-pub const RCC_UART1_CLK_SOURCE_XO32K: u32 = RCC_CR2_UART1_CLK_SEL_XO32K;
-pub const RCC_UART1_CLK_SOURCE_XO24M: u32 = RCC_CR2_UART1_CLK_SEL_XO24M;
+pub const RCC_UART1_CLK_SOURCE_PCLK0: usize = RCC_CR2_UART1_CLK_SEL_PCLK0;
+pub const RCC_UART1_CLK_SOURCE_RCO4M: usize = RCC_CR2_UART1_CLK_SEL_RCO4M;
+pub const RCC_UART1_CLK_SOURCE_XO32K: usize = RCC_CR2_UART1_CLK_SEL_XO32K;
+pub const RCC_UART1_CLK_SOURCE_XO24M: usize = RCC_CR2_UART1_CLK_SEL_XO24M;
 
 /// The source of the UART2 CLK
-pub const RCC_UART2_CLK_SOURCE_PCLK1: u32 = RCC_CR2_UART2_CLK_SEL_PCLK1;
-pub const RCC_UART2_CLK_SOURCE_RCO4M: u32 = RCC_CR2_UART2_CLK_SEL_RCO4M;
-pub const RCC_UART2_CLK_SOURCE_XO32K: u32 = RCC_CR2_UART2_CLK_SEL_XO32K;
-pub const RCC_UART2_CLK_SOURCE_XO24M: u32 = RCC_CR2_UART2_CLK_SEL_XO24M;
+pub const RCC_UART2_CLK_SOURCE_PCLK1: usize = RCC_CR2_UART2_CLK_SEL_PCLK1;
+pub const RCC_UART2_CLK_SOURCE_RCO4M: usize = RCC_CR2_UART2_CLK_SEL_RCO4M;
+pub const RCC_UART2_CLK_SOURCE_XO32K: usize = RCC_CR2_UART2_CLK_SEL_XO32K;
+pub const RCC_UART2_CLK_SOURCE_XO24M: usize = RCC_CR2_UART2_CLK_SEL_XO24M;
 
 /// The source of the UART3 CLK
-pub const RCC_UART3_CLK_SOURCE_PCLK1: u32 = RCC_CR2_UART3_CLK_SEL_PCLK1;
-pub const RCC_UART3_CLK_SOURCE_RCO4M: u32 = RCC_CR2_UART3_CLK_SEL_RCO4M;
-pub const RCC_UART3_CLK_SOURCE_XO32K: u32 = RCC_CR2_UART3_CLK_SEL_XO32K;
-pub const RCC_UART3_CLK_SOURCE_XO24M: u32 = RCC_CR2_UART3_CLK_SEL_XO24M;
+pub const RCC_UART3_CLK_SOURCE_PCLK1: usize = RCC_CR2_UART3_CLK_SEL_PCLK1;
+pub const RCC_UART3_CLK_SOURCE_RCO4M: usize = RCC_CR2_UART3_CLK_SEL_RCO4M;
+pub const RCC_UART3_CLK_SOURCE_XO32K: usize = RCC_CR2_UART3_CLK_SEL_XO32K;
+pub const RCC_UART3_CLK_SOURCE_XO24M: usize = RCC_CR2_UART3_CLK_SEL_XO24M;
 
 /// The source of the LPTIMER0 CLK
-pub const RCC_LPTIMER0_CLK_SOURCE_PCLK0: u32 = RCC_CR1_LPTIMER0_CLK_SEL_PCLK0;
-pub const RCC_LPTIMER0_CLK_SOURCE_RCO4M: u32 = RCC_CR1_LPTIMER0_CLK_SEL_RCO4M;
-pub const RCC_LPTIMER0_CLK_SOURCE_XO32K: u32 = RCC_CR1_LPTIMER0_CLK_SEL_XO32K;
-pub const RCC_LPTIMER0_CLK_SOURCE_RCO32K: u32 = RCC_CR1_LPTIMER0_CLK_SEL_RCO32K;
-pub const RCC_LPTIMER0_CLK_SOURCE_EXTCLK: u32 = RCC_CR1_LPTIMER0_CLK_SEL_RCO32K + 1;
+pub const RCC_LPTIMER0_CLK_SOURCE_PCLK0: usize = RCC_CR1_LPTIMER0_CLK_SEL_PCLK0;
+pub const RCC_LPTIMER0_CLK_SOURCE_RCO4M: usize = RCC_CR1_LPTIMER0_CLK_SEL_RCO4M;
+pub const RCC_LPTIMER0_CLK_SOURCE_XO32K: usize = RCC_CR1_LPTIMER0_CLK_SEL_XO32K;
+pub const RCC_LPTIMER0_CLK_SOURCE_RCO32K: usize = RCC_CR1_LPTIMER0_CLK_SEL_RCO32K;
+pub const RCC_LPTIMER0_CLK_SOURCE_EXTCLK: usize = RCC_CR1_LPTIMER0_CLK_SEL_RCO32K + 1;
 
 /// The source of the LPTIMER1 CLK
-pub const RCC_LPTIMER1_CLK_SOURCE_PCLK0: u32 = RCC_CR1_LPTIMER1_CLK_SEL_PCLK0;
-pub const RCC_LPTIMER1_CLK_SOURCE_RCO4M: u32 = RCC_CR1_LPTIMER1_CLK_SEL_RCO4M;
-pub const RCC_LPTIMER1_CLK_SOURCE_XO32K: u32 = RCC_CR1_LPTIMER1_CLK_SEL_XO32K;
-pub const RCC_LPTIMER1_CLK_SOURCE_RCO32K: u32 = RCC_CR1_LPTIMER1_CLK_SEL_RCO32K;
-pub const RCC_LPTIMER1_CLK_SOURCE_EXTCLK: u32 = RCC_CR1_LPTIMER1_CLK_SEL_RCO32K + 1;
+pub const RCC_LPTIMER1_CLK_SOURCE_PCLK0: usize = RCC_CR1_LPTIMER1_CLK_SEL_PCLK0;
+pub const RCC_LPTIMER1_CLK_SOURCE_RCO4M: usize = RCC_CR1_LPTIMER1_CLK_SEL_RCO4M;
+pub const RCC_LPTIMER1_CLK_SOURCE_XO32K: usize = RCC_CR1_LPTIMER1_CLK_SEL_XO32K;
+pub const RCC_LPTIMER1_CLK_SOURCE_RCO32K: usize = RCC_CR1_LPTIMER1_CLK_SEL_RCO32K;
+pub const RCC_LPTIMER1_CLK_SOURCE_EXTCLK: usize = RCC_CR1_LPTIMER1_CLK_SEL_RCO32K + 1;
 
 /// The source of the LCD CLK
-pub const RCC_LCD_CLK_SOURCE_XO32K: u32 = RCC_CR1_LCD_CLK_SEL_XO32K;
-pub const RCC_LCD_CLK_SOURCE_RCO32K: u32 = RCC_CR1_LCD_CLK_SEL_RCO32K;
-pub const RCC_LCD_CLK_SOURCE_RCO4M: u32 = RCC_CR1_LCD_CLK_SEL_RCO4M;
+pub const RCC_LCD_CLK_SOURCE_XO32K: usize = RCC_CR1_LCD_CLK_SEL_XO32K;
+pub const RCC_LCD_CLK_SOURCE_RCO32K: usize = RCC_CR1_LCD_CLK_SEL_RCO32K;
+pub const RCC_LCD_CLK_SOURCE_RCO4M: usize = RCC_CR1_LCD_CLK_SEL_RCO4M;
 
 /// The source of the LPUART CLK
-pub const RCC_LPUART_CLK_SOURCE_XO32K: u32 = RCC_CR1_LPUART_CLK_SEL_XO32K;
-pub const RCC_LPUART_CLK_SOURCE_RCO32K: u32 = RCC_CR1_LPUART_CLK_SEL_RCO32K;
-pub const RCC_LPUART_CLK_SOURCE_RCO4M: u32 = RCC_CR1_LPUART_CLK_SEL_RCO4M;
+pub const RCC_LPUART_CLK_SOURCE_XO32K: usize = RCC_CR1_LPUART_CLK_SEL_XO32K;
+pub const RCC_LPUART_CLK_SOURCE_RCO32K: usize = RCC_CR1_LPUART_CLK_SEL_RCO32K;
+pub const RCC_LPUART_CLK_SOURCE_RCO4M: usize = RCC_CR1_LPUART_CLK_SEL_RCO4M;
 
 /// The source of the RTC CLK
-pub const RCC_RTC_CLK_SOURCE_XO32K: u32 = RCC_CR1_RTC_CLK_SEL_XO32K;
-pub const RCC_RTC_CLK_SOURCE_RCO32K: u32 = RCC_CR1_RTC_CLK_SEL_RCO32K;
+pub const RCC_RTC_CLK_SOURCE_XO32K: usize = RCC_CR1_RTC_CLK_SEL_XO32K;
+pub const RCC_RTC_CLK_SOURCE_RCO32K: usize = RCC_CR1_RTC_CLK_SEL_RCO32K;
 
 /// The source of the IWDG CLK
-pub const RCC_IWDG_CLK_SOURCE_XO32K: u32 = RCC_CR1_IWDG_CLK_SEL_XO32K;
-pub const RCC_IWDG_CLK_SOURCE_RCO32K: u32 = RCC_CR1_IWDG_CLK_SEL_RCO32K;
+pub const RCC_IWDG_CLK_SOURCE_XO32K: usize = RCC_CR1_IWDG_CLK_SEL_XO32K;
+pub const RCC_IWDG_CLK_SOURCE_RCO32K: usize = RCC_CR1_IWDG_CLK_SEL_RCO32K;
 
 /// The source of the ADC CLK
-pub const RCC_ADC_CLK_SOURCE_PCLK1: u32 = RCC_CR2_ADC_CLK_SEL_PCLK1;
-pub const RCC_ADC_CLK_SOURCE_SYSCLK: u32 = RCC_CR2_ADC_CLK_SEL_SYSCLK;
-pub const RCC_ADC_CLK_SOURCE_RCO48M: u32 = RCC_CR2_ADC_CLK_SEL_RCO48M;
+pub const RCC_ADC_CLK_SOURCE_PCLK1: usize = RCC_CR2_ADC_CLK_SEL_PCLK1;
+pub const RCC_ADC_CLK_SOURCE_SYSCLK: usize = RCC_CR2_ADC_CLK_SEL_SYSCLK;
+pub const RCC_ADC_CLK_SOURCE_RCO48M: usize = RCC_CR2_ADC_CLK_SEL_RCO48M;
 
 /// The source of the QSPI CLK
-pub const RCC_QSPI_CLK_SOURCE_HCLK: u32 = RCC_CR2_QSPI_CLK_SEL_HCLK;
-pub const RCC_QSPI_CLK_SOURCE_SYSCLK: u32 = RCC_CR2_QSPI_CLK_SEL_SYSCLK;
+pub const RCC_QSPI_CLK_SOURCE_HCLK: usize = RCC_CR2_QSPI_CLK_SEL_HCLK;
+pub const RCC_QSPI_CLK_SOURCE_SYSCLK: usize = RCC_CR2_QSPI_CLK_SEL_SYSCLK;
 
 /// The source of the I2S CLK
-pub const RCC_I2S_CLK_SOURCE_PCLK0: u32 = RCC_CR2_I2S_CLK_SEL_PCLK0;
-pub const RCC_I2S_CLK_SOURCE_XO24M: u32 = RCC_CR2_I2S_CLK_SEL_XO24M;
-pub const RCC_I2S_CLK_SOURCE_XO32M: u32 = RCC_CR2_I2S_CLK_SEL_XO32M;
-pub const RCC_I2S_CLK_SOURCE_EXT_CLK: u32 = RCC_CR2_I2S_CLK_SEL_EXT_CLK;
+pub const RCC_I2S_CLK_SOURCE_PCLK0: usize = RCC_CR2_I2S_CLK_SEL_PCLK0;
+pub const RCC_I2S_CLK_SOURCE_XO24M: usize = RCC_CR2_I2S_CLK_SEL_XO24M;
+pub const RCC_I2S_CLK_SOURCE_XO32M: usize = RCC_CR2_I2S_CLK_SEL_XO32M;
+pub const RCC_I2S_CLK_SOURCE_EXT_CLK: usize = RCC_CR2_I2S_CLK_SEL_EXT_CLK;
 
 /// The divider of the HCLK
-pub const RCC_HCLK_DIV_1: u32 = RCC_CR0_HCLK_DIV_1;
-pub const RCC_HCLK_DIV_2: u32 = RCC_CR0_HCLK_DIV_2;
-pub const RCC_HCLK_DIV_4: u32 = RCC_CR0_HCLK_DIV_4;
-pub const RCC_HCLK_DIV_8: u32 = RCC_CR0_HCLK_DIV_8;
-pub const RCC_HCLK_DIV_16: u32 = RCC_CR0_HCLK_DIV_16;
-pub const RCC_HCLK_DIV_32: u32 = RCC_CR0_HCLK_DIV_32;
-pub const RCC_HCLK_DIV_64: u32 = RCC_CR0_HCLK_DIV_64;
-pub const RCC_HCLK_DIV_128: u32 = RCC_CR0_HCLK_DIV_128;
-pub const RCC_HCLK_DIV_256: u32 = RCC_CR0_HCLK_DIV_256;
-pub const RCC_HCLK_DIV_512: u32 = RCC_CR0_HCLK_DIV_512;
+pub const RCC_HCLK_DIV_1: usize = RCC_CR0_HCLK_DIV_1;
+pub const RCC_HCLK_DIV_2: usize = RCC_CR0_HCLK_DIV_2;
+pub const RCC_HCLK_DIV_4: usize = RCC_CR0_HCLK_DIV_4;
+pub const RCC_HCLK_DIV_8: usize = RCC_CR0_HCLK_DIV_8;
+pub const RCC_HCLK_DIV_16: usize = RCC_CR0_HCLK_DIV_16;
+pub const RCC_HCLK_DIV_32: usize = RCC_CR0_HCLK_DIV_32;
+pub const RCC_HCLK_DIV_64: usize = RCC_CR0_HCLK_DIV_64;
+pub const RCC_HCLK_DIV_128: usize = RCC_CR0_HCLK_DIV_128;
+pub const RCC_HCLK_DIV_256: usize = RCC_CR0_HCLK_DIV_256;
+pub const RCC_HCLK_DIV_512: usize = RCC_CR0_HCLK_DIV_512;
 
 /// The divider of the PCLK0
-pub const RCC_PCLK0_DIV_1: u32 = RCC_CR0_PCLK0_DIV_1;
-pub const RCC_PCLK0_DIV_2: u32 = RCC_CR0_PCLK0_DIV_2;
-pub const RCC_PCLK0_DIV_4: u32 = RCC_CR0_PCLK0_DIV_4;
-pub const RCC_PCLK0_DIV_8: u32 = RCC_CR0_PCLK0_DIV_8;
-pub const RCC_PCLK0_DIV_16: u32 = RCC_CR0_PCLK0_DIV_16;
+pub const RCC_PCLK0_DIV_1: usize = RCC_CR0_PCLK0_DIV_1;
+pub const RCC_PCLK0_DIV_2: usize = RCC_CR0_PCLK0_DIV_2;
+pub const RCC_PCLK0_DIV_4: usize = RCC_CR0_PCLK0_DIV_4;
+pub const RCC_PCLK0_DIV_8: usize = RCC_CR0_PCLK0_DIV_8;
+pub const RCC_PCLK0_DIV_16: usize = RCC_CR0_PCLK0_DIV_16;
 
 /// The divider of the PCLK1
-pub const RCC_PCLK1_DIV_1: u32 = RCC_CR0_PCLK1_DIV_1;
-pub const RCC_PCLK1_DIV_2: u32 = RCC_CR0_PCLK1_DIV_2;
-pub const RCC_PCLK1_DIV_4: u32 = RCC_CR0_PCLK1_DIV_4;
-pub const RCC_PCLK1_DIV_8: u32 = RCC_CR0_PCLK1_DIV_8;
-pub const RCC_PCLK1_DIV_16: u32 = RCC_CR0_PCLK1_DIV_16;
+pub const RCC_PCLK1_DIV_1: usize = RCC_CR0_PCLK1_DIV_1;
+pub const RCC_PCLK1_DIV_2: usize = RCC_CR0_PCLK1_DIV_2;
+pub const RCC_PCLK1_DIV_4: usize = RCC_CR0_PCLK1_DIV_4;
+pub const RCC_PCLK1_DIV_8: usize = RCC_CR0_PCLK1_DIV_8;
+pub const RCC_PCLK1_DIV_16: usize = RCC_CR0_PCLK1_DIV_16;
 
 /// The divider of the MCO CLK
-pub const RCC_MCO_CLK_DIV_1: u32 = RCC_CR0_MCO_CLK_DIV_1;
-pub const RCC_MCO_CLK_DIV_2: u32 = RCC_CR0_MCO_CLK_DIV_2;
-pub const RCC_MCO_CLK_DIV_4: u32 = RCC_CR0_MCO_CLK_DIV_4;
-pub const RCC_MCO_CLK_DIV_8: u32 = RCC_CR0_MCO_CLK_DIV_8;
-pub const RCC_MCO_CLK_DIV_16: u32 = RCC_CR0_MCO_CLK_DIV_16;
+pub const RCC_MCO_CLK_DIV_1: usize = RCC_CR0_MCO_CLK_DIV_1;
+pub const RCC_MCO_CLK_DIV_2: usize = RCC_CR0_MCO_CLK_DIV_2;
+pub const RCC_MCO_CLK_DIV_4: usize = RCC_CR0_MCO_CLK_DIV_4;
+pub const RCC_MCO_CLK_DIV_8: usize = RCC_CR0_MCO_CLK_DIV_8;
+pub const RCC_MCO_CLK_DIV_16: usize = RCC_CR0_MCO_CLK_DIV_16;
 
 /// RCC peripherals
-pub const RCC_PERIPHERAL_SAC: u32 = 0x00;
-pub const RCC_PERIPHERAL_SEC: u32 = 0x01;
-pub const RCC_PERIPHERAL_CRC: u32 = 0x02;
-pub const RCC_PERIPHERAL_RTC: u32 = 0x03;
-pub const RCC_PERIPHERAL_WDG: u32 = 0x04;
-pub const RCC_PERIPHERAL_IWDG: u32 = 0x05;
-pub const RCC_PERIPHERAL_LPTIMER0: u32 = 0x06;
-pub const RCC_PERIPHERAL_BSTIMER1: u32 = 0x07;
-pub const RCC_PERIPHERAL_BSTIMER0: u32 = 0x08;
-pub const RCC_PERIPHERAL_TIMER3: u32 = 0x09;
-pub const RCC_PERIPHERAL_TIMER2: u32 = 0x0A;
-pub const RCC_PERIPHERAL_TIMER1: u32 = 0x0B;
-pub const RCC_PERIPHERAL_TIMER0: u32 = 0x0C;
-pub const RCC_PERIPHERAL_GPIOA: u32 = 0x0D;
-pub const RCC_PERIPHERAL_GPIOB: u32 = 0x20;
-pub const RCC_PERIPHERAL_GPIOC: u32 = 0x21;
-pub const RCC_PERIPHERAL_GPIOD: u32 = 0x22;
-pub const RCC_PERIPHERAL_LORA: u32 = 0x0E;
-pub const RCC_PERIPHERAL_DAC: u32 = 0x0F;
-pub const RCC_PERIPHERAL_LCD: u32 = 0x10;
-pub const RCC_PERIPHERAL_AFEC: u32 = 0x11;
-pub const RCC_PERIPHERAL_ADC: u32 = 0x12;
-pub const RCC_PERIPHERAL_I2C2: u32 = 0x14;
-pub const RCC_PERIPHERAL_I2C1: u32 = 0x15;
-pub const RCC_PERIPHERAL_I2C0: u32 = 0x16;
-pub const RCC_PERIPHERAL_QSPI: u32 = 0x17;
-pub const RCC_PERIPHERAL_SSP2: u32 = 0x18;
-pub const RCC_PERIPHERAL_SSP1: u32 = 0x19;
-pub const RCC_PERIPHERAL_SSP0: u32 = 0x1A;
-pub const RCC_PERIPHERAL_LPUART: u32 = 0x1B;
-pub const RCC_PERIPHERAL_UART3: u32 = 0x1C;
-pub const RCC_PERIPHERAL_UART2: u32 = 0x1D;
-pub const RCC_PERIPHERAL_UART1: u32 = 0x1E;
-pub const RCC_PERIPHERAL_UART0: u32 = 0x1F;
-pub const RCC_PERIPHERAL_DMA1: u32 = 0x30;
-pub const RCC_PERIPHERAL_DMA0: u32 = 0x31;
-pub const RCC_PERIPHERAL_I2S: u32 = 0x32;
-pub const RCC_PERIPHERAL_RNGC: u32 = 0x33;
-pub const RCC_PERIPHERAL_LPTIMER1: u32 = 0x34;
-pub const RCC_PERIPHERAL_SYSCFG: u32 = 0x40;
-pub const RCC_PERIPHERAL_PWR: u32 = 0x41;
+pub const RCC_PERIPHERAL_SAC: usize = 0x00;
+pub const RCC_PERIPHERAL_SEC: usize = 0x01;
+pub const RCC_PERIPHERAL_CRC: usize = 0x02;
+pub const RCC_PERIPHERAL_RTC: usize = 0x03;
+pub const RCC_PERIPHERAL_WDG: usize = 0x04;
+pub const RCC_PERIPHERAL_IWDG: usize = 0x05;
+pub const RCC_PERIPHERAL_LPTIMER0: usize = 0x06;
+pub const RCC_PERIPHERAL_BSTIMER1: usize = 0x07;
+pub const RCC_PERIPHERAL_BSTIMER0: usize = 0x08;
+pub const RCC_PERIPHERAL_TIMER3: usize = 0x09;
+pub const RCC_PERIPHERAL_TIMER2: usize = 0x0A;
+pub const RCC_PERIPHERAL_TIMER1: usize = 0x0B;
+pub const RCC_PERIPHERAL_TIMER0: usize = 0x0C;
+pub const RCC_PERIPHERAL_GPIOA: usize = 0x0D;
+pub const RCC_PERIPHERAL_GPIOB: usize = 0x20;
+pub const RCC_PERIPHERAL_GPIOC: usize = 0x21;
+pub const RCC_PERIPHERAL_GPIOD: usize = 0x22;
+pub const RCC_PERIPHERAL_LORA: usize = 0x0E;
+pub const RCC_PERIPHERAL_DAC: usize = 0x0F;
+pub const RCC_PERIPHERAL_LCD: usize = 0x10;
+pub const RCC_PERIPHERAL_AFEC: usize = 0x11;
+pub const RCC_PERIPHERAL_ADC: usize = 0x12;
+pub const RCC_PERIPHERAL_I2C2: usize = 0x14;
+pub const RCC_PERIPHERAL_I2C1: usize = 0x15;
+pub const RCC_PERIPHERAL_I2C0: usize = 0x16;
+pub const RCC_PERIPHERAL_QSPI: usize = 0x17;
+pub const RCC_PERIPHERAL_SSP2: usize = 0x18;
+pub const RCC_PERIPHERAL_SSP1: usize = 0x19;
+pub const RCC_PERIPHERAL_SSP0: usize = 0x1A;
+pub const RCC_PERIPHERAL_LPUART: usize = 0x1B;
+pub const RCC_PERIPHERAL_UART3: usize = 0x1C;
+pub const RCC_PERIPHERAL_UART2: usize = 0x1D;
+pub const RCC_PERIPHERAL_UART1: usize = 0x1E;
+pub const RCC_PERIPHERAL_UART0: usize = 0x1F;
+pub const RCC_PERIPHERAL_DMA1: usize = 0x30;
+pub const RCC_PERIPHERAL_DMA0: usize = 0x31;
+pub const RCC_PERIPHERAL_I2S: usize = 0x32;
+pub const RCC_PERIPHERAL_RNGC: usize = 0x33;
+pub const RCC_PERIPHERAL_LPTIMER1: usize = 0x34;
+pub const RCC_PERIPHERAL_SYSCFG: usize = 0x40;
+pub const RCC_PERIPHERAL_PWR: usize = 0x41;
 
 /// RCC reset mask
-pub const RCC_RESET_MASK_SEC: u32 = 0x02;
-pub const RCC_RESET_MASK_CPU: u32 = 0x04;
-pub const RCC_RESET_MASK_EFC: u32 = 0x08;
-pub const RCC_RESET_MASK_WDG: u32 = 0x10;
-pub const RCC_RESET_MASK_IWDG: u32 = 0x20;
-pub const RCC_RESET_MASK_ALL: u32 = 0x3E;
+pub const RCC_RESET_MASK_SEC: usize = 0x02;
+pub const RCC_RESET_MASK_CPU: usize = 0x04;
+pub const RCC_RESET_MASK_EFC: usize = 0x08;
+pub const RCC_RESET_MASK_WDG: usize = 0x10;
+pub const RCC_RESET_MASK_IWDG: usize = 0x20;
+pub const RCC_RESET_MASK_ALL: usize = 0x3E;
 
 define_reg! {
     Rcc
     __Rcc {
-        cr0: VolatileRW<u32>,
-        cr1: VolatileRW<u32>,
-        cr2: VolatileRW<u32>,
-        cgr0: VolatileRW<u32>,
-        cgr1: VolatileRW<u32>,
-        cgr2: VolatileRW<u32>,
-        rst0: VolatileRW<u32>,
-        rst1: VolatileRW<u32>,
-        rst_sr: VolatileRW<u32>,
-        rst_cr: VolatileRW<u32>,
-        sr: VolatileRO<u32>,
-        sr1: VolatileRO<u32>,
-        cr3: VolatileRW<u32>,
+        cr0: VolatileRW<usize>,
+        cr1: VolatileRW<usize>,
+        cr2: VolatileRW<usize>,
+        cgr0: VolatileRW<usize>,
+        cgr1: VolatileRW<usize>,
+        cgr2: VolatileRW<usize>,
+        rst0: VolatileRW<usize>,
+        rst1: VolatileRW<usize>,
+        rst_sr: VolatileRW<usize>,
+        rst_cr: VolatileRW<usize>,
+        sr: VolatileRO<usize>,
+        sr1: VolatileRO<usize>,
+        cr3: VolatileRW<usize>,
     }
 }
 
 impl Rcc {
     /// Get the frequency of the specified clock
-    pub fn get_clk_freq(&self, clk: u32) -> u32 {
+    pub fn get_clk_freq(&self, clk: usize) -> usize {
         let mut freq;
         let mut tmp = self.cr0.read() & RCC_CR0_SYSCLK_SEL_MASK;
         let sysclk_freq = match tmp {
@@ -274,7 +274,7 @@ impl Rcc {
     }
 
     /// Enable/Disable the specified oscillator
-    pub fn enable_oscillator(&self, osc: u32, new_state: bool) {
+    pub fn enable_oscillator(&self, osc: usize, new_state: bool) {
         match osc {
             RCC_OSC_RCO48M => {
                 let value = analog_read!(0x06);
@@ -350,12 +350,12 @@ impl Rcc {
     }
 
     /// Set the source of the SYSCLK
-    pub fn set_sys_clk_src(&self, clk_src: u32) {
+    pub fn set_sys_clk_src(&self, clk_src: usize) {
         set_reg_bits!(self.cr0, RCC_CR0_SYSCLK_SEL_MASK, clk_src);
     }
 
     /// Set the source of the SYSTICK
-    pub fn set_systick_src(&self, clk_src: u32) {
+    pub fn set_systick_src(&self, clk_src: usize) {
         if clk_src == RCC_SYSTICK_SOURCE_HCLK {
             toggle_reg_bits!(SYSTICK.ctrl, SYSTICK_CTRL_CLKSOURCE_MSK, true);
         } else {
@@ -364,7 +364,7 @@ impl Rcc {
     }
 
     /// Set the source of the MCO clock
-    pub fn set_mco_clk_src(&self, clk_src: u32) {
+    pub fn set_mco_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cr0, RCC_CR0_MCO_CLK_SEL_MASK, false);
             while self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
@@ -373,7 +373,7 @@ impl Rcc {
     }
 
     /// Set the source of the UART0 CLK
-    pub fn set_uart0_clk_src(&self, clk_src: u32) {
+    pub fn set_uart0_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_UART0_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_UART0_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_UART0_CLK_EN_SYNC != 0 {}
@@ -382,7 +382,7 @@ impl Rcc {
     }
 
     /// Set the source of the UART1 CLK
-    pub fn set_uart1_clk_src(&self, clk_src: u32) {
+    pub fn set_uart1_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_UART1_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_UART1_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_UART1_CLK_EN_SYNC != 0 {}
@@ -391,7 +391,7 @@ impl Rcc {
     }
 
     /// Set the source of the UART2 CLK
-    pub fn set_uart2_clk_src(&self, clk_src: u32) {
+    pub fn set_uart2_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_UART2_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_UART2_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_UART2_CLK_EN_SYNC != 0 {}
@@ -400,7 +400,7 @@ impl Rcc {
     }
 
     /// Set the source of the UART3 CLK
-    pub fn set_uart3_clk_src(&self, clk_src: u32) {
+    pub fn set_uart3_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_UART3_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_UART3_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_UART3_CLK_EN_SYNC != 0 {}
@@ -409,7 +409,7 @@ impl Rcc {
     }
 
     /// Set the source of the LPTIMER0 CLK
-    pub fn set_lptimer0_clk_src(&self, clk_src: u32) {
+    pub fn set_lptimer0_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_LPTIMER0_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_LPTIMER0_CLK_EN_SYNC != 0 {}
@@ -423,7 +423,7 @@ impl Rcc {
     }
 
     /// Set the source of the LPTIMER1 CLK
-    pub fn set_lptimer1_clk_src(&self, clk_src: u32) {
+    pub fn set_lptimer1_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_LPTIMER1_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_LPTIMER1_CLK_EN_SYNC != 0 {}
@@ -437,7 +437,7 @@ impl Rcc {
     }
 
     /// Set the source of the LCD CLK
-    pub fn set_lcd_clk_src(&self, clk_src: u32) {
+    pub fn set_lcd_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_LCD_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_LCD_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_LCD_CLK_EN_SYNC != 0 {}
@@ -446,7 +446,7 @@ impl Rcc {
     }
 
     /// Set the source of the LPUART CLK
-    pub fn set_lpuart_clk_src(&self, clk_src: u32) {
+    pub fn set_lpuart_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_LPUART_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_LPUART_CLK_EN_SYNC != 0 {}
@@ -455,7 +455,7 @@ impl Rcc {
     }
 
     /// Set the source of the RTC CLK
-    pub fn set_rtc_clk_src(&self, clk_src: u32) {
+    pub fn set_rtc_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_RTC_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_RTC_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_RTC_CLK_EN_SYNC != 0 {}
@@ -464,7 +464,7 @@ impl Rcc {
     }
 
     /// Set the source of the IWDG CLK
-    pub fn set_iwdg_clk_src(&self, clk_src: u32) {
+    pub fn set_iwdg_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_IWDG_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_IWDG_CLK_EN_SYNC != 0 {}
@@ -473,7 +473,7 @@ impl Rcc {
     }
 
     /// Set the source of the ADC CLK
-    pub fn set_adc_clk_src(&self, clk_src: u32) {
+    pub fn set_adc_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_ADC_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr0, RCC_CGR0_ADC_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_ADC_CLK_EN_SYNC != 0 {}
@@ -482,7 +482,7 @@ impl Rcc {
     }
 
     /// Set the source of the QSPI CLK
-    pub fn set_qspi_clk_src(&self, clk_src: u32) {
+    pub fn set_qspi_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_QSPI_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_QSPI_CLK_EN_SYNC != 0 {}
@@ -491,7 +491,7 @@ impl Rcc {
     }
 
     /// Set the source of the I2S CLK
-    pub fn set_i2s_clk_src(&self, clk_src: u32) {
+    pub fn set_i2s_clk_src(&self, clk_src: usize) {
         if self.sr1.read() & RCC_SR1_I2S_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cgr1, RCC_CGR1_I2S_CLK_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_I2S_CLK_EN_SYNC != 0 {}
@@ -500,12 +500,12 @@ impl Rcc {
     }
 
     /// Get the source of the SYSCLK
-    pub fn get_sys_clk_src(&self) -> u32 {
+    pub fn get_sys_clk_src(&self) -> usize {
         self.cr0.read() & RCC_CR0_SYSCLK_SEL_MASK
     }
 
     /// Get the source of the SYSTICK
-    pub fn get_systick_src(&self) -> u32 {
+    pub fn get_systick_src(&self) -> usize {
         if SYSTICK.ctrl.read() & SYSTICK_CTRL_CLKSOURCE_MSK != 0 {
             RCC_SYSTICK_SOURCE_HCLK
         } else {
@@ -514,32 +514,32 @@ impl Rcc {
     }
 
     /// Get the source of the MCO clock
-    pub fn get_mco_clk_src(&self) -> u32 {
+    pub fn get_mco_clk_src(&self) -> usize {
         self.cr0.read() & RCC_CR0_MCO_CLK_SEL_MASK
     }
 
     /// Get the source of the UART0 CLK
-    pub fn get_uart0_clk_src(&self) -> u32 {
+    pub fn get_uart0_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_UART0_CLK_SEL_MASK
     }
 
     /// Get the source of the UART1 CLK
-    pub fn get_uart1_clk_src(&self) -> u32 {
+    pub fn get_uart1_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_UART1_CLK_SEL_MASK
     }
 
     /// Get the source of the UART2 CLK
-    pub fn get_uart2_clk_src(&self) -> u32 {
+    pub fn get_uart2_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_UART2_CLK_SEL_MASK
     }
 
     /// Get the source of the UART3 CLK
-    pub fn get_uart3_clk_src(&self) -> u32 {
+    pub fn get_uart3_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_UART3_CLK_SEL_MASK
     }
 
     /// Get the source of the LPTIMER0 CLK
-    pub fn get_lptimer0_get_clk_src(&self) -> u32 {
+    pub fn get_lptimer0_get_clk_src(&self) -> usize {
         if self.cr1.read() & RCC_CR1_LPTIMER0_EXTCLK_SEL_MASK != 0 {
             RCC_LPTIMER0_CLK_SOURCE_EXTCLK
         } else {
@@ -548,7 +548,7 @@ impl Rcc {
     }
 
     /// Get the source of the LPTIMER1 CLK
-    pub fn get_lptimer1_get_clk_src(&self) -> u32 {
+    pub fn get_lptimer1_get_clk_src(&self) -> usize {
         if self.cr1.read() & RCC_CR1_LPTIMER1_EXTCLK_SEL_MASK != 0 {
             RCC_LPTIMER1_CLK_SOURCE_EXTCLK
         } else {
@@ -557,47 +557,47 @@ impl Rcc {
     }
 
     /// Get the source of the LCD CLK
-    pub fn get_lcd_get_clk_src(&self) -> u32 {
+    pub fn get_lcd_get_clk_src(&self) -> usize {
         self.cr1.read() & RCC_CR1_LCD_CLK_SEL_MASK
     }
 
     /// Get the source of the LPUART CLK
-    pub fn get_lpuart_clk_src(&self) -> u32 {
+    pub fn get_lpuart_clk_src(&self) -> usize {
         self.cr1.read() & RCC_CR1_LPUART_CLK_SEL_MASK
     }
 
     /// Get the source of the RTC CLK
-    pub fn get_rtc_clk_src(&self) -> u32 {
+    pub fn get_rtc_clk_src(&self) -> usize {
         self.cr1.read() & RCC_CR1_RTC_CLK_SEL_MASK
     }
 
     /// Get the source of the IWDG CLK
-    pub fn get_iwdg_clk_src(&self) -> u32 {
+    pub fn get_iwdg_clk_src(&self) -> usize {
         self.cr1.read() & RCC_CR1_IWDG_CLK_SEL_MASK
     }
 
     /// Get the source of the ADC CLK
-    pub fn get_adc_clk_src(&self) -> u32 {
+    pub fn get_adc_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_ADC_CLK_SEL_MASK
     }
 
     /// Get the source of the QSPI CLK
-    pub fn get_qspi_clk_src(&self) -> u32 {
+    pub fn get_qspi_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_QSPI_CLK_SEL_MASK
     }
 
     /// Get the source of the I2S CLK
-    pub fn get_i2s_clk_src(&self) -> u32 {
+    pub fn get_i2s_clk_src(&self) -> usize {
         self.cr2.read() & RCC_CR2_I2S_CLK_SEL_MASK
     }
 
     /// Set the divider of the HCLK
-    pub fn set_hclk_div(&self, div: u32) {
+    pub fn set_hclk_div(&self, div: usize) {
         set_reg_bits!(self.cr0, RCC_CR0_HCLK_DIV_MASK, div);
     }
 
     /// Set the divider of the PCLK
-    pub fn set_pclk_div(&self, pclk0_div: u32, pclk1_div: u32) {
+    pub fn set_pclk_div(&self, pclk0_div: usize, pclk1_div: usize) {
         set_reg_bits!(
             self.cr0,
             RCC_CR0_PCLK0_DIV_MASK | RCC_CR0_PCLK1_DIV_MASK,
@@ -606,7 +606,7 @@ impl Rcc {
     }
 
     /// Set the divider of the MCO CLK
-    pub fn set_mco_clk_div(&self, div: u32) {
+    pub fn set_mco_clk_div(&self, div: usize) {
         if self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {
             toggle_reg_bits!(self.cr0, RCC_CR0_MCO_CLK_OUT_EN_MASK, false);
             while self.sr1.read() & RCC_SR1_MCO_CLK_EN_SYNC != 0 {}
@@ -615,7 +615,7 @@ impl Rcc {
     }
 
     /// Enable/Disable the clock of the specified peripheral
-    pub fn enable_peripheral_clk(&self, peripheral: u32, new_state: bool) {
+    pub fn enable_peripheral_clk(&self, peripheral: usize, new_state: bool) {
         match peripheral {
             RCC_PERIPHERAL_UART0 => {
                 toggle_reg_bits!(self.cgr0, RCC_CGR0_UART0_CLK_EN_MASK, new_state);
@@ -779,7 +779,7 @@ impl Rcc {
     }
 
     /// Reset the register of the specified peripheral to the reset value
-    pub fn rst_peripheral(&self, mut peripheral: u32, new_state: bool) {
+    pub fn rst_peripheral(&self, mut peripheral: usize, new_state: bool) {
         if peripheral >= RCC_PERIPHERAL_SYSCFG {
             return;
         }
@@ -803,22 +803,22 @@ impl Rcc {
     }
 
     /// Set the reset mask
-    pub fn set_reset_mask(&self, mask: u32) {
+    pub fn set_reset_mask(&self, mask: usize) {
         set_reg_bits!(self.rst_cr, RCC_RST_CR_RESET_REQ_EN_MASK, mask);
     }
 
     /// Get the reset mask
-    pub fn get_reset_mask(&self) -> u32 {
+    pub fn get_reset_mask(&self) -> usize {
         self.rst_cr.read() & RCC_RST_CR_RESET_REQ_EN_MASK
     }
 
     /// Set the divider of the I2S MCLK
-    pub fn set_i2s_mclk_div(&self, div: u32) {
+    pub fn set_i2s_mclk_div(&self, div: usize) {
         set_reg_bits!(self.cr3, RCC_CR3_I2S_MCLK_DIV_MASK, div << 8);
     }
 
     /// Set the divider of the I2S SCLK
-    pub fn set_i2s_sclk_div(&self, div: u32) {
+    pub fn set_i2s_sclk_div(&self, div: usize) {
         set_reg_bits!(self.cr3, RCC_CR3_I2S_SCLK_DIV_MASK, div);
     }
 }

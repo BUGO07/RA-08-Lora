@@ -13,19 +13,19 @@ use crate::{
     set_reg_bits, toggle_reg_bits,
 };
 
-pub const PWR_LP_MODE_STOP0: u32 = 0x00000000;
-pub const PWR_LP_MODE_STOP1: u32 = 0x00000001;
-pub const PWR_LP_MODE_STOP2: u32 = 0x00000002;
-pub const PWR_LP_MODE_STOP3: u32 = 0x00000003;
-pub const PWR_LP_MODE_STANDBY: u32 = 0x00000004;
+pub const PWR_LP_MODE_STOP0: usize = 0x00000000;
+pub const PWR_LP_MODE_STOP1: usize = 0x00000001;
+pub const PWR_LP_MODE_STOP2: usize = 0x00000002;
+pub const PWR_LP_MODE_STOP3: usize = 0x00000003;
+pub const PWR_LP_MODE_STANDBY: usize = 0x00000004;
 
 ///The bits mask of the low power mode register
-pub const PWR_LP_MODE_MASK: u32 = 0x00000003;
+pub const PWR_LP_MODE_MASK: usize = 0x00000003;
 /// The bit mask of the low power mode ext register
-pub const PWR_LP_MODE_EXT_MASK: u32 = 1 << 24;
+pub const PWR_LP_MODE_EXT_MASK: usize = 1 << 24;
 
-pub const REG_AFEC_RAW_SR: u32 = 0x40008208;
-pub const AFEC_RAW_SR_RCO48M_READY: u32 = 0x00000004;
+pub const REG_AFEC_RAW_SR: usize = 0x40008208;
+pub const AFEC_RAW_SR_RCO48M_READY: usize = 0x00000004;
 
 define_reg! {
     /// Wrapper over the raw PWR struct [`__Pwr`]
@@ -33,27 +33,27 @@ define_reg! {
     /// Raw PWR struct
     __Pwr {
         /// control register 0, offset 0x00
-        cr0: VolatileRW<u32>,
+        cr0: VolatileRW<usize>,
         /// control register 1, offset 0x04
-        cr1: VolatileRW<u32>,
+        cr1: VolatileRW<usize>,
         /// status register 0, offset 0x08
-        sr0: VolatileRW<u32>,
+        sr0: VolatileRW<usize>,
         /// status register 2, offset 0x0C
-        sr1: VolatileRW<u32>,
+        sr1: VolatileRW<usize>,
         /// control register 3, offset 0x10
-        cr2: VolatileRW<u32>,
+        cr2: VolatileRW<usize>,
         /// control register 4, offset 0x14
-        cr3: VolatileRW<u32>,
+        cr3: VolatileRW<usize>,
         /// control register 5, offset 0x18
-        cr4: VolatileRW<u32>,
+        cr4: VolatileRW<usize>,
         /// control register 6, offset 0x1C
-        cr5: VolatileRW<u32>,
+        cr5: VolatileRW<usize>,
     }
 }
 
 impl Pwr {
-    pub fn deep_sleep(&self, mode: u32, wfi: u32) {
-        if (unsafe { *(0x10002010 as *const u32) } & 0x3) == 0 {
+    pub fn deep_sleep(&self, mode: usize, wfi: usize) {
+        if (unsafe { *(0x10002010 as *const usize) } & 0x3) == 0 {
             set_reg_bits!(self.cr1, (0xF << 20), (1 << 20));
         }
 
@@ -89,11 +89,11 @@ impl Pwr {
         }
     }
 
-    pub fn deepsleep_wfi(&self, mode: u32) {
+    pub fn deepsleep_wfi(&self, mode: usize) {
         self.deep_sleep(mode, 1);
     }
 
-    pub fn deepsleep_wfe(&self, mode: u32) {
+    pub fn deepsleep_wfe(&self, mode: usize) {
         self.deep_sleep(mode, 0);
     }
 

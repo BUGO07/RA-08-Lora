@@ -8,37 +8,37 @@ use crate::{
     toggle_reg_bits,
 };
 
-pub const WDG_LOCK_TOKEN: u32 = 0x1ACCE551;
-pub const WDG_RESEN: u32 = 1 << 1;
-pub const WDG_INTEN: u32 = 1;
+pub const WDG_LOCK_TOKEN: usize = 0x1ACCE551;
+pub const WDG_RESEN: usize = 1 << 1;
+pub const WDG_INTEN: usize = 1;
 
 define_reg! {
     Wdg
     __Wdg {
-        load: VolatileRW<u32>,
-        value: VolatileRO<u32>,
-        control: VolatileRW<u32>,
-        intclr: VolatileRW<u32>,
-        ris: VolatileRO<u32>,
-        mis: VolatileRO<u32>,
-        dummy0: [VolatileRO<u32>; 0x2FA],
-        lock: VolatileRW<u32>,
-        dummy1: [VolatileRO<u32>; 0xBF],
-        itcr: VolatileRW<u32>,
-        itop: VolatileRW<u32>,
-        dummy2: [VolatileRO<u32>; 0x32],
-        periphid4: VolatileRO<u32>,
-        periphid5: VolatileRO<u32>,
-        periphid6: VolatileRO<u32>,
-        periphid7: VolatileRO<u32>,
-        periphid0: VolatileRO<u32>,
-        periphid1: VolatileRO<u32>,
-        periphid2: VolatileRO<u32>,
-        periphid3: VolatileRO<u32>,
-        pcellid0: VolatileRO<u32>,
-        pcellid1: VolatileRO<u32>,
-        pcellid2: VolatileRO<u32>,
-        pcellid3: VolatileRO<u32>,
+        load: VolatileRW<usize>,
+        value: VolatileRO<usize>,
+        control: VolatileRW<usize>,
+        intclr: VolatileRW<usize>,
+        ris: VolatileRO<usize>,
+        mis: VolatileRO<usize>,
+        dummy0: [VolatileRO<usize>; 0x2FA],
+        lock: VolatileRW<usize>,
+        dummy1: [VolatileRO<usize>; 0xBF],
+        itcr: VolatileRW<usize>,
+        itop: VolatileRW<usize>,
+        dummy2: [VolatileRO<usize>; 0x32],
+        periphid4: VolatileRO<usize>,
+        periphid5: VolatileRO<usize>,
+        periphid6: VolatileRO<usize>,
+        periphid7: VolatileRO<usize>,
+        periphid0: VolatileRO<usize>,
+        periphid1: VolatileRO<usize>,
+        periphid2: VolatileRO<usize>,
+        periphid3: VolatileRO<usize>,
+        pcellid0: VolatileRO<usize>,
+        pcellid1: VolatileRO<usize>,
+        pcellid2: VolatileRO<usize>,
+        pcellid3: VolatileRO<usize>,
     }
 }
 
@@ -51,7 +51,7 @@ impl Wdg {
         self.lock.write(WDG_LOCK_TOKEN);
     }
 
-    pub fn start(&self, reload_value: u32) {
+    pub fn start(&self, reload_value: usize) {
         self.unlock();
         self.load.write(reload_value);
         self.control.write(WDG_RESEN | WDG_INTEN);

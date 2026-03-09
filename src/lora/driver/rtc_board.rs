@@ -1,4 +1,4 @@
-use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicUsize, Ordering};
 
 use crate::{
     cortex::{IRQType, VolatileRO, VolatileRW, nvic_enable_irq},
@@ -30,14 +30,14 @@ pub const DAYS_IN_MONTH: [u8; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30,
 pub const DAYS_IN_MONTH_LEAP_YEAR: [u8; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /// Microsecond constant.
-pub const RTC_MICROSECOND: u32 = 1000000;
+pub const RTC_MICROSECOND: usize = 1000000;
 /// Enable time flag.
-pub const RTC_ENABLE_TIME: u32 = 0x10000000;
+pub const RTC_ENABLE_TIME: usize = 0x10000000;
 /// Enable alarm flag.
-pub const RTC_ENABLE_ALARM: u32 = 0x80000000;
+pub const RTC_ENABLE_ALARM: usize = 0x80000000;
 
 /// RTC alarm wakeup flag.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcAlarmWakeup {
     /// Alarm 0 wakeup flag.
     Alarm0WkEn = 0x8000000,
@@ -46,7 +46,7 @@ pub enum RtcAlarmWakeup {
 }
 
 /// RTC cyc control information.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcCycControl {
     /// Cyc wakeup flag.
     CycWkEn = 0x2000000,
@@ -55,7 +55,7 @@ pub enum RtcCycControl {
 }
 
 /// RTC tamper control information.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcTamperControl {
     /// Tamper flag.
     Tamper = 0x800000,
@@ -68,7 +68,7 @@ pub enum RtcTamperControl {
 }
 
 /// RTC wakeup control information.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcWakeupControl {
     /// Wakeup 0 flag.
     Wakeup0 = 0x20000,
@@ -97,7 +97,7 @@ pub enum RtcWakeupControl {
 }
 
 /// RTC filter.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcFilter {
     /// No filter.
     NoFilter,
@@ -110,7 +110,7 @@ pub enum RtcFilter {
 }
 
 /// RTC status.
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum RtcStatus {
     /// Alarm 0 status.
@@ -130,7 +130,7 @@ pub enum RtcStatus {
 }
 
 /// RTC interrupt enable flag.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcInterruptFlag {
     /// Second interrupt.
     Sec = 0x80,
@@ -167,7 +167,7 @@ pub struct RtcCalendar {
     /// Second.
     pub second: AtomicU8,
     /// Subsecond, in microseconds.
-    pub subsecond: AtomicU32,
+    pub subsecond: AtomicUsize,
 }
 
 /// RTC alarm mask.
@@ -187,7 +187,7 @@ pub struct RtcAlarmMask {
 }
 
 /// RTC IO output level.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcIoLevel {
     /// IO output level not inverted.
     NoInvert = 0x0,
@@ -196,7 +196,7 @@ pub enum RtcIoLevel {
 }
 
 /// RTC IO output selection.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcIo {
     /// Low level output.
     LowLevel = 0x30,
@@ -211,7 +211,7 @@ pub enum RtcIo {
 }
 
 /// RTC erase retention SRAM source.
-#[repr(u32)]
+#[repr(usize)]
 pub enum RtcRetSramErase {
     /// Enable wakeup 0 erase.
     Wakeup0Enable = 0x1,
@@ -224,9 +224,9 @@ pub enum RtcRetSramErase {
 }
 
 /// Maximum number of RTC alarms.
-pub const RTC_ALARM_MAX_NUM: u32 = 2;
+pub const RTC_ALARM_MAX_NUM: usize = 2;
 /// Maximum number of RTC wakeup sources.
-pub const RTC_WAKEUP_MAX_NUM: u32 = 3;
+pub const RTC_WAKEUP_MAX_NUM: usize = 3;
 
 /// Current RTC calendar context.
 static RTC_CALENDAR_CTX: RtcCalendar = RtcCalendar {
@@ -237,7 +237,7 @@ static RTC_CALENDAR_CTX: RtcCalendar = RtcCalendar {
     hour: AtomicU8::new(0),
     minute: AtomicU8::new(0),
     second: AtomicU8::new(0),
-    subsecond: AtomicU32::new(0),
+    subsecond: AtomicUsize::new(0),
 };
 
 /// RTC timer context.
@@ -251,32 +251,32 @@ static LOW_POWER_DISABLE_DURING_TASK: AtomicBool = AtomicBool::new(false);
 /// Indicates if the RTC is already initialized or not.
 static RTC_INITIALIZED: AtomicBool = AtomicBool::new(false);
 /// Hold the wake-up time duration in milliseconds.
-static MCU_WAKEUP_TIME: AtomicU32 = AtomicU32::new(0);
+static MCU_WAKEUP_TIME: AtomicUsize = AtomicUsize::new(0);
 /// Flag used to indicate the MCU has woken up from an external IRQ.
 static NON_SCHEDULED_WAKE_UP: AtomicBool = AtomicBool::new(false);
 
 define_reg! {
     Rtc
     __Rtc {
-        ctrl: VolatileRW<u32>,
-        alarm0: VolatileRW<u32>,
-        alarm1: VolatileRW<u32>,
-        ppm_adjust: VolatileRW<u32>,
-        calendar: VolatileRW<u32>,
-        calendar_h: VolatileRW<u32>,
-        cyc_max: VolatileRW<u32>,
-        sr: VolatileRW<u32>,
-        asyn_data: VolatileRO<u32>,
-        asyn_data_h: VolatileRO<u32>,
-        cr1: VolatileRW<u32>,
-        sr1: VolatileRW<u32>,
-        cr2: VolatileRW<u32>,
-        sub_second_cnt: VolatileRO<u32>,
-        cyc_cnt: VolatileRO<u32>,
-        alarm0_subsecond: VolatileRW<u32>,
-        alarm1_subsecond: VolatileRW<u32>,
-        calendar_r: VolatileRW<u32>,
-        calendar_r_h: VolatileRW<u32>,
+        ctrl: VolatileRW<usize>,
+        alarm0: VolatileRW<usize>,
+        alarm1: VolatileRW<usize>,
+        ppm_adjust: VolatileRW<usize>,
+        calendar: VolatileRW<usize>,
+        calendar_h: VolatileRW<usize>,
+        cyc_max: VolatileRW<usize>,
+        sr: VolatileRW<usize>,
+        asyn_data: VolatileRO<usize>,
+        asyn_data_h: VolatileRO<usize>,
+        cr1: VolatileRW<usize>,
+        sr1: VolatileRW<usize>,
+        cr2: VolatileRW<usize>,
+        sub_second_cnt: VolatileRO<usize>,
+        cyc_cnt: VolatileRO<usize>,
+        alarm0_subsecond: VolatileRW<usize>,
+        alarm1_subsecond: VolatileRW<usize>,
+        calendar_r: VolatileRW<usize>,
+        calendar_r_h: VolatileRW<usize>,
     }
 }
 
@@ -303,7 +303,7 @@ impl Rtc {
     ///
     /// # Parameters
     /// - `timeout`: Duration of the timer in milliseconds.
-    pub fn set_timeout(&self, timeout: u32) {
+    pub fn set_timeout(&self, timeout: usize) {
         self.start_wakeup_alarm(timeout);
     }
 
@@ -344,7 +344,7 @@ impl Rtc {
     ///
     /// # Returns
     /// Timeout value with applied compensation.
-    pub fn get_adjusted_timeout_value(&self, mut timeout: u32) -> u32 {
+    pub fn get_adjusted_timeout_value(&self, mut timeout: usize) -> usize {
         let mcu_wakeup_time = MCU_WAKEUP_TIME.load(Ordering::Relaxed);
         let non_scheduled_wakeup = NON_SCHEDULED_WAKE_UP.load(Ordering::Relaxed);
         if timeout > mcu_wakeup_time && non_scheduled_wakeup {
@@ -395,7 +395,7 @@ impl Rtc {
     ///
     /// # Parameters
     /// - `timeout`: Wake-up timeout in milliseconds.
-    pub fn start_wakeup_alarm(&self, mut timeout: u32) {
+    pub fn start_wakeup_alarm(&self, mut timeout: usize) {
         if timeout < 5 {
             timeout = 5;
         }
@@ -429,7 +429,7 @@ impl Rtc {
             .store(now.subsecond.load(Ordering::Relaxed), Ordering::Relaxed);
 
         self.cyc_cmd(false);
-        self.config_cyc_max(self.convert_ms_to_tick(timeout as u64) as u32);
+        self.config_cyc_max(self.convert_ms_to_tick(timeout as u64) as usize);
         self.config_cyc_wakeup(true);
         self.cyc_cmd(true);
         self.config_interrupt(RtcInterruptFlag::Cyc, true);
@@ -570,59 +570,59 @@ impl Rtc {
         };
 
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, alarm_wakeup as u32, state);
+        toggle_reg_bits!(self.ctrl, alarm_wakeup as usize, state);
     }
 
     /// Enables or disables the RTC cyc counter.
     pub fn cyc_cmd(&self, enable: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcCycControl::CycCounter as u32, enable);
+        toggle_reg_bits!(self.ctrl, RtcCycControl::CycCounter as usize, enable);
     }
 
     /// Configures RTC cyc wake-up.
     pub fn config_cyc_wakeup(&self, state: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcCycControl::CycWkEn as u32, state);
+        toggle_reg_bits!(self.ctrl, RtcCycControl::CycWkEn as usize, state);
     }
 
     /// Enables or disables RTC tamper detection.
     pub fn tamper_cmd(&self, enable: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcTamperControl::Tamper as u32, enable);
+        toggle_reg_bits!(self.ctrl, RtcTamperControl::Tamper as usize, enable);
     }
 
     /// Configures tamper high-level trigger.
     pub fn config_tamper_high_level(&self, state: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperLevel as u32, state);
+        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperLevel as usize, state);
     }
 
     /// Configures tamper level wake-up.
     pub fn config_tamper_level_wakeup(&self, state: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperWkEn0 as u32, state);
+        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperWkEn0 as usize, state);
     }
 
     /// Configures tamper wake-up.
     pub fn config_tamper_wakeup(&self, state: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperWkEn1 as u32, state);
+        toggle_reg_bits!(self.ctrl, RtcTamperControl::TamperWkEn1 as usize, state);
     }
 
     /// Configures tamper filter type.
     pub fn config_tamper_filter(&self, filter: RtcFilter) {
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as u32) << 18, false);
+        toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as usize) << 18, false);
         self.check_syn();
-        toggle_reg_bits!(self.ctrl, (filter as u32) << 18, true);
+        toggle_reg_bits!(self.ctrl, (filter as usize) << 18, true);
     }
 
     /// Enables or disables a wake-up IO source.
     pub fn wakeup_io_cmd(&self, wakeup_io_idx: u8, state: bool) {
         let wakeup = match wakeup_io_idx {
-            0 => RtcWakeupControl::Wakeup0 as u32,
-            1 => RtcWakeupControl::Wakeup1 as u32,
-            2 => RtcWakeupControl::Wakeup2 as u32,
+            0 => RtcWakeupControl::Wakeup0 as usize,
+            1 => RtcWakeupControl::Wakeup1 as usize,
+            2 => RtcWakeupControl::Wakeup2 as usize,
             _ => panic!("Invalid wakeup io index"),
         };
         self.check_syn();
@@ -632,9 +632,9 @@ impl Rtc {
     /// Configures wake-up IO high-level trigger.
     pub fn config_wakeup_io_high_level(&self, wakeup_io_idx: u8, state: bool) {
         let wakeup_level = match wakeup_io_idx {
-            0 => RtcWakeupControl::Wakeup0Level as u32,
-            1 => RtcWakeupControl::Wakeup1Level as u32,
-            2 => RtcWakeupControl::Wakeup2Level as u32,
+            0 => RtcWakeupControl::Wakeup0Level as usize,
+            1 => RtcWakeupControl::Wakeup1Level as usize,
+            2 => RtcWakeupControl::Wakeup2Level as usize,
             _ => panic!("Invalid wakeup io index"),
         };
         self.check_syn();
@@ -644,9 +644,9 @@ impl Rtc {
     /// Configures wake-up IO level wake-up behavior.
     pub fn config_wakeup_io_level_wakeup(&self, wakeup_io_idx: u8, state: bool) {
         let wakeup_wken = match wakeup_io_idx {
-            0 => RtcWakeupControl::Wakeup0Wken0 as u32,
-            1 => RtcWakeupControl::Wakeup1Wken0 as u32,
-            2 => RtcWakeupControl::Wakeup2Wken0 as u32,
+            0 => RtcWakeupControl::Wakeup0Wken0 as usize,
+            1 => RtcWakeupControl::Wakeup1Wken0 as usize,
+            2 => RtcWakeupControl::Wakeup2Wken0 as usize,
             _ => panic!("Invalid wakeup io index"),
         };
         self.check_syn();
@@ -656,9 +656,9 @@ impl Rtc {
     /// Configures wake-up IO wake-up behavior.
     pub fn config_wakeup_io_wakeup(&self, wakeup_io_idx: u8, state: bool) {
         let wakeup_wken = match wakeup_io_idx {
-            0 => RtcWakeupControl::Wakeup0Wken1 as u32,
-            1 => RtcWakeupControl::Wakeup1Wken1 as u32,
-            2 => RtcWakeupControl::Wakeup2Wken1 as u32,
+            0 => RtcWakeupControl::Wakeup0Wken1 as usize,
+            1 => RtcWakeupControl::Wakeup1Wken1 as usize,
+            2 => RtcWakeupControl::Wakeup2Wken1 as usize,
             _ => panic!("Invalid wakeup io index"),
         };
         self.check_syn();
@@ -670,19 +670,19 @@ impl Rtc {
         self.check_syn();
         match wakeup_idx {
             0 => {
-                toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as u32) << 12, false);
+                toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as usize) << 12, false);
                 self.check_syn();
-                toggle_reg_bits!(self.ctrl, (filter as u32) << 12, true);
+                toggle_reg_bits!(self.ctrl, (filter as usize) << 12, true);
             }
             1 => {
-                toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as u32) << 6, false);
+                toggle_reg_bits!(self.ctrl, (RtcFilter::Filter7 as usize) << 6, false);
                 self.check_syn();
-                toggle_reg_bits!(self.ctrl, (filter as u32) << 6, true);
+                toggle_reg_bits!(self.ctrl, (filter as usize) << 6, true);
             }
             _ => {
-                toggle_reg_bits!(self.ctrl, RtcFilter::Filter7 as u32, false);
+                toggle_reg_bits!(self.ctrl, RtcFilter::Filter7 as usize, false);
                 self.check_syn();
-                toggle_reg_bits!(self.ctrl, filter as u32, true);
+                toggle_reg_bits!(self.ctrl, filter as usize, true);
             }
         }
     }
@@ -692,13 +692,13 @@ impl Rtc {
     /// # Parameters
     /// - `calendar`: Calendar settings to write to RTC.
     pub fn set_calendar(&self, calendar: &RtcCalendar) {
-        let year = calendar.year.load(Ordering::Relaxed) as u32;
-        let week = calendar.week.load(Ordering::Relaxed) as u32;
-        let month = calendar.month.load(Ordering::Relaxed) as u32;
-        let day = calendar.day.load(Ordering::Relaxed) as u32;
-        let hour = calendar.hour.load(Ordering::Relaxed) as u32;
-        let minute = calendar.minute.load(Ordering::Relaxed) as u32;
-        let second = calendar.second.load(Ordering::Relaxed) as u32;
+        let year = calendar.year.load(Ordering::Relaxed) as usize;
+        let week = calendar.week.load(Ordering::Relaxed) as usize;
+        let month = calendar.month.load(Ordering::Relaxed) as usize;
+        let day = calendar.day.load(Ordering::Relaxed) as usize;
+        let hour = calendar.hour.load(Ordering::Relaxed) as usize;
+        let minute = calendar.minute.load(Ordering::Relaxed) as usize;
+        let second = calendar.second.load(Ordering::Relaxed) as usize;
         if year > 2099
             || week > 7
             || month > 12
@@ -732,12 +732,12 @@ impl Rtc {
     }
 
     /// Gets RTC subsecond counter value.
-    pub fn get_subsecond_count(&self) -> u32 {
+    pub fn get_subsecond_count(&self) -> usize {
         self.sub_second_cnt.read()
     }
 
     /// Gets RTC cyc counter value.
-    pub fn get_cyc_cnt(&self) -> u32 {
+    pub fn get_cyc_cnt(&self) -> usize {
         // this is how it's done in c, idk what but there should be a reason for doing it this way
         let mut cyc_count;
 
@@ -778,7 +778,7 @@ impl Rtc {
             }
         }
 
-        let subsecond = ((RTC_MICROSECOND as f32 / 32768.0) * subsecond_cnt as f32 + 0.5) as u32;
+        let subsecond = ((RTC_MICROSECOND as f32 / 32768.0) * subsecond_cnt as f32 + 0.5) as usize;
 
         let second = (syn_data & 0x0F) + ((syn_data >> 4) & 0x07) * 10;
         let minute = ((syn_data >> 7) & 0x0F) + ((syn_data >> 11) & 0x07) * 10;
@@ -797,7 +797,7 @@ impl Rtc {
             hour: AtomicU8::new(hour as u8),
             minute: AtomicU8::new(minute as u8),
             second: AtomicU8::new(second as u8),
-            subsecond: AtomicU32::new(subsecond),
+            subsecond: AtomicUsize::new(subsecond),
         }
     }
 
@@ -809,14 +809,14 @@ impl Rtc {
     pub fn set_status(&self, status: RtcStatus, set: bool) {
         self.check_syn();
         if !set {
-            self.sr.write(status as u32);
+            self.sr.write(status as usize);
         }
     }
 
     /// Reads an RTC status flag.
     pub fn get_status(&self, status: RtcStatus) -> bool {
         self.check_syn();
-        self.sr.read() & (status as u32) == status as u32
+        self.sr.read() & (status as usize) == status as usize
     }
 
     /// Clears second interrupt status.
@@ -826,7 +826,7 @@ impl Rtc {
 
     /// Enables or disables an RTC interrupt source.
     pub fn config_interrupt(&self, interrupt: RtcInterruptFlag, enable: bool) {
-        toggle_reg_bits!(self.cr1, interrupt as u32, enable);
+        toggle_reg_bits!(self.cr1, interrupt as usize, enable);
     }
 
     /// Sets an RTC alarm.
@@ -855,16 +855,16 @@ impl Rtc {
             match alarm_index {
                 0 => {
                     let val = self.alarm0_subsecond.read() & 0xFFFF0000;
-                    self.alarm0_subsecond.write(val | temp as u32);
+                    self.alarm0_subsecond.write(val | temp as usize);
                 }
                 _ => {
                     let val = self.alarm1_subsecond.read() & 0xFFFF0000;
-                    self.alarm1_subsecond.write(val | temp as u32);
+                    self.alarm1_subsecond.write(val | temp as usize);
                 }
             }
             self.check_syn();
             if temp != 0 {
-                // subsec_mask here would need to be a u32 mask value; skipping as original C used a field
+                // subsec_mask here would need to be a usize mask value; skipping as original C used a field
             }
         }
 
@@ -878,15 +878,15 @@ impl Rtc {
             return;
         }
 
-        let mut day_or_week_mask_value: u32 = 1;
-        let mut hr_mask_value: u32 = 1;
-        let mut min_mask_value: u32 = 1;
-        let mut sec_mask_value: u32 = 1;
-        let mut day_match_flag: u32 = 0;
-        let mut day_or_week_value: u32 = 0;
-        let mut hr_value: u32 = 0;
-        let mut min_value: u32 = 0;
-        let mut sec_value: u32 = 0;
+        let mut day_or_week_mask_value: usize = 1;
+        let mut hr_mask_value: usize = 1;
+        let mut min_mask_value: usize = 1;
+        let mut sec_mask_value: usize = 1;
+        let mut day_match_flag: usize = 0;
+        let mut day_or_week_value: usize = 0;
+        let mut hr_value: usize = 0;
+        let mut min_value: usize = 0;
+        let mut sec_value: usize = 0;
 
         if alarm_mask.day_mask {
             if day > 31 {
@@ -922,19 +922,19 @@ impl Rtc {
 
         if day_or_week_mask_value == 0 {
             if day_match_flag == 0 {
-                day_or_week_value = ((day as u32 / 10) << 24) | ((day as u32 % 10) << 20);
+                day_or_week_value = ((day as usize / 10) << 24) | ((day as usize % 10) << 20);
             } else {
-                day_or_week_value = (week as u32 % 10) << 20;
+                day_or_week_value = (week as usize % 10) << 20;
             }
         }
         if hr_mask_value == 0 {
-            hr_value = ((hour as u32 / 10) << 18) | ((hour as u32 % 10) << 14);
+            hr_value = ((hour as usize / 10) << 18) | ((hour as usize % 10) << 14);
         }
         if min_mask_value == 0 {
-            min_value = ((minute as u32 / 10) << 11) | ((minute as u32 % 10) << 7);
+            min_value = ((minute as usize / 10) << 11) | ((minute as usize % 10) << 7);
         }
         if sec_mask_value == 0 {
-            sec_value = ((second as u32 / 10) << 4) | (second as u32 % 10);
+            sec_value = ((second as usize / 10) << 4) | (second as usize % 10);
         }
 
         let alarm_value = (day_match_flag << 30)
@@ -959,7 +959,7 @@ impl Rtc {
     ///
     /// # Parameters
     /// - `max_value`: Maximum cyc counter value.
-    pub fn config_cyc_max(&self, max_value: u32) {
+    pub fn config_cyc_max(&self, max_value: usize) {
         self.check_syn();
         self.cyc_max.write(max_value);
     }
@@ -975,9 +975,9 @@ impl Rtc {
 
         self.check_syn();
         self.ppm_adjust.write(if adjust_value > 0 {
-            (0x7FFF - adjust_value) as u32
+            (0x7FFF - adjust_value) as usize
         } else if adjust_value < 0 {
-            (0x7FFF + (-adjust_value)) as u32
+            (0x7FFF + (-adjust_value)) as usize
         } else {
             0x7FFF
         });
@@ -986,15 +986,15 @@ impl Rtc {
     /// Configures RTC IO output source.
     pub fn config_io_output(&self, io: RtcIo) {
         self.check_syn();
-        toggle_reg_bits!(self.cr2, RtcIo::Sec as u32, false);
+        toggle_reg_bits!(self.cr2, RtcIo::Sec as usize, false);
         self.check_syn();
-        toggle_reg_bits!(self.cr2, io as u32, true);
+        toggle_reg_bits!(self.cr2, io as usize, true);
     }
 
     /// Gets RTC IO output selection.
     pub fn get_io_output(&self) -> u8 {
         self.check_syn();
-        ((self.cr2.read() & RtcIo::Sec as u32) >> 4) as u8
+        ((self.cr2.read() & RtcIo::Sec as usize) >> 4) as u8
     }
 
     /// Configures erase retention SRAM source.
@@ -1004,6 +1004,6 @@ impl Rtc {
     /// - `enable`: `true` to enable, `false` to disable.
     pub fn config_erase_ret_sram(&self, ret_sram: RtcRetSramErase, enable: bool) {
         self.check_syn();
-        toggle_reg_bits!(self.cr2, ret_sram as u32, enable);
+        toggle_reg_bits!(self.cr2, ret_sram as usize, enable);
     }
 }

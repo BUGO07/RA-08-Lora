@@ -19,7 +19,7 @@ use crate::{
 };
 
 /// I2C mode.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cMode {
     /// Master mode.
     Master,
@@ -28,7 +28,7 @@ pub enum I2cMode {
 }
 
 /// I2C speed.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cSpeed {
     /// Standard speed (100K).
     Standard = 0x00000000,
@@ -37,7 +37,7 @@ pub enum I2cSpeed {
 }
 
 /// I2C read/write direction.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cRW {
     /// I2C write data.
     Write,
@@ -46,7 +46,7 @@ pub enum I2cRW {
 }
 
 /// I2C ACK flag.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cAck {
     /// I2C NAK.
     Nak,
@@ -55,7 +55,7 @@ pub enum I2cAck {
 }
 
 /// I2C interrupts.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cInterrupt {
     /// Arbitration loss.
     ArbitrationLoss = 18,
@@ -84,7 +84,7 @@ pub enum I2cInterrupt {
 }
 
 /// I2C flags.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2cFlag {
     /// Receive FIFO is empty.
     RFifoEmpty = 0,
@@ -123,7 +123,7 @@ pub enum I2cSettings {
     /// Master mode settings.
     Master { speed: I2cSpeed },
     /// Slave mode settings.
-    Slave { slave_addr: u32 },
+    Slave { slave_addr: usize },
 }
 
 /// I2C configuration.
@@ -149,7 +149,7 @@ impl Default for I2cConfig {
 }
 
 /// Check whether FIFO mode is enabled in the CR register.
-fn is_fifo_mode(cr: u32) -> bool {
+fn is_fifo_mode(cr: usize) -> bool {
     cr & I2C_CR_FIFO_EN_MASK != 0
 }
 
@@ -162,23 +162,23 @@ pub enum I2cError {
 define_reg! {
     I2c
     __I2c {
-        cr: VolatileRW<u32>,
-        sr: VolatileRW<u32>,
-        sar: VolatileRW<u32>,
-        dbr: VolatileRW<u32>,
-        lcr: VolatileRW<u32>,
-        wcr: VolatileRW<u32>,
-        rst_cycl: VolatileRW<u32>,
-        bmr: VolatileRO<u32>,
-        wfifo: VolatileRW<u32>,
-        wfifo_wprt: VolatileRW<u32>,
-        wfifo_rptr: VolatileRW<u32>,
-        rfifo: VolatileRW<u32>,
-        rfifo_wptr: VolatileRW<u32>,
-        rfifo_rptr: VolatileRW<u32>,
-        resv: [VolatileRW<u32>; 2],
-        wfifo_status: VolatileRO<u32>,
-        rfifo_status: VolatileRO<u32>,
+        cr: VolatileRW<usize>,
+        sr: VolatileRW<usize>,
+        sar: VolatileRW<usize>,
+        dbr: VolatileRW<usize>,
+        lcr: VolatileRW<usize>,
+        wcr: VolatileRW<usize>,
+        rst_cycl: VolatileRW<usize>,
+        bmr: VolatileRO<usize>,
+        wfifo: VolatileRW<usize>,
+        wfifo_wprt: VolatileRW<usize>,
+        wfifo_rptr: VolatileRW<usize>,
+        rfifo: VolatileRW<usize>,
+        rfifo_wptr: VolatileRW<usize>,
+        rfifo_rptr: VolatileRW<usize>,
+        resv: [VolatileRW<usize>; 2],
+        wfifo_status: VolatileRO<usize>,
+        rfifo_status: VolatileRO<usize>,
     }
 }
 
@@ -188,7 +188,7 @@ impl I2c {
     /// Waits up to `timeout` iterations for the unit to become non-busy,
     /// then performs a reset sequence. Returns an error if the unit is still
     /// busy after the timeout expires.
-    pub fn unit_reset(&self, timeout: u32) -> Result<(), I2cError> {
+    pub fn unit_reset(&self, timeout: usize) -> Result<(), I2cError> {
         let mut temp = timeout;
         while (self.sr.read() & I2C_SR_UNIT_BUSY_MASK != 0) && temp != 0 {
             temp -= 1;
@@ -209,7 +209,7 @@ impl I2c {
 
     /// Deinitialize the I2C peripheral registers to the reset values.
     pub fn deinit(&self) {
-        let peripheral = match self.ptr() as u32 {
+        let peripheral = match self.ptr() as usize {
             I2C0_BASE => RCC_PERIPHERAL_I2C0,
             I2C1_BASE => RCC_PERIPHERAL_I2C1,
             I2C2_BASE => RCC_PERIPHERAL_I2C2,
@@ -227,14 +227,14 @@ impl I2c {
 
         toggle_reg_bits!(self.cr, I2C_CR_FIFO_EN_MASK, config.fifo_mode_en);
 
-        let clk_freq = RCC.get_clk_freq(if self.ptr() as u32 == I2C0_BASE {
+        let clk_freq = RCC.get_clk_freq(if self.ptr() as usize == I2C0_BASE {
             RCC_PCLK0
         } else {
             RCC_PCLK1
         });
 
-        const STANDARD_SPEED: u32 = 100000;
-        const FAST_SPEED: u32 = 400000;
+        const STANDARD_SPEED: usize = 100000;
+        const FAST_SPEED: usize = 400000;
 
         let slv = (clk_freq / STANDARD_SPEED - 8) / 2;
         let flv = (clk_freq / FAST_SPEED) / 2 - 1;
@@ -254,12 +254,12 @@ impl I2c {
         if matches!(interrupt, I2cInterrupt::MasterStopDet) {
             toggle_reg_bits!(self.cr, I2C_CR_MASTER_STOP_DET_EN_MASK, enable);
         }
-        toggle_reg_bits!(self.cr, 1 << interrupt as u32, enable);
+        toggle_reg_bits!(self.cr, 1 << interrupt as usize, enable);
     }
 
     /// Clear the I2C interrupt status.
     pub fn clear_interrupt(&self, interrupt: I2cInterrupt) {
-        self.sr.write(1 << interrupt as u32);
+        self.sr.write(1 << interrupt as usize);
     }
 
     /// Send the start request for I2C master.
@@ -274,9 +274,9 @@ impl I2c {
             toggle_reg_bits!(self.cr, I2C_CR_TRANS_BEGIN_MASK, true);
 
             self.wfifo
-                .write(data as u32 | I2C_WFIFO_CONTROL_START_MASK | I2C_WFIFO_CONTROL_TB_MASK);
+                .write(data as usize | I2C_WFIFO_CONTROL_START_MASK | I2C_WFIFO_CONTROL_TB_MASK);
         } else {
-            self.dbr.write(data as u32);
+            self.dbr.write(data as usize);
             toggle_reg_bits!(self.cr, I2C_CR_STOP_MASK, false);
             toggle_reg_bits!(self.cr, I2C_CR_START_MASK | I2C_CR_TRANS_BYTE_MASK, true);
         }
@@ -292,9 +292,9 @@ impl I2c {
     pub fn master_send_stop_with_data(&self, data: u8) {
         if is_fifo_mode(self.cr.read()) {
             self.wfifo
-                .write(data as u32 | I2C_WFIFO_CONTROL_TB_MASK | I2C_WFIFO_CONTROL_STOP_MASK);
+                .write(data as usize | I2C_WFIFO_CONTROL_TB_MASK | I2C_WFIFO_CONTROL_STOP_MASK);
         } else {
-            self.dbr.write(data as u32);
+            self.dbr.write(data as usize);
 
             toggle_reg_bits!(self.cr, I2C_CR_START_MASK, false);
             toggle_reg_bits!(self.cr, I2C_CR_TRANS_BYTE_MASK, true);
@@ -305,9 +305,9 @@ impl I2c {
     /// Write a byte to send.
     pub fn send_data(&self, data: u8) {
         if is_fifo_mode(self.cr.read()) {
-            self.wfifo.write(data as u32 | I2C_WFIFO_CONTROL_TB_MASK);
+            self.wfifo.write(data as usize | I2C_WFIFO_CONTROL_TB_MASK);
         } else {
-            self.dbr.write(data as u32);
+            self.dbr.write(data as usize);
 
             toggle_reg_bits!(self.cr, I2C_CR_START_MASK, false);
             toggle_reg_bits!(self.cr, I2C_CR_TRANS_BYTE_MASK, true);
@@ -345,7 +345,7 @@ impl I2c {
 
     /// Clear the flag status of the specified I2C flag.
     pub fn clear_flag_status(&self, flag: I2cFlag) {
-        self.sr.write(1 << flag as u32);
+        self.sr.write(1 << flag as usize);
     }
 
     /// Get the flag status of the specified I2C flag.
@@ -353,12 +353,12 @@ impl I2c {
         if matches!(flag, I2cFlag::RFifoEmpty) {
             I2C0.rfifo_status.read() & I2C_RFIFO_STATUS_SIZE_MASK == 0
         } else {
-            self.sr.read() & (1 << flag as u32) != 0
+            self.sr.read() & (1 << flag as usize) != 0
         }
     }
 
     /// Get the interrupt status of the specified I2C interrupt.
     pub fn get_interrupt_status(&self, interrupt: I2cInterrupt) -> bool {
-        self.sr.read() & (1 << interrupt as u32) != 0
+        self.sr.read() & (1 << interrupt as usize) != 0
     }
 }

@@ -9,21 +9,21 @@ use crate::{
 };
 
 /// The size of the flash word line
-pub const FLASH_LINE_SIZE: u32 = 0x200;
+pub const FLASH_LINE_SIZE: usize = 0x200;
 /// The size of a flash page
-pub const FLASH_PAGE_SIZE: u32 = 0x1000;
+pub const FLASH_PAGE_SIZE: usize = 0x1000;
 
 /// The flash protect sequence0 to unlock the flash CR access
-pub const FLASH_CR_PROTECT_SEQ0: u32 = 0x8C9DAEBF;
+pub const FLASH_CR_PROTECT_SEQ0: usize = 0x8C9DAEBF;
 /// The flash protect sequence1 to unlock the flash CR access
-pub const FLASH_CR_PROTECT_SEQ1: u32 = 0x13141516;
+pub const FLASH_CR_PROTECT_SEQ1: usize = 0x13141516;
 
 /// The address of the flash OTP area
-pub const FLASH_OTP_ADDR_START: u32 = 0x10001C00;
+pub const FLASH_OTP_ADDR_START: usize = 0x10001C00;
 /// The end address of the flash OTP area
-pub const FLASH_OTP_ADDR_END: u32 = 0x10002000;
+pub const FLASH_OTP_ADDR_END: usize = 0x10002000;
 /// The size of the flash OTP area
-pub const FLASH_OTP_SIZE: u32 = FLASH_OTP_ADDR_END - FLASH_OTP_ADDR_START;
+pub const FLASH_OTP_SIZE: usize = FLASH_OTP_ADDR_END - FLASH_OTP_ADDR_START;
 
 /// Macro for performing a volatile read from a memory address
 macro_rules! volatile_read {
@@ -78,7 +78,7 @@ pub fn flash_erase_all() -> Result<(), FlashError> {
     );
     flash_cr_lock();
 
-    volatile_write!(FLASH_BASE, 0xFFFFFFFF, u32);
+    volatile_write!(FLASH_BASE, 0xFFFFFFFF, usize);
 
     if SEC.sr.read() & SEC_SR_FLASH_ACCESS_ERROR_MASK != 0 {
         SEC.sr.write(SEC_SR_FLASH_ACCESS_ERROR_MASK);
@@ -95,7 +95,7 @@ pub fn flash_erase_all() -> Result<(), FlashError> {
 /// Erase one page
 ///
 /// Returns Ok if everything went well, or a FlashError if an error occurred (e.g. invalid address, size, or flash access error)
-pub fn flash_erase_page(addr: u32) -> Result<(), FlashError> {
+pub fn flash_erase_page(addr: usize) -> Result<(), FlashError> {
     // clear sr
     if SEC.sr.read() & SEC_SR_FLASH_ACCESS_ERROR_MASK != 0 {
         SEC.sr.write(SEC_SR_FLASH_ACCESS_ERROR_MASK);
@@ -109,7 +109,7 @@ pub fn flash_erase_page(addr: u32) -> Result<(), FlashError> {
     );
     flash_cr_lock();
 
-    volatile_write!(addr, 0xFFFFFFFF, u32);
+    volatile_write!(addr, 0xFFFFFFFF, usize);
 
     if SEC.sr.read() & SEC_SR_FLASH_ACCESS_ERROR_MASK != 0 {
         SEC.sr.write(SEC_SR_FLASH_ACCESS_ERROR_MASK);
@@ -123,7 +123,7 @@ pub fn flash_erase_page(addr: u32) -> Result<(), FlashError> {
     Ok(())
 }
 
-pub fn flash_program_bytes(addr: u32, data: &[u8], size: u32) -> Result<(), FlashError> {
+pub fn flash_program_bytes(addr: usize, data: &[u8], size: usize) -> Result<(), FlashError> {
     let mut tmp = [0u8; 8];
     let p = tmp.as_mut_ptr();
 
@@ -140,22 +140,20 @@ pub fn flash_program_bytes(addr: u32, data: &[u8], size: u32) -> Result<(), Flas
 
     let aligned_size = size & 0xFFFFFFF8;
     tmp.fill(0xFF);
-    for i in aligned_size..size {
-        tmp[(i - aligned_size) as usize] = data[i as usize];
-    }
+    tmp[..size - aligned_size].copy_from_slice(&data[aligned_size..size]);
 
     for i in (0..size).step_by(8) {
         if i < aligned_size {
             EFC.program_data0
-                .write(volatile_read!(data.as_ptr().add(i as usize), u32));
+                .write(volatile_read!(data.as_ptr().add(i), usize));
             EFC.program_data1
-                .write(volatile_read!(data.as_ptr().add(i as usize + 4), u32));
+                .write(volatile_read!(data.as_ptr().add(i + 4), usize));
         } else {
-            EFC.program_data0.write(volatile_read!(p, u32));
-            EFC.program_data1.write(volatile_read!(p.add(4), u32));
+            EFC.program_data0.write(volatile_read!(p, usize));
+            EFC.program_data1.write(volatile_read!(p.add(4), usize));
         }
 
-        volatile_write!(addr + i, 0xFFFFFFFF, u32);
+        volatile_write!(addr + i, 0xFFFFFFFF, usize);
 
         if SEC.sr.read() & SEC_SR_FLASH_ACCESS_ERROR_MASK != 0 {
             SEC.sr.write(SEC_SR_FLASH_ACCESS_ERROR_MASK);
@@ -170,7 +168,7 @@ pub fn flash_program_bytes(addr: u32, data: &[u8], size: u32) -> Result<(), Flas
     Ok(())
 }
 
-pub fn flash_program_line(addr: u32, data: &[u8]) -> Result<(), FlashError> {
+pub fn flash_program_line(addr: usize, data: &[u8]) -> Result<(), FlashError> {
     _disable_irq();
 
     // clear sr
@@ -190,10 +188,11 @@ pub fn flash_program_line(addr: u32, data: &[u8]) -> Result<(), FlashError> {
 
     while EFC.sr.read() & EFC_SR_PROGRAM_DATA_WAIT == 0 {}
 
-    EFC.program_data0.write(volatile_read!(data.as_ptr(), u32));
+    EFC.program_data0
+        .write(volatile_read!(data.as_ptr(), usize));
     EFC.program_data1
-        .write(volatile_read!(data.as_ptr().add(4), u32));
-    volatile_write!(addr, 0xFFFFFFFF, u32);
+        .write(volatile_read!(data.as_ptr().add(4), usize));
+    volatile_write!(addr, 0xFFFFFFFF, usize);
 
     if SEC.sr.read() & SEC_SR_FLASH_ACCESS_ERROR_MASK != 0 {
         SEC.sr.write(SEC_SR_FLASH_ACCESS_ERROR_MASK);
@@ -206,9 +205,9 @@ pub fn flash_program_line(addr: u32, data: &[u8]) -> Result<(), FlashError> {
         while EFC.sr.read() & EFC_SR_PROGRAM_DATA_WAIT == 0 {}
 
         EFC.program_data0
-            .write(volatile_read!(data.as_ptr().add(j as usize), u32));
+            .write(volatile_read!(data.as_ptr().add(j as usize), usize));
         EFC.program_data1
-            .write(volatile_read!(data.as_ptr().add(j as usize + 4), u32));
+            .write(volatile_read!(data.as_ptr().add(j as usize + 4), usize));
     }
 
     while EFC.sr.read() & EFC_SR_OPERATION_DONE == 0 {}
@@ -218,7 +217,7 @@ pub fn flash_program_line(addr: u32, data: &[u8]) -> Result<(), FlashError> {
     Ok(())
 }
 
-pub fn flash_otp_program_data(addr: u32, data: &[u8], size: u32) -> Result<(), FlashError> {
+pub fn flash_otp_program_data(addr: usize, data: &[u8], size: usize) -> Result<(), FlashError> {
     if addr < FLASH_OTP_ADDR_START || (addr + size) > FLASH_OTP_ADDR_END {
         return Err(FlashError::InvalidAddress);
     }

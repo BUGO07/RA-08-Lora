@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// I2S interrupt sources.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2sInterrupt {
     /// TX FIFO overflow interrupt.
     TxFo = 1 << 5,
@@ -19,7 +19,7 @@ pub enum I2sInterrupt {
 }
 
 /// I2S audio mode.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2sMode {
     /// Left alignment mode.
     LeftAlign,
@@ -30,7 +30,7 @@ pub enum I2sMode {
 }
 
 /// I2S FIFO trigger level.
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum I2sFifoTriggerLevel {
     /// FIFO trigger level 1.
@@ -44,10 +44,10 @@ pub enum I2sFifoTriggerLevel {
 }
 
 /// FIFO trigger level mask.
-pub const I2S_FIFO_TRIGGER_LEVEL_MASK: u32 = 0xf;
+pub const I2S_FIFO_TRIGGER_LEVEL_MASK: usize = 0xf;
 
 /// I2S word size.
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum I2sWordSize {
     /// Don't care word size.
@@ -65,12 +65,12 @@ pub enum I2sWordSize {
 }
 
 /// FIFO depth.
-pub const FIFO_DEPTH: u32 = 4;
+pub const FIFO_DEPTH: usize = 4;
 /// RX and TX word size mask.
-pub const I2S_WORDSIZE_MASK: u32 = 0x7;
+pub const I2S_WORDSIZE_MASK: usize = 0x7;
 
 /// I2S role.
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum I2sRole {
     /// I2S slave.
@@ -80,7 +80,7 @@ pub enum I2sRole {
 }
 
 /// I2S channel selection.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2sChannel {
     /// Left channel.
     Left,
@@ -89,16 +89,16 @@ pub enum I2sChannel {
 }
 
 /// I2S master clock source frequency for 96KHz sample rate.
-pub const I2S_MCLK_SRC_FREQ17: u32 = 16934400;
+pub const I2S_MCLK_SRC_FREQ17: usize = 16934400;
 /// I2S master clock source frequency for 44.1KHz sample rate.
-pub const I2S_MCLK_SRC_FREQ12: u32 = 12288000;
+pub const I2S_MCLK_SRC_FREQ12: usize = 12288000;
 /// I2S 44.1KHz sample rate.
-pub const I2S_SAMPLE_RATE_44P1K: u32 = 44100;
+pub const I2S_SAMPLE_RATE_44P1K: usize = 44100;
 /// I2S 96KHz sample rate.
-pub const I2S_SAMPLE_RATE_96K: u32 = 96000;
+pub const I2S_SAMPLE_RATE_96K: usize = 96000;
 
 /// I2S register bit positions.
-#[repr(u32)]
+#[repr(usize)]
 pub enum I2sPos {
     /// I2S master enable position.
     MasterEnable,
@@ -135,77 +135,77 @@ define_reg! {
     I2s
     __I2s {
         /// enable register, offset 0x00
-        ier: VolatileRW<u32>,
+        ier: VolatileRW<usize>,
         /// receiver block enable register, offset 0x04
-        irer: VolatileRW<u32>,
+        irer: VolatileRW<usize>,
         /// transmitter block enable register, offset 0x08
-        iter: VolatileRW<u32>,
+        iter: VolatileRW<usize>,
         /// clock enable register, offset 0x0c
-        cer: VolatileRW<u32>,
+        cer: VolatileRW<usize>,
         /// clock configuration register, offset 0x10
-        ccr: VolatileRW<u32>,
+        ccr: VolatileRW<usize>,
         /// receiver block FIFO reset register, offset
-        rxffr: VolatileRW<u32>,
+        rxffr: VolatileRW<usize>,
         /// transmitter block FIFO reset register, offset 0x18
-        txffr: VolatileRW<u32>,
+        txffr: VolatileRW<usize>,
         /// reserved
-        resv0: VolatileRO<u32>,
+        resv0: VolatileRO<usize>,
 
         /// right receive buffer register, offset 0x20
-        lrbr_lthr: VolatileRW<u32>,
+        lrbr_lthr: VolatileRW<usize>,
         /// right transmit holding register, offset 0x24
-        rrbr_rthr: VolatileRW<u32>,
+        rrbr_rthr: VolatileRW<usize>,
         /// receiver enable register, offset 0x28
-        rer: VolatileRW<u32>,
+        rer: VolatileRW<usize>,
         /// transmitter enable register, offset 0x2c
-        ter: VolatileRW<u32>,
+        ter: VolatileRW<usize>,
         /// receiver configuration register, offset 0x30
-        rcr: VolatileRW<u32>,
+        rcr: VolatileRW<usize>,
         /// transmitter configuration register, offset 0x34
-        tcr: VolatileRW<u32>,
+        tcr: VolatileRW<usize>,
         /// interrupt status register, offset 0x38
-        isr: VolatileRO<u32>,
+        isr: VolatileRO<usize>,
         /// interrupt mask register, offset 0x3c
-        imr: VolatileRW<u32>,
+        imr: VolatileRW<usize>,
         /// receiver overrun register, offset 0x40
-        ror: VolatileRO<u32>,
+        ror: VolatileRO<usize>,
         /// transmitter overrun register, offset 0x44
-        tor: VolatileRO<u32>,
+        tor: VolatileRO<usize>,
         /// receiver FIFO configuration register, offset 0x48
-        rfcr: VolatileRW<u32>,
+        rfcr: VolatileRW<usize>,
         /// transmitter FIFO configuration register, offset 0x4c
-        tfcr: VolatileRW<u32>,
+        tfcr: VolatileRW<usize>,
         /// receiver FIFO flush register, offset 0x50
-        rff: VolatileRW<u32>,
+        rff: VolatileRW<usize>,
         /// transmitter FIFO flush register, offset 0x54
-        tff: VolatileRW<u32>,
+        tff: VolatileRW<usize>,
         /// reserved
-        resv1: [VolatileRO<u32>; 0x5a],
+        resv1: [VolatileRO<usize>; 0x5a],
         /// receiver block dma register, offset 0x1c0
-        rxdma: VolatileRW<u32>,
+        rxdma: VolatileRW<usize>,
         /// reset receiver block dma register, offset 0x1c4
-        rrxdma: VolatileRW<u32>,
+        rrxdma: VolatileRW<usize>,
         /// transmitter block dma register, offset 0x1c8
-        txdma: VolatileRW<u32>,
+        txdma: VolatileRW<usize>,
         /// reset transmitter block dma register, offset 0x1cc
-        rtxdma: VolatileRW<u32>,
+        rtxdma: VolatileRW<usize>,
         /// reserved
-        resv2: [VolatileRO<u32>; 8],
+        resv2: [VolatileRO<usize>; 8],
         /// component parameter register 2, offset 0x1f0
-        i2s_comp_param_2: VolatileRO<u32>,
+        i2s_comp_param_2: VolatileRO<usize>,
         /// component parameter register 1, offset 0x1f4
-        i2s_comp_param_1: VolatileRO<u32>,
+        i2s_comp_param_1: VolatileRO<usize>,
         /// component version register, offset 0x1f8
-        i2s_comp_version: VolatileRO<u32>,
+        i2s_comp_version: VolatileRO<usize>,
         /// component type register, offset 0x1fc
-        i2s_comp_type: VolatileRO<u32>,
+        i2s_comp_type: VolatileRO<usize>,
     }
 }
 
 impl I2s {
     /// Enable or disable an I2S interrupt.
     pub fn config_interrupt(&self, interrupt: I2sInterrupt, enable: bool) {
-        toggle_reg_bits!(self.imr, interrupt as u32, enable);
+        toggle_reg_bits!(self.imr, interrupt as usize, enable);
     }
 
     /// Clear an I2S interrupt by reading the corresponding register.
@@ -226,7 +226,7 @@ impl I2s {
     ///
     /// Returns `true` if the interrupt is active.
     pub fn get_interrupt_status(&self, interrupt: I2sInterrupt) -> bool {
-        (self.isr.read() & (interrupt as u32)) != 0
+        (self.isr.read() & (interrupt as usize)) != 0
     }
 
     /// Enable or disable I2S.
@@ -264,16 +264,16 @@ impl I2s {
         self.cmd(true);
 
         toggle_reg_bits!(self.rcr, I2S_WORDSIZE_MASK, false);
-        toggle_reg_bits!(self.rcr, config.word_size as u32, true);
+        toggle_reg_bits!(self.rcr, config.word_size as usize, true);
 
         toggle_reg_bits!(self.tcr, I2S_WORDSIZE_MASK, false);
-        toggle_reg_bits!(self.tcr, config.word_size as u32, true);
+        toggle_reg_bits!(self.tcr, config.word_size as usize, true);
 
         toggle_reg_bits!(self.rfcr, I2S_FIFO_TRIGGER_LEVEL_MASK, false);
-        toggle_reg_bits!(self.rfcr, config.fifo_threshold as u32, true);
+        toggle_reg_bits!(self.rfcr, config.fifo_threshold as usize, true);
 
         toggle_reg_bits!(self.tfcr, I2S_FIFO_TRIGGER_LEVEL_MASK, false);
-        toggle_reg_bits!(self.tfcr, config.fifo_threshold as u32, true);
+        toggle_reg_bits!(self.tfcr, config.fifo_threshold as usize, true);
     }
 
     /// Deinitialize the I2S peripheral, disabling its clock and resetting registers.
@@ -284,7 +284,7 @@ impl I2s {
     }
 
     /// Receive data from the specified I2S channel.
-    pub fn receive_data(&self, channel: I2sChannel) -> u32 {
+    pub fn receive_data(&self, channel: I2sChannel) -> usize {
         match channel {
             I2sChannel::Left => self.lrbr_lthr.read(),
             I2sChannel::Right => self.rrbr_rthr.read(),
@@ -294,14 +294,16 @@ impl I2s {
     /// Send data over I2S on both left and right channels.
     ///
     /// Both slices must have the same length.
-    pub fn send_data(&self, left_chan_data: &[u32], right_chan_data: &[u32]) {
+    pub fn send_data(&self, left_chan_data: &[usize], right_chan_data: &[usize]) {
         let word_size = self.tcr.read() & I2S_WORDSIZE_MASK;
 
         for i in 0..left_chan_data.len() {
             while !self.get_interrupt_status(I2sInterrupt::TxFe) {
                 // wait till tx fifo empties
             }
-            if word_size > I2sWordSize::Bits16 as u32 || word_size == I2sWordSize::DontCare as u32 {
+            if word_size > I2sWordSize::Bits16 as usize
+                || word_size == I2sWordSize::DontCare as usize
+            {
                 self.lrbr_lthr.write(left_chan_data[i]);
                 self.rrbr_rthr.write(right_chan_data[i]);
             } else {

@@ -68,7 +68,7 @@ pub fn _dmb() {
 /// # Returns
 /// Reversed value
 #[inline]
-pub fn _rev(value: u32) -> u32 {
+pub fn _rev(value: usize) -> usize {
     value.swap_bytes()
 }
 

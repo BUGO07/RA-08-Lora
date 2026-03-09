@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// GPIO pin
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum GpioPin {
     /// GPIO Pin 0
@@ -57,7 +57,7 @@ impl GpioPin {
 }
 
 /// GPIO pin mode
-#[repr(u32)]
+#[repr(usize)]
 pub enum GpioMode {
     /// Floating Input
     InputFloating,
@@ -78,14 +78,14 @@ pub enum GpioMode {
 }
 
 /// The output drive capability of the GPIO pin
-#[repr(u32)]
+#[repr(usize)]
 pub enum GpioDriveCapability {
     _4mA,
     _8mA,
 }
 
 /// GPIO interrupt type
-#[repr(u32)]
+#[repr(usize)]
 pub enum IntType {
     /// Disable GPIO interrupt
     None,
@@ -101,46 +101,46 @@ define_reg! {
     Gpio
     __Gpio {
         ///  output enable register
-        oer: VolatileRW<u32>,
+        oer: VolatileRW<usize>,
         ///  output type register
-        otyper: VolatileRW<u32>,
+        otyper: VolatileRW<usize>,
         ///  input enable register
-        ier: VolatileRW<u32>,
+        ier: VolatileRW<usize>,
         ///  pull enable register
-        per: VolatileRW<u32>,
+        per: VolatileRW<usize>,
         ///  pull select register
-        psr: VolatileRW<u32>,
+        psr: VolatileRW<usize>,
         ///  input data register
-        idr: VolatileRO<u32>,
+        idr: VolatileRO<usize>,
         ///  output data register
-        odr: VolatileRW<u32>,
+        odr: VolatileRW<usize>,
         ///  bit reset register
-        brr: VolatileRW<u32>,
+        brr: VolatileRW<usize>,
         ///  bit set register
-        bsr: VolatileRW<u32>,
+        bsr: VolatileRW<usize>,
         ///  dirve set register
-        dsr: VolatileRW<u32>,
+        dsr: VolatileRW<usize>,
         ///  interrupt control register
-        icr: VolatileRW<u32>,
+        icr: VolatileRW<usize>,
         ///  interrupt flag register
-        ifr: VolatileRW<u32>,
+        ifr: VolatileRW<usize>,
         ///  wakeup control register
-        wucr: VolatileRW<u32>,
+        wucr: VolatileRW<usize>,
         ///  wakeup level register
-        wulvl: VolatileRW<u32>,
+        wulvl: VolatileRW<usize>,
         ///  alternate function low register
-        afrl: VolatileRW<u32>,
+        afrl: VolatileRW<usize>,
         ///  alternate function high register
-        afrh: VolatileRW<u32>,
+        afrh: VolatileRW<usize>,
         ///  stop3 wakeup control register
-        stop3_wucr: VolatileRW<u32>,
+        stop3_wucr: VolatileRW<usize>,
     }
 }
 
 impl Gpio {
     /// Init the GPIOx according to the specified parameters
     pub fn init(&self, gpio_pin: GpioPin, mode: GpioMode) {
-        let pin = gpio_pin as u32;
+        let pin = gpio_pin as usize;
         match mode {
             GpioMode::InputFloating => {
                 toggle_reg_bits!(self.oer, 1 << pin, true);
@@ -172,7 +172,7 @@ impl Gpio {
                 toggle_reg_bits!(self.odr, 1 << pin, false);
             }
             GpioMode::OutputODHiz => {
-                if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
+                if self.ptr() as usize == GPIOD_BASE && pin > GpioPin::Pin7 as usize {
                     toggle_reg_bits!(self.odr, 1 << pin, false);
                     toggle_reg_bits!(self.ier, 1 << pin, false);
                     toggle_reg_bits!(self.oer, 1 << pin, true);
@@ -185,7 +185,7 @@ impl Gpio {
                 }
             }
             GpioMode::OutputODLow => {
-                if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
+                if self.ptr() as usize == GPIOD_BASE && pin > GpioPin::Pin7 as usize {
                     toggle_reg_bits!(self.odr, 1 << pin, false);
                     toggle_reg_bits!(self.ier, 1 << pin, false);
                     toggle_reg_bits!(self.oer, 1 << pin, false);
@@ -207,8 +207,8 @@ impl Gpio {
 
     /// Set the output level of the GPIO pin (High = true, Low = false)
     pub fn write(&self, gpio_pin: GpioPin, high: bool) {
-        let pin = gpio_pin as u32;
-        if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
+        let pin = gpio_pin as usize;
+        if self.ptr() as usize == GPIOD_BASE && pin > GpioPin::Pin7 as usize {
             if (self.odr.read() & (1 << pin) == 0)
                 && (self.ier.read() & (1 << pin) == 0)
                 && (self.oer.read() & (1 << pin) != 0)
@@ -247,22 +247,22 @@ impl Gpio {
 
     /// Read the input level (High = true, Low = false)
     pub fn read(&self, gpio_pin: GpioPin) -> bool {
-        self.idr.read() & (1 << gpio_pin as u32) != 0
+        self.idr.read() & (1 << gpio_pin as usize) != 0
     }
 
     /// Toggle the output level of the GPIO pin
     pub fn toggle(&self, gpio_pin: GpioPin) {
-        self.odr.write(self.odr.read() ^ (1 << gpio_pin as u32));
+        self.odr.write(self.odr.read() ^ (1 << gpio_pin as usize));
     }
 
     /// Config the ouput drive capability of the GPIO pin
     pub fn config_drive_capability(&self, gpio_pin: GpioPin, capability: GpioDriveCapability) {
         match capability {
             GpioDriveCapability::_4mA => {
-                toggle_reg_bits!(self.dsr, 1 << gpio_pin as u32, true);
+                toggle_reg_bits!(self.dsr, 1 << gpio_pin as usize, true);
             }
             GpioDriveCapability::_8mA => {
-                toggle_reg_bits!(self.dsr, 1 << gpio_pin as u32, false);
+                toggle_reg_bits!(self.dsr, 1 << gpio_pin as usize, false);
             }
         }
     }
@@ -272,36 +272,36 @@ impl Gpio {
         self.clear_interrupt(gpio_pin);
         set_reg_bits!(
             self.icr,
-            0x3 << (2 * gpio_pin as u32),
-            (int_type as u32) << (2 * gpio_pin as u32)
+            0x3 << (2 * gpio_pin as usize),
+            (int_type as usize) << (2 * gpio_pin as usize)
         );
     }
 
     /// Clear the interrupt of the specified GPIO pin
     pub fn clear_interrupt(&self, gpio_pin: GpioPin) {
         self.ifr
-            .write(self.ifr.read() & 0x3 << (2 * gpio_pin as u32));
+            .write(self.ifr.read() & 0x3 << (2 * gpio_pin as usize));
     }
 
     /// get the interrupt status of the specified GPIO pin
     pub fn get_interrupt_status(&self, gpio_pin: GpioPin) -> bool {
-        self.ifr.read() & (0x3 << (2 * gpio_pin as u32)) != 0
+        self.ifr.read() & (0x3 << (2 * gpio_pin as usize)) != 0
     }
 
     /// Config the wakeup setting of the specified GPIO pin
     pub fn config_wakeup(&self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
-        toggle_reg_bits!(self.wucr, 1 << gpio_pin as u32, enable);
-        toggle_reg_bits!(self.wulvl, 1 << gpio_pin as u32, wake_up);
+        toggle_reg_bits!(self.wucr, 1 << gpio_pin as usize, enable);
+        toggle_reg_bits!(self.wulvl, 1 << gpio_pin as usize, wake_up);
     }
 
     /// Config the wakeup setting of the specified GPIO pin
     pub fn config_stop3_wakeup(&self, gpio_pin: GpioPin, enable: bool, wake_up: bool) {
-        let mut pin = gpio_pin as u32;
-        if self.ptr() as u32 == GPIOD_BASE && pin > GpioPin::Pin7 as u32 {
+        let mut pin = gpio_pin as usize;
+        if self.ptr() as usize == GPIOD_BASE && pin > GpioPin::Pin7 as usize {
             return;
         }
 
-        if self.ptr() as u32 == GPIOA_BASE {
+        if self.ptr() as usize == GPIOA_BASE {
             if matches!(gpio_pin, GpioPin::Pin6 | GpioPin::Pin7) {
                 pin += 6;
             } else if matches!(gpio_pin, GpioPin::Pin12 | GpioPin::Pin13) {
@@ -318,15 +318,15 @@ impl Gpio {
 
     /// Config the iomux of the specified GPIO pin
     pub fn set_iomux(&self, gpio_pin: GpioPin, function: u8) {
-        let pin = gpio_pin as u32;
-        if pin > GpioPin::Pin7 as u32 {
-            let index = pin - GpioPin::Pin8 as u32;
-            let tmp_mask = if self.ptr() as u32 == GPIOD_BASE {
+        let pin = gpio_pin as usize;
+        if pin > GpioPin::Pin7 as usize {
+            let index = pin - GpioPin::Pin8 as usize;
+            let tmp_mask = if self.ptr() as usize == GPIOD_BASE {
                 0x7 << (3 * index)
             } else {
                 0xF << (4 * index)
             };
-            let tmp = if self.ptr() as u32 == GPIOD_BASE {
+            let tmp = if self.ptr() as usize == GPIOD_BASE {
                 function << (3 * index)
             } else {
                 function << (4 * index)

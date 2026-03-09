@@ -13,9 +13,9 @@ use crate::{
 };
 
 /// The maximum value of the IWDG reload
-pub const IWDG_MAX_RELOAD: u32 = 0x0FFF;
+pub const IWDG_MAX_RELOAD: usize = 0x0FFF;
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum IwdgPrescaler {
     Div4 = 0x00000000,
     Div8 = 0x00000002,
@@ -29,13 +29,13 @@ pub enum IwdgPrescaler {
 define_reg! {
     Iwdg
     __Iwdg {
-        cr: VolatileRW<u32>,
-        max: VolatileRW<u32>,
-        win: VolatileRW<u32>,
-        sr: VolatileRO<u32>,
-        sr1: VolatileRO<u32>,
-        cr1: VolatileRW<u32>,
-        sr2: VolatileRW<u32>,
+        cr: VolatileRW<usize>,
+        max: VolatileRW<usize>,
+        win: VolatileRW<usize>,
+        sr: VolatileRO<usize>,
+        sr1: VolatileRO<usize>,
+        cr1: VolatileRW<usize>,
+        sr2: VolatileRW<usize>,
     }
 }
 
@@ -66,15 +66,15 @@ impl Iwdg {
     pub fn set_prescaler(&self, prescaler: IwdgPrescaler) {
         self.wait_until_done();
 
-        set_reg_bits!(self.cr, IWDG_CR_PREDIV_MASK, prescaler as u32);
+        set_reg_bits!(self.cr, IWDG_CR_PREDIV_MASK, prescaler as usize);
     }
 
-    pub fn set_reload(&self, value: u32) {
+    pub fn set_reload(&self, value: usize) {
         self.wait_until_done();
         self.max.write(value.min(IWDG_MAX_RELOAD));
     }
 
-    pub fn set_window_value(&self, value: u32) {
+    pub fn set_window_value(&self, value: usize) {
         self.wait_until_done();
 
         self.win.write(value.min(IWDG_MAX_RELOAD));

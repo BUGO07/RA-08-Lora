@@ -13,9 +13,9 @@ use crate::{
 };
 
 /// 30 seconds between transmissions (ms)
-pub const APP_TX_DUTYCYCLE: u32 = 30_000;
+pub const APP_TX_DUTYCYCLE: usize = 30_000;
 /// random delay range on top of `APP_TX_DUTYCYCLE`
-pub const APP_TX_DUTYCYCLE_RND: u32 = 1_000;
+pub const APP_TX_DUTYCYCLE_RND: usize = 1_000;
 
 /// SF12 - BW125 /// lora/mac/region/Region.h
 pub const LORAWAN_DEFAULT_DATARATE: u8 = ffi::DR_0;
@@ -64,7 +64,7 @@ struct App {
     /// whether or not to request ACK for sent messages
     is_tx_confirmed: bool,
     /// time between transmissions
-    tx_duty_cycle_time: u32,
+    tx_duty_cycle_time: usize,
     /// whether or not it's time to send next packet
     next_tx: bool,
     /// current device state
@@ -410,7 +410,7 @@ pub fn app_start() -> ! {
                 }
 
                 APP.tx_duty_cycle_time =
-                    APP_TX_DUTYCYCLE + ffi::randr(0, APP_TX_DUTYCYCLE_RND as i32) as u32;
+                    APP_TX_DUTYCYCLE + ffi::randr(0, APP_TX_DUTYCYCLE_RND as i32) as usize;
                 APP.device_state = DeviceState::Cycle;
             },
 

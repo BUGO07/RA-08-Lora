@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// LPUART baudrate options
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartBaudrate {
     /// 110 baud
     Baud110 = 110,
@@ -28,16 +28,16 @@ pub enum LpuartBaudrate {
 }
 
 /// Baudrate integer mask
-pub const LPUART_BAUD_RATE_INT_MASK: u32 = 0x3ffc00;
+pub const LPUART_BAUD_RATE_INT_MASK: usize = 0x3ffc00;
 /// Baudrate integer position
-pub const LPUART_BAUD_RATE_INT_POS: u32 = 10;
+pub const LPUART_BAUD_RATE_INT_POS: usize = 10;
 /// Baudrate fraction mask
-pub const LPUART_BAUD_RATE_FRA_MASK: u32 = 0x3c0;
+pub const LPUART_BAUD_RATE_FRA_MASK: usize = 0x3c0;
 /// Baudrate fraction position
-pub const LPUART_BAUD_RATE_FRA_POS: u32 = 6;
+pub const LPUART_BAUD_RATE_FRA_POS: usize = 6;
 
 /// LPUART data width
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartDataWidth {
     /// 5-bit data width
     Data5Bit,
@@ -50,7 +50,7 @@ pub enum LpuartDataWidth {
 }
 
 /// LPUART parity mode
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartParity {
     /// Even parity
     Even = 0x0,
@@ -65,7 +65,7 @@ pub enum LpuartParity {
 }
 
 /// LPUART stop bits
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartStopBits {
     /// 1 stop bit
     Stop1Bit,
@@ -74,7 +74,7 @@ pub enum LpuartStopBits {
 }
 
 /// LPUART CR0 register bit definitions
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartCr0 {
     /// RX low level wakeup
     LowLevelWakeup = 0x400000,
@@ -89,7 +89,7 @@ pub enum LpuartCr0 {
 }
 
 /// LPUART interrupt definitions
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartInterrupt {
     /// RX start valid interrupt
     Cr1StartValid = 0x1,
@@ -112,7 +112,7 @@ pub enum LpuartInterrupt {
 }
 
 /// LPUART CR1 register bit definitions
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartCr1 {
     /// TX enable
     TxEnable = 0x200,
@@ -121,7 +121,7 @@ pub enum LpuartCr1 {
 }
 
 /// LPUART SR0 RX status flags
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartRxStatus {
     /// RX start valid
     Sr0StartValid = 0x1,
@@ -138,7 +138,7 @@ pub enum LpuartRxStatus {
 }
 
 /// LPUART SR1 register status flags
-#[repr(u32)]
+#[repr(usize)]
 pub enum LpuartSr1 {
     /// Write SR0 register state
     WriteSr0 = 0x2,
@@ -155,7 +155,7 @@ pub enum LpuartSr1 {
 /// LPUART initialization configuration
 pub struct LpuartConfig {
     /// Baudrate
-    pub baudrate: u32,
+    pub baudrate: usize,
     /// Data width
     pub data_width: LpuartDataWidth,
     /// Parity mode
@@ -173,11 +173,11 @@ pub struct LpuartConfig {
 define_reg! {
     Lpuart
     __Lpuart {
-        cr0: VolatileRW<u32>,
-        cr1: VolatileRW<u32>,
-        sr0: VolatileRW<u32>,
-        sr1: VolatileRW<u32>,
-        data: VolatileRW<u32>,
+        cr0: VolatileRW<usize>,
+        cr1: VolatileRW<usize>,
+        sr0: VolatileRW<usize>,
+        sr1: VolatileRW<usize>,
+        data: VolatileRW<usize>,
     }
 }
 
@@ -194,101 +194,101 @@ impl Lpuart {
     /// Send a byte of data if the TX buffer is empty
     pub fn send_data(&self, data: u8) {
         if self.get_tx_empty() {
-            self.data.write(data as u32);
+            self.data.write(data as usize);
         }
     }
 
     /// Enable or disable an interrupt source
     pub fn config_interrupt(&self, interrupt: LpuartInterrupt, enable: bool) {
-        toggle_reg_bits!(self.cr1, interrupt as u32, enable);
+        toggle_reg_bits!(self.cr1, interrupt as usize, enable);
     }
 
     /// Enable or disable RTS
     pub fn config_rts(&self, enable: bool) {
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
-        toggle_reg_bits!(self.cr0, LpuartCr0::RtsEnable as u32, enable);
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        toggle_reg_bits!(self.cr0, LpuartCr0::RtsEnable as usize, enable);
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
     }
 
     /// Enable or disable RX
     pub fn config_rx(&self, enable: bool) {
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
-        toggle_reg_bits!(self.cr0, LpuartCr0::RxEnable as u32, enable);
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        toggle_reg_bits!(self.cr0, LpuartCr0::RxEnable as usize, enable);
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
     }
 
     /// Enable or disable CTS
     pub fn config_cts(&self, enable: bool) {
-        toggle_reg_bits!(self.cr1, LpuartCr1::CtsEnable as u32, enable);
+        toggle_reg_bits!(self.cr1, LpuartCr1::CtsEnable as usize, enable);
     }
 
     /// Enable or disable TX
     pub fn config_tx(&self, enable: bool) {
-        toggle_reg_bits!(self.cr1, LpuartCr1::TxEnable as u32, enable);
+        toggle_reg_bits!(self.cr1, LpuartCr1::TxEnable as usize, enable);
     }
 
     /// Get the RX status for a given flag
     pub fn get_rx_status(&self, status: LpuartRxStatus) -> bool {
-        while self.sr1.read() & LpuartSr1::WriteSr0 as u32 != LpuartSr1::WriteSr0 as u32 {}
-        self.sr0.read() & (status as u32) != 0
+        while self.sr1.read() & LpuartSr1::WriteSr0 as usize != LpuartSr1::WriteSr0 as usize {}
+        self.sr0.read() & (status as usize) != 0
     }
 
     /// Clear the specified RX status flag
     pub fn clear_rx_status(&self, status: LpuartRxStatus) {
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
-        self.sr0.write(status as u32);
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        self.sr0.write(status as usize);
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
     }
 
     /// Check if RX buffer is not empty
     pub fn get_rx_not_empty(&self) -> bool {
-        self.sr1.read() & LpuartSr1::RxNotEmpty as u32 != 0
+        self.sr1.read() & LpuartSr1::RxNotEmpty as usize != 0
     }
 
     /// Check if TX buffer is empty
     pub fn get_tx_empty(&self) -> bool {
-        self.sr1.read() & LpuartSr1::TxEmpty as u32 != 0
+        self.sr1.read() & LpuartSr1::TxEmpty as usize != 0
     }
 
     /// Check if TX is done
     pub fn get_tx_done(&self) -> bool {
-        self.sr1.read() & LpuartSr1::TxDone as u32 != 0
+        self.sr1.read() & LpuartSr1::TxDone as usize != 0
     }
 
     /// Clear the TX done status flag
     pub fn clear_tx_done(&self) {
-        toggle_reg_bits!(self.sr1, LpuartSr1::TxDone as u32, true);
+        toggle_reg_bits!(self.sr1, LpuartSr1::TxDone as usize, true);
     }
 
     /// Initialize the LPUART with the given configuration
     pub fn init(&self, config: LpuartConfig) {
         let lpuart_clk_freq = RCC.get_lpuart_clk_src();
-        let freq: u32 = match lpuart_clk_freq {
+        let freq: usize = match lpuart_clk_freq {
             RCC_CR1_LPUART_CLK_SEL_XO32K => 32768,
             RCC_CR1_LPUART_CLK_SEL_RCO32K => 32000,
             _ => 4_000_000,
         };
 
-        let mut tmp_value: u32 = 0;
+        let mut tmp_value: usize = 0;
 
         if config.low_level_wakeup {
-            tmp_value |= LpuartCr0::LowLevelWakeup as u32;
+            tmp_value |= LpuartCr0::LowLevelWakeup as usize;
         } else if config.start_wakeup {
-            tmp_value |= LpuartCr0::StartWakeup as u32;
+            tmp_value |= LpuartCr0::StartWakeup as usize;
         } else if config.rx_done_wakeup {
-            tmp_value |= LpuartCr0::RxDoneWakeup as u32;
+            tmp_value |= LpuartCr0::RxDoneWakeup as usize;
         }
 
         // baudrate
@@ -296,14 +296,14 @@ impl Lpuart {
         let fbaud =
             (((freq % config.baudrate) * 16 + config.baudrate / 2) / config.baudrate) as u16;
 
-        tmp_value |= ((ibaud as u32) << LPUART_BAUD_RATE_INT_POS)
-            | ((fbaud as u32) << LPUART_BAUD_RATE_FRA_POS)
-            | (config.stop_bits as u32)
-            | (config.parity as u32)
-            | (config.data_width as u32);
+        tmp_value |= ((ibaud as usize) << LPUART_BAUD_RATE_INT_POS)
+            | ((fbaud as usize) << LPUART_BAUD_RATE_FRA_POS)
+            | (config.stop_bits as usize)
+            | (config.parity as usize)
+            | (config.data_width as usize);
 
-        while self.sr1.read() & (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
-            != (LpuartSr1::WriteSr0 as u32 | LpuartSr1::WriteCr0 as u32)
+        while self.sr1.read() & (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
+            != (LpuartSr1::WriteSr0 as usize | LpuartSr1::WriteCr0 as usize)
         {}
         self.cr0.write(tmp_value);
     }

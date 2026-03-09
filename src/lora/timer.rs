@@ -1,4 +1,4 @@
-use core::sync::atomic::{AtomicU8, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
 
 use crate::{
     cortex::func::{_disable_irq, _enable_irq},
@@ -7,21 +7,21 @@ use crate::{
 
 const MAX_TIMERS: usize = 16;
 
-static NEXT_TIMER_ID: AtomicU32 = AtomicU32::new(1);
+static NEXT_TIMER_ID: AtomicUsize = AtomicUsize::new(1);
 static HAS_LOOPED_THROUGH_MAIN: AtomicU8 = AtomicU8::new(0);
 static mut G_SYSTIME_REF: u64 = 0;
 static mut TIMER_EVENTS: heapless::Vec<TimerEvent, MAX_TIMERS> = heapless::Vec::new();
 
 pub struct TimerEvent {
-    pub id: u32,
-    pub timestamp: u32,
-    pub reload_value: u32,
+    pub id: usize,
+    pub timestamp: usize,
+    pub reload_value: usize,
     pub is_running: bool,
     pub callback: Option<fn()>,
 }
 
 pub struct TimerSysTime {
-    pub seconds: u32,
+    pub seconds: usize,
     pub subseconds: i16,
 }
 
@@ -32,8 +32,8 @@ pub struct TimerSysTime {
 #[repr(C)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct TimerEvent_t {
-    pub Timestamp: u32,
-    pub ReloadValue: u32,
+    pub Timestamp: usize,
+    pub ReloadValue: usize,
     pub IsRunning: bool,
     pub Callback: Option<extern "C" fn()>,
     pub Next: *mut TimerEvent_t,
@@ -43,7 +43,7 @@ pub struct TimerEvent_t {
 #[repr(C)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct TimerSysTime_t {
-    pub Seconds: u32,
+    pub Seconds: usize,
     pub SubSeconds: i16,
 }
 
@@ -71,7 +71,7 @@ impl TimerSysTime_t {
 unsafe fn c_timer_to_rust(obj: *mut TimerEvent_t) -> TimerEvent {
     let c = unsafe { &*obj };
     TimerEvent {
-        id: obj as u32,
+        id: obj as usize,
         timestamp: c.Timestamp,
         reload_value: c.ReloadValue,
         is_running: c.IsRunning,
@@ -103,7 +103,7 @@ pub fn timer_set_sys_time(sys_time: TimerSysTime) {
 pub fn timer_get_sys_time() -> TimerSysTime {
     let cur_time = timer_get_current_time();
     TimerSysTime {
-        seconds: (cur_time / 1000) as u32,
+        seconds: (cur_time / 1000) as usize,
         subseconds: (cur_time % 1000) as i16,
     }
 }
@@ -122,7 +122,7 @@ fn time_stamps_update() {
     let old = RTC.get_timer_ctx();
     let now = RTC.set_timer_ctx();
 
-    let delta_ctx = (now - old) as u32;
+    let delta_ctx = (now - old) as usize;
     for event in unsafe { TIMER_EVENTS.iter_mut() } {
         if event.timestamp > delta_ctx {
             event.timestamp -= delta_ctx;
@@ -156,7 +156,7 @@ pub fn timer_start(timer: &mut TimerEvent) {
 
         timer_insert_new_head_timer(timer);
     } else {
-        let elapsed_time = RTC.get_elapsed_time() as u32;
+        let elapsed_time = RTC.get_elapsed_time() as usize;
         timer.timestamp += elapsed_time;
 
         let head_ts = unsafe { TIMER_EVENTS[0].timestamp };
@@ -216,7 +216,7 @@ pub fn timer_reset(timer: &mut TimerEvent) {
     timer_start(timer);
 }
 
-pub fn timer_set_value(timer: &mut TimerEvent, value: u32) {
+pub fn timer_set_value(timer: &mut TimerEvent, value: usize) {
     timer_stop(timer);
     timer.timestamp = value;
     timer.reload_value = value;
@@ -240,7 +240,7 @@ pub fn timer_irq_handler() {
         let should_fire = unsafe {
             TIMER_EVENTS
                 .first()
-                .is_some_and(|h| h.timestamp < RTC.get_elapsed_time() as u32 || h.timestamp == 0)
+                .is_some_and(|h| h.timestamp < RTC.get_elapsed_time() as usize || h.timestamp == 0)
         };
         if !should_fire {
             break;
@@ -452,7 +452,7 @@ pub unsafe extern "C" fn TimerReset(obj: *mut TimerEvent_t) {
 /// `obj` must be a valid, non-null pointer to an initialized `TimerEvent_t`.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TimerSetValue(obj: *mut TimerEvent_t, value: u32) {
+pub unsafe extern "C" fn TimerSetValue(obj: *mut TimerEvent_t, value: usize) {
     let mut event = unsafe { c_timer_to_rust(obj) };
     timer_set_value(&mut event, value);
     unsafe { rust_timer_to_c(obj, &event) };

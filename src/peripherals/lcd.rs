@@ -1,5 +1,5 @@
 use crate::{analog_read, analog_write, peripherals::regs::Lcd, toggle_reg_bits};
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdDuty {
     Static = 0x0,
     Half = 0x1,
@@ -8,7 +8,7 @@ pub enum LcdDuty {
     Reserved = 0x7,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdComUse {
     One = 0x1,
     Two = 0x2,
@@ -16,7 +16,7 @@ pub enum LcdComUse {
     Four = 0x4,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdDriveMode {
     SmallCurrent = 0x0,
     LargeCurrent = 0x1,
@@ -24,7 +24,7 @@ pub enum LcdDriveMode {
     LargeCurrentBuffer = 0x3,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdBias {
     Quarter = 0x0,
     Third = 0x8,
@@ -32,12 +32,12 @@ pub enum LcdBias {
     Static = 0x18,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdEnable {
     Enabled = 0x20,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdPrescaler {
     Div1 = 0x0,
     Div2 = 0x1,
@@ -57,7 +57,7 @@ pub enum LcdPrescaler {
     Div32768 = 0xf,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdDivision {
     Div16 = 0x0,
     Div17 = 0x10,
@@ -77,7 +77,7 @@ pub enum LcdDivision {
     Div31 = 0xf0,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdBlinkFreq {
     Div8 = 0x0,
     Div16 = 0x100,
@@ -89,7 +89,7 @@ pub enum LcdBlinkFreq {
     Div1024 = 0x700,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdBlinkSel {
     Disabled = 0x0,
     Seg0Com0 = 0x800,
@@ -97,7 +97,7 @@ pub enum LcdBlinkSel {
     AllSegCom = 0x1800,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdDeadCycle {
     Zero = 0x0,
     One = 0x2000,
@@ -109,12 +109,12 @@ pub enum LcdDeadCycle {
     Seven = 0xe000,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdSwitchEnable {
     Enabled = 0x10000,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdLargeCurrentNum {
     Zero = 0x0,
     One = 0x20000,
@@ -126,7 +126,7 @@ pub enum LcdLargeCurrentNum {
     Seven = 0xe0000,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdComNum {
     Com0,
     Com1,
@@ -134,7 +134,7 @@ pub enum LcdComNum {
     Com3,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdComSegMask {
     Com0 = 0x7ffffff,
     Com1 = 0x3ffffff,
@@ -142,18 +142,18 @@ pub enum LcdComSegMask {
     Com3 = 0xffffff,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdStatus {
     Cr0Done = 0x1,
     Cr1Done = 0x2,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdInterrupt {
     EvenFrameDone = 0x2,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum LcdInterruptStatus {
     EvenFrameDone = 0x1,
 }
@@ -174,73 +174,73 @@ impl Lcd {
 
     pub fn enable(&self, enable_flag: bool) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr0, LcdEnable::Enabled as u32, enable_flag);
+        toggle_reg_bits!(self.cr0, LcdEnable::Enabled as usize, enable_flag);
     }
 
     pub fn config_duty(&self, duty: LcdDuty) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr0, LcdDuty::Reserved as u32, false);
+        toggle_reg_bits!(self.cr0, LcdDuty::Reserved as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr0, duty as u32, true);
+        toggle_reg_bits!(self.cr0, duty as usize, true);
     }
 
     pub fn config_bias(&self, bias: LcdBias) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr0, LcdBias::Static as u32, false);
+        toggle_reg_bits!(self.cr0, LcdBias::Static as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr0, bias as u32, true);
+        toggle_reg_bits!(self.cr0, bias as usize, true);
     }
 
     pub fn config_prescaler(&self, prescaler: LcdPrescaler) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdPrescaler::Div32768 as u32, false);
+        toggle_reg_bits!(self.cr1, LcdPrescaler::Div32768 as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, prescaler as u32, true);
+        toggle_reg_bits!(self.cr1, prescaler as usize, true);
     }
 
     pub fn config_division_clock(&self, division: LcdDivision) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdDivision::Div31 as u32, false);
+        toggle_reg_bits!(self.cr1, LcdDivision::Div31 as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, division as u32, true);
+        toggle_reg_bits!(self.cr1, division as usize, true);
     }
 
     pub fn config_blink_freq(&self, blink_freq: LcdBlinkFreq) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdBlinkFreq::Div1024 as u32, false);
+        toggle_reg_bits!(self.cr1, LcdBlinkFreq::Div1024 as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, blink_freq as u32, true);
+        toggle_reg_bits!(self.cr1, blink_freq as usize, true);
     }
 
     pub fn config_blink_sel(&self, blink_sel: LcdBlinkSel) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdBlinkSel::AllSegCom as u32, false);
+        toggle_reg_bits!(self.cr1, LcdBlinkSel::AllSegCom as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, blink_sel as u32, true);
+        toggle_reg_bits!(self.cr1, blink_sel as usize, true);
     }
 
     pub fn config_dead_cycle(&self, dead_cycle: LcdDeadCycle) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdDeadCycle::Seven as u32, false);
+        toggle_reg_bits!(self.cr1, LcdDeadCycle::Seven as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, dead_cycle as u32, true);
+        toggle_reg_bits!(self.cr1, dead_cycle as usize, true);
     }
 
     pub fn enable_switch(&self, enable_flag: bool) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdSwitchEnable::Enabled as u32, enable_flag);
+        toggle_reg_bits!(self.cr1, LcdSwitchEnable::Enabled as usize, enable_flag);
     }
 
     pub fn config_large_current_num(&self, num: LcdLargeCurrentNum) {
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, LcdLargeCurrentNum::Seven as u32, false);
+        toggle_reg_bits!(self.cr1, LcdLargeCurrentNum::Seven as usize, false);
         while !self.check_sync_done() {}
-        toggle_reg_bits!(self.cr1, num as u32, true);
+        toggle_reg_bits!(self.cr1, num as usize, true);
     }
 
     pub fn write_com_seg_bit(&self, com: LcdComNum, bit_pos: u8, value: u8) {
-        let bit_mask = 1u32 << bit_pos;
-        let bit_value = (value as u32) << bit_pos;
+        let bit_mask = 1usize << bit_pos;
+        let bit_value = (value as usize) << bit_pos;
 
         while !self.check_sync_done() {}
         let dr = match com {
@@ -258,40 +258,40 @@ impl Lcd {
         while !self.check_sync_done() {}
 
         let (dr, mask) = match com {
-            LcdComNum::Com0 => (&self.dr0, LcdComSegMask::Com0 as u32),
-            LcdComNum::Com1 => (&self.dr1, LcdComSegMask::Com1 as u32),
-            LcdComNum::Com2 => (&self.dr2, LcdComSegMask::Com2 as u32),
-            LcdComNum::Com3 => (&self.dr3, LcdComSegMask::Com3 as u32),
+            LcdComNum::Com0 => (&self.dr0, LcdComSegMask::Com0 as usize),
+            LcdComNum::Com1 => (&self.dr1, LcdComSegMask::Com1 as usize),
+            LcdComNum::Com2 => (&self.dr2, LcdComSegMask::Com2 as usize),
+            LcdComNum::Com3 => (&self.dr3, LcdComSegMask::Com3 as usize),
         };
         toggle_reg_bits!(dr, mask, false);
     }
 
     pub fn check_sync_done(&self) -> bool {
-        self.sr.read() & (LcdStatus::Cr0Done as u32) == (LcdStatus::Cr0Done as u32)
-            && self.sr.read() & (LcdStatus::Cr1Done as u32) == (LcdStatus::Cr1Done as u32)
+        self.sr.read() & (LcdStatus::Cr0Done as usize) == (LcdStatus::Cr0Done as usize)
+            && self.sr.read() & (LcdStatus::Cr1Done as usize) == (LcdStatus::Cr1Done as usize)
     }
 
     pub fn config_drive_mode(&self, mode: LcdDriveMode) {
         let read_data = analog_read!(0xb) & !(0x3 << 3);
         analog_write!(0xb, read_data);
-        analog_write!(0xb, read_data | ((mode as u32) << 3));
+        analog_write!(0xb, read_data | ((mode as usize) << 3));
     }
 
     pub fn config_interrupt(&self, enable_flag: bool) {
-        toggle_reg_bits!(self.cr2, LcdInterrupt::EvenFrameDone as u32, enable_flag);
+        toggle_reg_bits!(self.cr2, LcdInterrupt::EvenFrameDone as usize, enable_flag);
     }
 
     pub fn get_interrupt_status(&self) -> bool {
-        self.cr2.read() & (LcdInterrupt::EvenFrameDone as u32)
-            == (LcdInterruptStatus::EvenFrameDone as u32)
+        self.cr2.read() & (LcdInterrupt::EvenFrameDone as usize)
+            == (LcdInterruptStatus::EvenFrameDone as usize)
     }
 
     pub fn clear_interrupt_status(&self) {
-        toggle_reg_bits!(self.cr2, LcdInterrupt::EvenFrameDone as u32, true);
+        toggle_reg_bits!(self.cr2, LcdInterrupt::EvenFrameDone as usize, true);
     }
 
     pub fn enable_com(&self, com_use: LcdComUse) {
-        let com = com_use as u32;
+        let com = com_use as usize;
         let read_data = analog_read!(0x9) & !(0x7 << 1);
         analog_write!(0x9, read_data);
         analog_write!(0x9, read_data | ((com - 1) << 1));

@@ -29,7 +29,7 @@ pub fn delay_init() {
 /// Delay for a specified number of microseconds
 /// Note: This function is blocking and will busy-wait, so it should be used for short delays only
 #[unsafe(no_mangle)]
-pub extern "C" fn delay_us(micros: u32) {
+pub extern "C" fn delay_us(micros: usize) {
     if FAC_US.load(Ordering::Relaxed) == 0 {
         panic!("delay_init() must be called before using delay functions");
     }
@@ -39,7 +39,7 @@ pub extern "C" fn delay_us(micros: u32) {
 
     let reload = SYSTICK.load.read();
 
-    let ticks = micros * FAC_US.load(Ordering::Relaxed) as u32;
+    let ticks = micros * FAC_US.load(Ordering::Relaxed) as usize;
     let mut tprev = SYSTICK.val.read();
 
     loop {
@@ -63,11 +63,11 @@ pub extern "C" fn delay_us(micros: u32) {
 /// Delay for a specified number of milliseconds
 /// Note: This function is blocking and will busy-wait, so it should be used for short delays only
 #[unsafe(no_mangle)]
-pub extern "C" fn delay_ms(millis: u32) {
+pub extern "C" fn delay_ms(millis: usize) {
     delay_us(millis * 1000);
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn DelayMs(millis: u32) {
+pub extern "C" fn DelayMs(millis: usize) {
     delay_ms(millis);
 }

@@ -20,11 +20,11 @@ use crate::{
     toggle_reg_bits,
 };
 
-pub const BOARD_TCXO_WAKEUP_TIME: u32 = 5;
+pub const BOARD_TCXO_WAKEUP_TIME: usize = 5;
 pub static G_PA_OPT_SETTING: AtomicU8 = AtomicU8::new(0);
 
 pub fn spi_in_out(data: u16) -> u16 {
-    LORAC.ssp_dr.write(data as u32);
+    LORAC.ssp_dr.write(data as usize);
 
     loop {
         let status = LORAC.ssp_sr.read();
@@ -61,7 +61,7 @@ pub fn sx126x_lorac_init() {
     }
 }
 
-pub fn sx126x_get_board_tcxo_wakeup_time() -> u32 {
+pub fn sx126x_get_board_tcxo_wakeup_time() -> usize {
     BOARD_TCXO_WAKEUP_TIME
 }
 
@@ -214,7 +214,7 @@ pub fn sx126x_set_rf_tx_power(power: i8) {
     sx126x_set_tx_params(power, RadioRampTimes::Ramp40Us);
 }
 
-pub fn sx126x_get_pa_select(_channel: u32) -> u8 {
+pub fn sx126x_get_pa_select(_channel: usize) -> u8 {
     2 // SX1262 ??
 }
 
@@ -226,7 +226,7 @@ pub fn sx126x_ant_sw_off() {
     CONFIG_LORA_RFSW_VDD_GPIOX.init(CONFIG_LORA_RFSW_VDD_PIN, GpioMode::OutputPPLow);
 }
 
-pub fn sx126x_check_rf_freq(_freq: u32) -> bool {
+pub fn sx126x_check_rf_freq(_freq: usize) -> bool {
     // implement check. currently all frequencies are supported
     true
 }
@@ -316,7 +316,7 @@ pub extern "C" fn SX126xSetRfTxPower(power: i8) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn SX126xGetPaSelect(channel: u32) -> u8 {
+pub extern "C" fn SX126xGetPaSelect(channel: usize) -> u8 {
     sx126x_get_pa_select(channel)
 }
 
@@ -331,12 +331,12 @@ pub extern "C" fn SX126xAntSwOff() {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn SX126xCheckRfFrequency(frequency: u32) -> bool {
+pub extern "C" fn SX126xCheckRfFrequency(frequency: usize) -> bool {
     sx126x_check_rf_freq(frequency)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn SX126xGetBoardTcxoWakeupTime() -> u32 {
+pub extern "C" fn SX126xGetBoardTcxoWakeupTime() -> usize {
     sx126x_get_board_tcxo_wakeup_time()
 }
 

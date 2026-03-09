@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// LPTIMER status flags (ISR register)
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerStatus {
     /// Compare match
@@ -33,7 +33,7 @@ pub enum LptimerStatus {
 }
 
 /// LPTIMER interrupt flags
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerInterrupt {
     /// Compare match interrupt
@@ -53,7 +53,7 @@ pub enum LptimerInterrupt {
 }
 
 /// LPTIMER clear status success flags (CSR register)
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerClearStatusFlag {
     /// Compare match
@@ -69,7 +69,7 @@ pub enum LptimerClearStatusFlag {
 }
 
 /// LPTIMER external trigger polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerTrigPolarity {
     /// Software trigger
@@ -83,7 +83,7 @@ pub enum LptimerTrigPolarity {
 }
 
 /// LPTIMER trigger source selection
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerTrigSel {
     /// External trigger etr
@@ -105,7 +105,7 @@ pub enum LptimerTrigSel {
 }
 
 /// LPTIMER clock prescaler
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerPrescaler {
     /// 1 prescaler
@@ -127,7 +127,7 @@ pub enum LptimerPrescaler {
 }
 
 /// LPTIMER trigger filter configuration
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerTrigFilter {
     /// No filter
@@ -141,7 +141,7 @@ pub enum LptimerTrigFilter {
 }
 
 /// LPTIMER external clock filter configuration
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerClkFilter {
     /// No filter
@@ -155,7 +155,7 @@ pub enum LptimerClkFilter {
 }
 
 /// LPTIMER clock polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerClkPolarity {
     /// Count by rising edge
@@ -169,7 +169,7 @@ pub enum LptimerClkPolarity {
 }
 
 /// LPTIMER CFGR register bit definitions
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerCfgr {
     /// External clock filter enable
@@ -191,7 +191,7 @@ pub enum LptimerCfgr {
 }
 
 /// LPTIMER wakeup configuration
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerWakeup {
     /// CMPM wakeup enable
@@ -209,7 +209,7 @@ pub enum LptimerWakeup {
 }
 
 /// LPTIMER count mode
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum LptimerMode {
     /// Start in single mode
@@ -219,7 +219,7 @@ pub enum LptimerMode {
 }
 
 /// LPTIMER enable flag
-const LPTIMER_CR_ENABLE: u32 = 0x1;
+const LPTIMER_CR_ENABLE: usize = 0x1;
 
 /// LPTIMER initialization configuration
 pub struct LptimerConfig {
@@ -239,25 +239,25 @@ define_reg! {
     Lptimer
     __Lptimer {
         /// LPTIMER flag and status register
-        isr: VolatileRO<u32>,
+        isr: VolatileRO<usize>,
         /// LPTIMER flag clear register
-        icr: VolatileRW<u32>,
+        icr: VolatileRW<usize>,
         /// LPTIMER interrupt enable register
-        ier: VolatileRW<u32>,
+        ier: VolatileRW<usize>,
         /// LPTIMER configuration register
-        cfgr: VolatileRW<u32>,
+        cfgr: VolatileRW<usize>,
         /// LPTIMER control register
-        cr: VolatileRW<u32>,
+        cr: VolatileRW<usize>,
         /// LPTIMER compare register
-        cmp: VolatileRW<u32>,
+        cmp: VolatileRW<usize>,
         /// LPTIMER autoreload register
-        arr: VolatileRW<u32>,
+        arr: VolatileRW<usize>,
         /// LPTIMER counter register
-        cnt: VolatileRO<u32>,
+        cnt: VolatileRO<usize>,
         /// LPTIMER CSR register
-        csr: VolatileRO<u32>,
+        csr: VolatileRO<usize>,
         /// LPTIMER SR1 register
-        sr1: VolatileRO<u32>,
+        sr1: VolatileRO<usize>,
     }
 }
 
@@ -267,27 +267,27 @@ impl Lptimer {
         while !self.get_status(LptimerStatus::Cfgrok) {}
         toggle_reg_bits!(
             self.cfgr,
-            LptimerCfgr::Countmode as u32,
+            LptimerCfgr::Countmode as usize,
             config.count_by_external
         );
 
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, LptimerPrescaler::Div128 as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerPrescaler::Div128 as usize, false);
 
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, config.prescaler as u32, true);
+        toggle_reg_bits!(self.cfgr, config.prescaler as usize, true);
 
         while !self.get_status(LptimerStatus::Cfgrok) {}
         toggle_reg_bits!(
             self.cfgr,
-            LptimerCfgr::Preload as u32,
+            LptimerCfgr::Preload as usize,
             config.autoreload_preload
         );
 
         while !self.get_status(LptimerStatus::Cfgrok) {}
         toggle_reg_bits!(
             self.cfgr,
-            LptimerCfgr::Wavpol as u32,
+            LptimerCfgr::Wavpol as usize,
             config.wavpol_inverted
         );
 
@@ -315,128 +315,132 @@ impl Lptimer {
 
     /// Enable or disable external clock filter
     pub fn enable_clock_filter(&self, enable: bool) {
-        toggle_reg_bits!(self.cfgr, LptimerCfgr::CkfltEn as u32, enable);
+        toggle_reg_bits!(self.cfgr, LptimerCfgr::CkfltEn as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Enable or disable trigger filter
     pub fn enable_trigger_filter(&self, enable: bool) {
-        toggle_reg_bits!(self.cfgr, LptimerCfgr::TrgfltEn as u32, enable);
+        toggle_reg_bits!(self.cfgr, LptimerCfgr::TrgfltEn as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure wakeup source
     pub fn config_wakeup(&self, wkup: LptimerWakeup, enable: bool) {
-        toggle_reg_bits!(self.cfgr, wkup as u32, enable);
+        toggle_reg_bits!(self.cfgr, wkup as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Enable or disable timeout mode
     pub fn config_timeout(&self, enable: bool) {
-        toggle_reg_bits!(self.cfgr, LptimerCfgr::Timeout as u32, enable);
+        toggle_reg_bits!(self.cfgr, LptimerCfgr::Timeout as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Enable or disable waveform output
     pub fn config_wave(&self, enable: bool) {
-        toggle_reg_bits!(self.cfgr, LptimerCfgr::Wave as u32, enable);
+        toggle_reg_bits!(self.cfgr, LptimerCfgr::Wave as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Enable or disable encoder mode
     pub fn config_encoder(&self, enable: bool) {
-        toggle_reg_bits!(self.cfgr, LptimerCfgr::Enc as u32, enable);
+        toggle_reg_bits!(self.cfgr, LptimerCfgr::Enc as usize, enable);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure external trigger polarity
     pub fn config_trigger_polarity(&self, polarity: LptimerTrigPolarity) {
-        toggle_reg_bits!(self.cfgr, LptimerTrigPolarity::RisingFalling as u32, false);
+        toggle_reg_bits!(
+            self.cfgr,
+            LptimerTrigPolarity::RisingFalling as usize,
+            false
+        );
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, polarity as u32, true);
+        toggle_reg_bits!(self.cfgr, polarity as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure trigger source
     pub fn config_trigger_source(&self, source: LptimerTrigSel) {
-        toggle_reg_bits!(self.cfgr, LptimerTrigSel::Sel7 as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerTrigSel::Sel7 as usize, false);
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, source as u32, true);
+        toggle_reg_bits!(self.cfgr, source as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure clock prescaler
     pub fn config_clock_prescaler(&self, prescaler: LptimerPrescaler) {
-        toggle_reg_bits!(self.cfgr, LptimerPrescaler::Div128 as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerPrescaler::Div128 as usize, false);
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, prescaler as u32, true);
+        toggle_reg_bits!(self.cfgr, prescaler as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure trigger filter
     pub fn config_trigger_filter(&self, filter: LptimerTrigFilter) {
-        toggle_reg_bits!(self.cfgr, LptimerTrigFilter::Len8 as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerTrigFilter::Len8 as usize, false);
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, filter as u32, true);
+        toggle_reg_bits!(self.cfgr, filter as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure external clock filter
     pub fn config_clock_filter(&self, filter: LptimerClkFilter) {
-        toggle_reg_bits!(self.cfgr, LptimerClkFilter::Len8 as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerClkFilter::Len8 as usize, false);
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, filter as u32, true);
+        toggle_reg_bits!(self.cfgr, filter as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure clock polarity
     pub fn config_clock_polarity(&self, polarity: LptimerClkPolarity) {
-        toggle_reg_bits!(self.cfgr, LptimerClkPolarity::Reserved as u32, false);
+        toggle_reg_bits!(self.cfgr, LptimerClkPolarity::Reserved as usize, false);
         while !self.get_status(LptimerStatus::Cfgrok) {}
-        toggle_reg_bits!(self.cfgr, polarity as u32, true);
+        toggle_reg_bits!(self.cfgr, polarity as usize, true);
         while !self.get_status(LptimerStatus::Cfgrok) {}
     }
 
     /// Configure count mode (single or continuous)
     pub fn config_count_mode(&self, mode: LptimerMode, enable: bool) {
-        toggle_reg_bits!(self.cr, mode as u32, enable);
+        toggle_reg_bits!(self.cr, mode as usize, enable);
         while !self.get_status(LptimerStatus::Crok) {}
     }
 
     /// Enable or disable an interrupt source
     pub fn config_interrupt(&self, interrupt: LptimerInterrupt, enable: bool) {
-        toggle_reg_bits!(self.ier, interrupt as u32, enable);
+        toggle_reg_bits!(self.ier, interrupt as usize, enable);
     }
 
     /// Clear an interrupt flag
     pub fn clear_interrupt(&self, interrupt: LptimerInterrupt) {
-        toggle_reg_bits!(self.icr, interrupt as u32, true);
+        toggle_reg_bits!(self.icr, interrupt as usize, true);
     }
 
     /// Get the interrupt status from the SR1 register
     pub fn get_interrupt_status(&self, interrupt: LptimerInterrupt) -> bool {
-        self.sr1.read() & (interrupt as u32) == (interrupt as u32)
+        self.sr1.read() & (interrupt as usize) == (interrupt as usize)
     }
 
     /// Set the autoreload register value
     pub fn set_arr_register(&self, arr_value: u16) {
-        self.arr.write(arr_value as u32);
+        self.arr.write(arr_value as usize);
         while !self.get_status(LptimerStatus::Arrok) {}
     }
 
     /// Set the compare register value
     pub fn set_cmp_register(&self, cmp_value: u16) {
-        self.cmp.write(cmp_value as u32);
+        self.cmp.write(cmp_value as usize);
         while !self.get_status(LptimerStatus::Cmpok) {}
     }
 
     /// Get the ISR status for a given flag
     pub fn get_status(&self, status: LptimerStatus) -> bool {
-        self.isr.read() & (status as u32) == (status as u32)
+        self.isr.read() & (status as usize) == (status as usize)
     }
 
     /// Get the clear status success flag from the CSR register
     pub fn get_clear_status_flag(&self, flag: LptimerClearStatusFlag) -> bool {
-        self.csr.read() & (flag as u32) == (flag as u32)
+        self.csr.read() & (flag as usize) == (flag as usize)
     }
 }

@@ -8,11 +8,11 @@ use crate::{
     peripherals::delay::delay_ms,
 };
 
-/// Radio complete Wake-up Time with margin for temperature compensation [ms]
-pub const RADIO_WAKEUP_TIME: u32 = 3;
+/// Radio complete Wake-up Time with margin for temperature compensation (ms)
+pub const RADIO_WAKEUP_TIME: usize = 3;
 
 /// Compensation delay for SetAutoTx/Rx functions in 15.625 microseconds
-pub const AUTO_RX_TX_OFFSET: u32 = 2;
+pub const AUTO_RX_TX_OFFSET: usize = 2;
 
 /// LFSR initial value to compute IBM type CRC
 pub const CRC_IBM_SEED: u16 = 0xFFFF;
@@ -446,8 +446,8 @@ pub enum RadioCommands {
 /// GFSK modulation parameters
 #[derive(Debug, Clone, Copy)]
 pub struct GfskModulationParams {
-    pub bit_rate: u32,
-    pub fdev: u32,
+    pub bit_rate: usize,
+    pub fdev: usize,
     pub modulation_shaping: RadioModShapings,
     pub bandwidth: u8,
 }
@@ -524,7 +524,7 @@ pub struct GfskPacketStatus {
     pub rssi_avg: i8,
     /// The RSSI measured on last packet
     pub rssi_sync: i8,
-    pub freq_error: u32,
+    pub freq_error: usize,
 }
 
 /// LoRa packet status
@@ -535,7 +535,7 @@ pub struct LoRaPacketStatus {
     /// The SNR of the last packet
     pub snr_pkt: i8,
     pub signal_rssi_pkt: i8,
-    pub freq_error: u32,
+    pub freq_error: usize,
 }
 
 /// Represents the packet status for every packet type
@@ -772,7 +772,7 @@ type VoidFn = fn();
 pub const XTAL_FREQ: f64 = 32000000.0;
 pub const FREQ_DIV: f64 = 2u64.pow(25) as f64;
 pub const FREQ_STEP: f64 = XTAL_FREQ / FREQ_DIV;
-pub const RX_BUFFER_SIZE: u32 = 256;
+pub const RX_BUFFER_SIZE: usize = 256;
 
 pub struct Sx126xCallbacks {
     pub tx_done: Option<VoidFn>,
@@ -793,7 +793,7 @@ pub struct RadioRegister {
 
 pub static mut OPERATING_MODE: RadioOperatingModes = RadioOperatingModes::Sleep;
 pub static mut RADIO_PACKET_TYPE: RadioPacketTypes = RadioPacketTypes::None;
-pub static mut FREQUENCY_ERROR: u32 = 0;
+pub static mut FREQUENCY_ERROR: usize = 0;
 pub static mut IMAGE_CALIBRATED: bool = false;
 
 pub fn sx126x_init() {
@@ -861,7 +861,7 @@ pub fn sx126x_get_payload(buffer: &mut [u8], max_size: u8) -> Result<u8, Sx126xE
     Ok(length)
 }
 
-pub fn sx126x_send_payload(payload: &[u8], timeout: u32) {
+pub fn sx126x_send_payload(payload: &[u8], timeout: usize) {
     sx126x_set_payload(payload);
     sx126x_set_tx(timeout);
 }
@@ -893,7 +893,7 @@ pub fn sx126x_set_whitening_seed(seed: u16) {
     }
 }
 
-pub fn sx126x_get_random() -> u32 {
+pub fn sx126x_get_random() -> usize {
     let mut random_bytes = [0u8; 4];
 
     sx126x_set_rx(0);
@@ -904,7 +904,7 @@ pub fn sx126x_get_random() -> u32 {
 
     sx126x_set_standby(RadioStandbyModes::StdbyRc);
 
-    u32::from_be_bytes(random_bytes)
+    usize::from_be_bytes(random_bytes)
 }
 
 pub fn sx126x_set_sleep(sleep_config: SleepParams) {
@@ -929,7 +929,7 @@ pub fn sx126x_set_fs() {
     unsafe { OPERATING_MODE = RadioOperatingModes::Fs };
 }
 
-pub fn sx126x_set_tx(timeout: u32) {
+pub fn sx126x_set_tx(timeout: usize) {
     unsafe { OPERATING_MODE = RadioOperatingModes::Tx };
 
     let buf = [
@@ -940,7 +940,7 @@ pub fn sx126x_set_tx(timeout: u32) {
     sx126x_write_command(RadioCommands::SetTx, &buf);
 }
 
-pub fn sx126x_set_rx(timeout: u32) {
+pub fn sx126x_set_rx(timeout: usize) {
     unsafe { OPERATING_MODE = RadioOperatingModes::Rx };
 
     let buf = [
@@ -951,7 +951,7 @@ pub fn sx126x_set_rx(timeout: u32) {
     sx126x_write_command(RadioCommands::SetRx, &buf);
 }
 
-pub fn sx126x_set_rx_boosted(timeout: u32) {
+pub fn sx126x_set_rx_boosted(timeout: usize) {
     unsafe { OPERATING_MODE = RadioOperatingModes::Rx };
 
     sx126x_write_registers(REG_RX_GAIN, &[0x96]); // max LNA gain, increase current by ~2mA for around ~3dB in sensitivity
@@ -964,7 +964,7 @@ pub fn sx126x_set_rx_boosted(timeout: u32) {
     sx126x_write_command(RadioCommands::SetRx, &buf);
 }
 
-pub fn sx126x_set_rx_duty_cycle(rx_time: u32, sleep_time: u32) {
+pub fn sx126x_set_rx_duty_cycle(rx_time: usize, sleep_time: usize) {
     let buf = [
         ((rx_time >> 16) & 0xFF) as u8,
         ((rx_time >> 8) & 0xFF) as u8,
@@ -1006,7 +1006,7 @@ pub fn sx126x_calibrate(calib_param: CalibrationParams) {
     sx126x_write_command(RadioCommands::Calibrate, &[calib_param.value]);
 }
 
-pub fn sx126x_calibrate_image(freq: u32) {
+pub fn sx126x_calibrate_image(freq: usize) {
     let cal_freq = if freq > 900_000_000 {
         [0xE1, 0xE9]
     } else if freq > 850_000_000 {
@@ -1056,7 +1056,7 @@ pub fn sx126x_set_dio_2_as_rf_switch_ctrl(enable: bool) {
     sx126x_write_command(RadioCommands::SetRfSwitchMode, &[enable as u8]);
 }
 
-pub fn sx126x_set_dio_3_as_tcxo_ctrl(tcxo_voltage: RadioTcxoCtrlVoltage, timeout: u32) {
+pub fn sx126x_set_dio_3_as_tcxo_ctrl(tcxo_voltage: RadioTcxoCtrlVoltage, timeout: usize) {
     let buf = [
         tcxo_voltage as u8 & 0x07,
         ((timeout >> 16) & 0xFF) as u8,
@@ -1066,7 +1066,7 @@ pub fn sx126x_set_dio_3_as_tcxo_ctrl(tcxo_voltage: RadioTcxoCtrlVoltage, timeout
     sx126x_write_command(RadioCommands::SetTcxoMode, &buf);
 }
 
-pub fn sx126x_set_rf_frequency(frequency: u32) {
+pub fn sx126x_set_rf_frequency(frequency: usize) {
     unsafe {
         if !IMAGE_CALIBRATED {
             sx126x_calibrate_image(frequency);
@@ -1074,7 +1074,7 @@ pub fn sx126x_set_rf_frequency(frequency: u32) {
         }
     }
 
-    let freq = (frequency as f64 / FREQ_STEP) as u32;
+    let freq = (frequency as f64 / FREQ_STEP) as usize;
     let buf = [
         ((freq >> 24) & 0xFF) as u8,
         ((freq >> 16) & 0xFF) as u8,
@@ -1115,8 +1115,8 @@ pub fn sx126x_set_modulation_params(modulation_params: &ModulationParams) {
             if !matches!(sx126x_get_packet_type(), RadioPacketTypes::Gfsk) {
                 sx126x_set_packet_type(RadioPacketTypes::Gfsk);
             }
-            let temp_val = (32.0 * (XTAL_FREQ / params.bit_rate as f64)) as u32;
-            let fdev_val = (params.fdev as f64 / FREQ_STEP) as u32;
+            let temp_val = (32.0 * (XTAL_FREQ / params.bit_rate as f64)) as usize;
+            let fdev_val = (params.fdev as f64 / FREQ_STEP) as usize;
             let buf = [
                 ((temp_val >> 16) & 0xFF) as u8,
                 ((temp_val >> 8) & 0xFF) as u8,
@@ -1201,7 +1201,7 @@ pub fn sx126x_set_cad_params(
     cad_det_peak: u8,
     cad_det_min: u8,
     cad_exit_mode: RadioCadExitModes,
-    cad_timeout: u32,
+    cad_timeout: usize,
 ) {
     let buf = [
         cad_symbol_num as u8,

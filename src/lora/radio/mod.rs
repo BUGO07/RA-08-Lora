@@ -186,23 +186,23 @@ pub struct Radio_s {
     pub Init: Option<unsafe extern "C" fn(events: *mut RadioEvents_t) -> i32>,
     pub GetStatus: Option<extern "C" fn() -> RadioState_t>,
     pub SetModem: Option<extern "C" fn(modem: RadioModems_t)>,
-    pub SetChannel: Option<extern "C" fn(freq: u32)>,
+    pub SetChannel: Option<extern "C" fn(freq: usize)>,
     pub IsChannelFree: Option<
         extern "C" fn(
             modem: RadioModems_t,
-            freq: u32,
+            freq: usize,
             rssiThresh: i16,
-            maxCarrierSenseTime: u32,
+            maxCarrierSenseTime: usize,
         ) -> bool,
     >,
-    pub Random: Option<extern "C" fn() -> u32>,
+    pub Random: Option<extern "C" fn() -> usize>,
     pub SetRxConfig: Option<
         unsafe extern "C" fn(
             modem: RadioModems_t,
-            bandwidth: u32,
-            datarate: u32,
+            bandwidth: usize,
+            datarate: usize,
             coderate: u8,
-            bandwidthAfc: u32,
+            bandwidthAfc: usize,
             preambleLen: u16,
             symbTimeout: u16,
             fixLen: bool,
@@ -218,9 +218,9 @@ pub struct Radio_s {
         unsafe extern "C" fn(
             modem: RadioModems_t,
             power: i8,
-            fdev: u32,
-            bandwidth: u32,
-            datarate: u32,
+            fdev: usize,
+            bandwidth: usize,
+            datarate: usize,
             coderate: u8,
             preambleLen: u16,
             fixLen: bool,
@@ -228,17 +228,17 @@ pub struct Radio_s {
             freqHopOn: bool,
             hopPeriod: u8,
             iqInverted: bool,
-            timeout: u32,
+            timeout: usize,
         ),
     >,
-    pub CheckRfFrequency: Option<extern "C" fn(frequency: u32) -> bool>,
-    pub TimeOnAir: Option<extern "C" fn(modem: RadioModems_t, pktLen: u8) -> u32>,
+    pub CheckRfFrequency: Option<extern "C" fn(frequency: usize) -> bool>,
+    pub TimeOnAir: Option<extern "C" fn(modem: RadioModems_t, pktLen: u8) -> usize>,
     pub Send: Option<unsafe extern "C" fn(buffer: *mut u8, size: u8)>,
     pub Sleep: Option<extern "C" fn()>,
     pub Standby: Option<extern "C" fn()>,
-    pub Rx: Option<extern "C" fn(timeout: u32)>,
+    pub Rx: Option<extern "C" fn(timeout: usize)>,
     pub StartCad: Option<extern "C" fn(symbols: u8)>,
-    pub SetTxContinuousWave: Option<extern "C" fn(freq: u32, power: i8, time: u16)>,
+    pub SetTxContinuousWave: Option<extern "C" fn(freq: usize, power: i8, time: u16)>,
     pub Rssi: Option<extern "C" fn(modem: RadioModems_t) -> i16>,
     pub Write: Option<extern "C" fn(addr: u16, data: u8)>,
     pub Read: Option<extern "C" fn(addr: u16) -> u8>,
@@ -246,14 +246,14 @@ pub struct Radio_s {
     pub ReadBuffer: Option<unsafe extern "C" fn(addr: u16, buffer: *mut u8, size: u8)>,
     pub SetMaxPayloadLength: Option<extern "C" fn(modem: RadioModems_t, max: u8)>,
     pub SetPublicNetwork: Option<extern "C" fn(enable: bool)>,
-    pub GetWakeupTime: Option<extern "C" fn() -> u32>,
+    pub GetWakeupTime: Option<extern "C" fn() -> usize>,
     pub IrqProcess: Option<extern "C" fn()>,
-    pub RxBoosted: Option<extern "C" fn(timeout: u32)>,
-    pub SetRxDutyCycle: Option<extern "C" fn(rxTime: u32, sleepTime: u32)>,
+    pub RxBoosted: Option<extern "C" fn(timeout: usize)>,
+    pub SetRxDutyCycle: Option<extern "C" fn(rxTime: usize, sleepTime: usize)>,
 }
 
 struct FskBandwidth {
-    bandwidth: u32,
+    bandwidth: usize,
     reg_value: u8,
 }
 
@@ -363,8 +363,8 @@ const BANDWIDTHS: &[RadioLoRaBandwidths] = &[
 ];
 
 static mut MAX_PAYLOAD_LENGTH: u8 = 0xFF;
-static mut TX_TIMEOUT: u32 = 0;
-static mut RX_TIMEOUT: u32 = 0;
+static mut TX_TIMEOUT: usize = 0;
+static mut RX_TIMEOUT: usize = 0;
 static mut RX_CONTINUOUS: bool = false;
 
 static mut RADIO_PKT_STATUS: Option<PacketStatus> = None;
@@ -403,9 +403,9 @@ static mut CAD_TIMEOUT_TIMER: TimerEvent = TimerEvent {
     callback: None,
 };
 
-static mut RNG_NEXT: u32 = 1;
+static mut RNG_NEXT: usize = 1;
 
-pub fn srand1(seed: u32) {
+pub fn srand1(seed: usize) {
     unsafe { RNG_NEXT = seed };
 }
 
@@ -415,7 +415,7 @@ pub fn rand1() -> i32 {
         RNG_NEXT = ((RNG_NEXT as u64)
             .wrapping_mul(1_103_515_245)
             .wrapping_add(12345)
-            % RAND_LOCAL_MAX) as u32;
+            % RAND_LOCAL_MAX) as usize;
         RNG_NEXT as i32
     }
 }
@@ -428,7 +428,7 @@ fn sx126x_state() -> &'static mut Sx126x {
     unsafe { SX126X.as_mut().expect("radio not initialised") }
 }
 
-fn radio_get_fsk_bandwidth_reg_value(bandwidth: u32) -> u8 {
+fn radio_get_fsk_bandwidth_reg_value(bandwidth: usize) -> u8 {
     if bandwidth == 0 {
         return 0x1F;
     }
@@ -458,7 +458,7 @@ pub fn radio_symb_time(bw: RadioLoRaBandwidths, sf: u8) -> f64 {
         RadioLoRaBandwidths::Bw250 => 250.0,
         RadioLoRaBandwidths::Bw500 => 500.0,
     };
-    (1u32 << sf) as f64 / bw_khz
+    (1usize << sf) as f64 / bw_khz
 }
 
 /// Initialises the radio hardware and internal state.
@@ -541,16 +541,16 @@ pub fn radio_set_modem(modem: RadioModem) {
 }
 
 /// Sets the channel frequency.
-pub fn radio_set_channel(freq: u32) {
+pub fn radio_set_channel(freq: usize) {
     sx126x_set_rf_frequency(freq);
 }
 
 /// Checks if the channel is free for the given time.
 pub fn radio_is_channel_free(
     modem: RadioModem,
-    freq: u32,
+    freq: usize,
     rssi_thresh: i16,
-    max_carrier_sense_time: u32,
+    max_carrier_sense_time: usize,
 ) -> bool {
     radio_set_modem(modem);
     radio_set_channel(freq);
@@ -571,16 +571,16 @@ pub fn radio_is_channel_free(
 }
 
 /// Generates a 32-bit random value based on RSSI readings.
-pub fn radio_random() -> u32 {
+pub fn radio_random() -> usize {
     radio_set_modem(RadioModem::LoRa);
     sx126x_set_rx(0);
 
-    let mut rnd: u32 = 0;
+    let mut rnd: usize = 0;
     for i in 0..32 {
         delay_ms(1);
-        rnd |= ((sx126x_get_rssi_inst() as u32) & 0x01) << i;
+        rnd |= ((sx126x_get_rssi_inst() as usize) & 0x01) << i;
     }
-    rnd = rnd.wrapping_add(rand1() as u32);
+    rnd = rnd.wrapping_add(rand1() as usize);
     radio_sleep();
     rnd
 }
@@ -589,10 +589,10 @@ pub fn radio_random() -> u32 {
 #[allow(clippy::too_many_arguments)]
 pub fn radio_set_rx_config(
     modem: RadioModem,
-    bandwidth: u32,
-    datarate: u32,
+    bandwidth: usize,
+    datarate: usize,
     coderate: u8,
-    _bandwidth_afc: u32,
+    _bandwidth_afc: usize,
     preamble_len: u16,
     mut symb_timeout: u16,
     fix_len: bool,
@@ -663,16 +663,15 @@ pub fn radio_set_rx_config(
 
             unsafe {
                 RX_TIMEOUT =
-                    (symb_timeout as f64 * ((1.0 / datarate as f64) * 8.0) * 1000.0) as u32;
+                    (symb_timeout as f64 * ((1.0 / datarate as f64) * 8.0) * 1000.0) as usize;
             }
         }
         RadioModem::LoRa => {
             sx126x_set_stop_rx_timer_on_preamble_detect(false);
             sx126x_set_lora_symb_num_timeout(symb_timeout as u8);
 
-            let bw_idx = bandwidth as usize;
-            let bw = if bw_idx < BANDWIDTHS.len() {
-                BANDWIDTHS[bw_idx]
+            let bw = if bandwidth < BANDWIDTHS.len() {
+                BANDWIDTHS[bandwidth]
             } else {
                 RadioLoRaBandwidths::Bw125
             };
@@ -762,9 +761,9 @@ pub fn radio_set_rx_config(
 pub fn radio_set_tx_config(
     modem: RadioModem,
     power: i8,
-    fdev: u32,
-    bandwidth: u32,
-    datarate: u32,
+    fdev: usize,
+    bandwidth: usize,
+    datarate: usize,
     coderate: u8,
     preamble_len: u16,
     fix_len: bool,
@@ -772,7 +771,7 @@ pub fn radio_set_tx_config(
     _freq_hop_on: bool,
     _hop_period: u8,
     iq_inverted: bool,
-    timeout: u32,
+    timeout: usize,
 ) {
     let sx = sx126x_state();
     let max_payload = unsafe { MAX_PAYLOAD_LENGTH };
@@ -822,9 +821,8 @@ pub fn radio_set_tx_config(
             sx126x_set_whitening_seed(0x01FF);
         }
         RadioModem::LoRa => {
-            let bw_idx = bandwidth as usize;
-            let bw = if bw_idx < BANDWIDTHS.len() {
-                BANDWIDTHS[bw_idx]
+            let bw = if bandwidth < BANDWIDTHS.len() {
+                BANDWIDTHS[bandwidth]
             } else {
                 RadioLoRaBandwidths::Bw125
             };
@@ -920,12 +918,12 @@ pub fn radio_set_tx_config(
 }
 
 /// Checks if the given RF frequency is supported.
-pub fn radio_check_rf_frequency(_frequency: u32) -> bool {
+pub fn radio_check_rf_frequency(_frequency: usize) -> bool {
     true
 }
 
 /// Computes the packet time on air in ms.
-pub fn radio_time_on_air(modem: RadioModem, pkt_len: u8) -> u32 {
+pub fn radio_time_on_air(modem: RadioModem, pkt_len: u8) -> usize {
     let sx = sx126x_state();
     match modem {
         RadioModem::Fsk => {
@@ -948,7 +946,7 @@ pub fn radio_time_on_air(modem: RadioModem, pkt_len: u8) -> u32 {
                         + header_len
                         + pkt_len as f64
                         + crc_len);
-                libm::rint(num_bits / mp.bit_rate as f64 * 1e3) as u32
+                libm::rint(num_bits / mp.bit_rate as f64 * 1e3) as usize
             } else {
                 0
             }
@@ -976,7 +974,7 @@ pub fn radio_time_on_air(modem: RadioModem, pkt_len: u8) -> u32 {
                 let n_payload = 8.0 + if tmp > 0.0 { tmp } else { 0.0 };
                 let t_payload = n_payload * ts;
                 let t_on_air = t_preamble + t_payload;
-                libm::floor(t_on_air + 0.999) as u32
+                libm::floor(t_on_air + 0.999) as usize
             } else {
                 0
             }
@@ -1020,7 +1018,7 @@ pub fn radio_standby() {
 }
 
 /// Sets the radio in reception mode for the given time.
-pub fn radio_rx(timeout: u32) {
+pub fn radio_rx(timeout: usize) {
     let irq_flags = RadioIrqMasks::RxDone as u16
         | RadioIrqMasks::CrcError as u16
         | RadioIrqMasks::RxTxTimeout as u16;
@@ -1044,7 +1042,7 @@ pub fn radio_rx(timeout: u32) {
 }
 
 /// Sets the radio in boosted-gain reception mode.
-pub fn radio_rx_boosted(timeout: u32) {
+pub fn radio_rx_boosted(timeout: usize) {
     let irq_flags = RadioIrqMasks::RxDone as u16;
     sx126x_set_dio_irq_params(
         irq_flags,
@@ -1066,7 +1064,7 @@ pub fn radio_rx_boosted(timeout: u32) {
 }
 
 /// Sets the Rx duty cycle management parameters.
-pub fn radio_set_rx_duty_cycle(rx_time: u32, sleep_time: u32) {
+pub fn radio_set_rx_duty_cycle(rx_time: usize, sleep_time: usize) {
     sx126x_set_rx_duty_cycle(rx_time, sleep_time);
 }
 
@@ -1114,17 +1112,17 @@ pub fn radio_start_cad(symbols: u8) {
 }
 
 /// Transmit with a raw timeout (timeout << 6).
-pub fn radio_tx(timeout: u32) {
+pub fn radio_tx(timeout: usize) {
     sx126x_set_tx(timeout << 6);
 }
 
 /// Sets the radio in continuous wave transmission mode.
-pub fn radio_set_tx_continuous_wave(freq: u32, power: i8, time: u16) {
+pub fn radio_set_tx_continuous_wave(freq: usize, power: i8, time: u16) {
     sx126x_set_rf_frequency(freq);
     sx126x_set_rf_tx_power(power);
     sx126x_set_tx_continuous_wave();
 
-    timer_set_value(unsafe { &mut RX_TIMEOUT_TIMER }, time as u32 * 1000);
+    timer_set_value(unsafe { &mut RX_TIMEOUT_TIMER }, time as usize * 1000);
     timer_start(unsafe { &mut RX_TIMEOUT_TIMER });
 }
 
@@ -1204,7 +1202,7 @@ pub fn radio_set_public_network(enable: bool) {
 }
 
 /// Gets the time required for the board + radio to get out of sleep (ms).
-pub fn radio_get_wakeup_time() -> u32 {
+pub fn radio_get_wakeup_time() -> usize {
     sx126x_get_board_tcxo_wakeup_time() + RADIO_WAKEUP_TIME
 }
 
@@ -1356,22 +1354,22 @@ extern "C" fn RadioSetModem(modem: RadioModems_t) {
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioSetChannel(freq: u32) {
+extern "C" fn RadioSetChannel(freq: usize) {
     radio_set_channel(freq);
 }
 
 #[allow(non_snake_case)]
 extern "C" fn RadioIsChannelFree(
     modem: RadioModems_t,
-    freq: u32,
+    freq: usize,
     rssiThresh: i16,
-    maxCarrierSenseTime: u32,
+    maxCarrierSenseTime: usize,
 ) -> bool {
     radio_is_channel_free(modem.to_rust(), freq, rssiThresh, maxCarrierSenseTime)
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioRandom() -> u32 {
+extern "C" fn RadioRandom() -> usize {
     radio_random()
 }
 
@@ -1380,10 +1378,10 @@ extern "C" fn RadioRandom() -> u32 {
 #[allow(non_snake_case, clippy::too_many_arguments, clippy::missing_safety_doc)]
 unsafe extern "C" fn RadioSetRxConfig(
     modem: RadioModems_t,
-    bandwidth: u32,
-    datarate: u32,
+    bandwidth: usize,
+    datarate: usize,
     coderate: u8,
-    bandwidthAfc: u32,
+    bandwidthAfc: usize,
     preambleLen: u16,
     symbTimeout: u16,
     fixLen: bool,
@@ -1418,9 +1416,9 @@ unsafe extern "C" fn RadioSetRxConfig(
 unsafe extern "C" fn RadioSetTxConfig(
     modem: RadioModems_t,
     power: i8,
-    fdev: u32,
-    bandwidth: u32,
-    datarate: u32,
+    fdev: usize,
+    bandwidth: usize,
+    datarate: usize,
     coderate: u8,
     preambleLen: u16,
     fixLen: bool,
@@ -1428,7 +1426,7 @@ unsafe extern "C" fn RadioSetTxConfig(
     freqHopOn: bool,
     hopPeriod: u8,
     iqInverted: bool,
-    timeout: u32,
+    timeout: usize,
 ) {
     radio_set_tx_config(
         modem.to_rust(),
@@ -1448,12 +1446,12 @@ unsafe extern "C" fn RadioSetTxConfig(
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioCheckRfFrequency(frequency: u32) -> bool {
+extern "C" fn RadioCheckRfFrequency(frequency: usize) -> bool {
     radio_check_rf_frequency(frequency)
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioTimeOnAir(modem: RadioModems_t, pktLen: u8) -> u32 {
+extern "C" fn RadioTimeOnAir(modem: RadioModems_t, pktLen: u8) -> usize {
     radio_time_on_air(modem.to_rust(), pktLen)
 }
 
@@ -1476,7 +1474,7 @@ extern "C" fn RadioStandby() {
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioRx(timeout: u32) {
+extern "C" fn RadioRx(timeout: usize) {
     radio_rx(timeout);
 }
 
@@ -1486,7 +1484,7 @@ extern "C" fn RadioStartCad(symbols: u8) {
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioSetTxContinuousWave(freq: u32, power: i8, time: u16) {
+extern "C" fn RadioSetTxContinuousWave(freq: usize, power: i8, time: u16) {
     radio_set_tx_continuous_wave(freq, power, time);
 }
 
@@ -1532,7 +1530,7 @@ extern "C" fn RadioSetPublicNetwork(enable: bool) {
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioGetWakeupTime() -> u32 {
+extern "C" fn RadioGetWakeupTime() -> usize {
     radio_get_wakeup_time()
 }
 
@@ -1542,12 +1540,12 @@ extern "C" fn RadioIrqProcess() {
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioRxBoosted(timeout: u32) {
+extern "C" fn RadioRxBoosted(timeout: usize) {
     radio_rx_boosted(timeout);
 }
 
 #[allow(non_snake_case)]
-extern "C" fn RadioSetRxDutyCycle(rxTime: u32, sleepTime: u32) {
+extern "C" fn RadioSetRxDutyCycle(rxTime: usize, sleepTime: usize) {
     radio_set_rx_duty_cycle(rxTime, sleepTime);
 }
 

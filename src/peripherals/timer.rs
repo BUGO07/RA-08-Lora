@@ -11,7 +11,7 @@ use crate::{
     toggle_reg_bits,
 };
 
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerChannel {
     Channel0,
@@ -20,9 +20,9 @@ pub enum TimerChannel {
     Channel3,
 }
 
-pub const TIMER_DCR_DBL_POSITION: u32 = 8;
+pub const TIMER_DCR_DBL_POSITION: usize = 8;
 
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCountMode {
     Up = 0xFFFF,
@@ -32,7 +32,7 @@ pub enum TimerCountMode {
     CenterAligned3 = 0x60,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerClockDivision {
     Div1 = 0x0,
@@ -43,15 +43,15 @@ pub enum TimerClockDivision {
 
 #[derive(Clone, Copy)]
 pub struct TimerConfig {
-    pub prescaler: u32,
+    pub prescaler: usize,
     pub counter_mode: TimerCountMode,
-    pub period: u32,
+    pub period: usize,
     pub clock_division: TimerClockDivision,
     pub autoreload_preload: bool,
     pub resv: u8,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum TimerCr1 {
     Cen = 0x1,
     Udis = 0x2,
@@ -61,7 +61,7 @@ pub enum TimerCr1 {
     AutoreloadPreload = 0x80,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum TimerMasterMode {
     Reset = 0x0,
     Enable = 0x10,
@@ -73,14 +73,14 @@ pub enum TimerMasterMode {
     Oc3Ref = 0x70,
 }
 
-#[repr(u32)]
+#[repr(usize)]
 pub enum TimerCr2 {
     CcdsUpd = 0x8,
     TiosXor = 0x80,
 }
 
 /// TIMER ETR Prescaler
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerEtrPrescaler {
     /// No prescaler is used
@@ -94,7 +94,7 @@ pub enum TimerEtrPrescaler {
 }
 
 /// TIMER External trigger filter
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerEtf {
     /// No filter
@@ -132,7 +132,7 @@ pub enum TimerEtf {
 }
 
 /// TIMER Trigger source selection
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTs {
     /// Internal Trigger 0 (ITR0)
@@ -174,7 +174,7 @@ pub enum TimerSms {
 }
 
 /// TIMER smcr configuration
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerSmcr {
     /// Master/slave mode is synchronized
@@ -186,7 +186,7 @@ pub enum TimerSmcr {
 }
 
 /// TIMER channel 1 and 3 input filter
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerIc1f {
     /// No filter
@@ -224,7 +224,7 @@ pub enum TimerIc1f {
 }
 
 /// TIMER channel 0 and 2 input filter
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerIc0f {
     /// No filter
@@ -262,7 +262,7 @@ pub enum TimerIc0f {
 }
 
 /// TIMER channel 0 input capture polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc0pInput {
     /// Capture triggered by rising edge on timer input
@@ -274,7 +274,7 @@ pub enum TimerCc0pInput {
 }
 
 /// TIMER channel 1 input capture polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc1pInput {
     /// Capture triggered by rising edge on timer input
@@ -286,7 +286,7 @@ pub enum TimerCc1pInput {
 }
 
 /// TIMER channel 2 input capture polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc2pInput {
     /// Capture triggered by rising edge on timer input
@@ -298,7 +298,7 @@ pub enum TimerCc2pInput {
 }
 
 /// TIMER channel 3 input capture polarity
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc3pInput {
     /// Capture triggered by rising edge on timer input
@@ -335,7 +335,7 @@ pub struct TimerSlaveConfig {
 }
 
 /// TIMER dma definition
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerDma {
     /// DMA request is triggered by the update event
@@ -353,7 +353,7 @@ pub enum TimerDma {
 }
 
 /// TIMER interrupt definition
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerInterrupt {
     /// Update interrupt
@@ -371,7 +371,7 @@ pub enum TimerInterrupt {
 }
 
 /// TIMER Flag definition
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerSr {
     /// Update interrupt flag
@@ -397,7 +397,7 @@ pub enum TimerSr {
 }
 
 /// TIMER Event register
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerEgr {
     /// Reinitialize the counter and generates an update
@@ -415,7 +415,7 @@ pub enum TimerEgr {
 }
 
 /// TIMER Channel 1 and 3 output compare and PWM modes
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerOc1m {
     /// Frozen
@@ -437,7 +437,7 @@ pub enum TimerOc1m {
 }
 
 /// TIMER Channel 0 and 2 output compare and PWM modes
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerOc0m {
     /// Frozen
@@ -459,7 +459,7 @@ pub enum TimerOc0m {
 }
 
 /// TIMER Channel 1 and 3 capture and compare selection
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc1s {
     /// Output mode
@@ -473,7 +473,7 @@ pub enum TimerCc1s {
 }
 
 /// TIMER Channel 0 and 2 capture and compare selection
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCc0s {
     /// Output mode
@@ -487,7 +487,7 @@ pub enum TimerCc0s {
 }
 
 /// TIMER ccmr output mode configuration
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCcmrOutput {
     /// Output fast state enable
@@ -505,7 +505,7 @@ pub enum TimerCcmrOutput {
 }
 
 /// TIMER channel 1 and 3 input capture prescaler
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerIc1psc {
     /// Clock division: 1
@@ -519,7 +519,7 @@ pub enum TimerIc1psc {
 }
 
 /// TIMER channel 0 and 2 input capture prescaler
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerIc0psc {
     /// Clock division: 1
@@ -533,7 +533,7 @@ pub enum TimerIc0psc {
 }
 
 /// TIMER CCER register config
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerCcer {
     /// Capture compare 0 enabled
@@ -591,13 +591,13 @@ pub union TimerOcMode {
 /// TIMER Output compare configuration structure definition
 pub struct TimerOcInit {
     pub oc_mode: TimerOcMode,
-    pub pulse: u32,
+    pub pulse: usize,
     pub high_level: bool,
     pub oc_fast: bool,
 }
 
 /// TIMER dma read/write length
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerDbl {
     /// 1 transmission
@@ -641,7 +641,7 @@ pub enum TimerDbl {
 }
 
 /// TIMER dma read/write base address
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerDba {
     /// TIM_CR1
@@ -694,7 +694,7 @@ pub struct TimerClearOcxref {
 }
 
 /// TIMER timer0 TI0 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim0Ti0Or {
     /// TIM0 TI0 input connected to channel 0
@@ -714,7 +714,7 @@ pub enum TimerTim0Ti0Or {
 }
 
 /// TIMER timer0 TI3 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim0Ti3Or {
     /// TIM0 TI3 input connected to channel 3
@@ -728,7 +728,7 @@ pub enum TimerTim0Ti3Or {
 }
 
 /// TIMER timer0 etr OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim0EtrOr {
     /// TIM0 etr input connected to etr
@@ -762,7 +762,7 @@ pub enum TimerTim0EtrOr {
 }
 
 /// TIMER timer1 TI2 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim1Ti2Or {
     /// TIM1 TI2 input connected to channel 2
@@ -774,7 +774,7 @@ pub enum TimerTim1Ti2Or {
 }
 
 /// TIMER timer2 TI0 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim2Ti0Or {
     /// TIM2 TI0 input connected to channel 0
@@ -806,7 +806,7 @@ pub enum TimerTim2Ti0Or {
 }
 
 /// TIMER timer2 TI1 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim2Ti1Or {
     /// TIM2 TI1 input connected to channel 1
@@ -818,7 +818,7 @@ pub enum TimerTim2Ti1Or {
 }
 
 /// TIMER timer2 etr OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim2EtrOr {
     /// TIM2 etr input connected to etr
@@ -834,7 +834,7 @@ pub enum TimerTim2EtrOr {
 }
 
 /// TIMER timer3 TI0 OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim3Ti0Or {
     /// TIM3 TI0 input connected to channel 0
@@ -856,7 +856,7 @@ pub enum TimerTim3Ti0Or {
 }
 
 /// TIMER timer3 etr OR remap
-#[repr(u32)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum TimerTim3EtrOr {
     /// TIM3 etr input connected to channel 0
@@ -888,47 +888,47 @@ define_reg! {
     TimerGp
     __TimerGp {
         /// TIMER control register 1, Address offset: 0x00
-        cr1: VolatileRW<u32>,
+        cr1: VolatileRW<usize>,
         /// TIMER control register 2, Address offset: 0x04
-        cr2: VolatileRW<u32>,
+        cr2: VolatileRW<usize>,
         /// TIMER slave Mode Control register, Address offset: 0x08
-        smcr: VolatileRW<u32>,
+        smcr: VolatileRW<usize>,
         /// TIMER DMA/interrupt enable register, Address offset: 0x0C
-        dier: VolatileRW<u32>,
+        dier: VolatileRW<usize>,
         /// TIMER status register, Address offset: 0x10
-        sr: VolatileRW<u32>,
+        sr: VolatileRW<usize>,
         /// TIMER event generation register, Address offset: 0x14
-        egr: VolatileRW<u32>,
+        egr: VolatileRW<usize>,
         /// TIMER  capture/compare mode register 1, Address offset: 0x18
-        ccmr1: VolatileRW<u32>,
+        ccmr1: VolatileRW<usize>,
         /// TIMER  capture/compare mode register 2, Address offset: 0x1C
-        ccmr2: VolatileRW<u32>,
+        ccmr2: VolatileRW<usize>,
         /// TIMER capture/compare enable register, Address offset: 0x20
-        ccer: VolatileRW<u32>,
+        ccer: VolatileRW<usize>,
         /// TIMER counter register, Address offset: 0x24
-        cnt: VolatileRW<u32>,
+        cnt: VolatileRW<usize>,
         /// TIMER prescaler register, Address offset: 0x28
-        psc: VolatileRW<u32>,
+        psc: VolatileRW<usize>,
         /// TIMER auto-reload register, Address offset: 0x2C
-        arr: VolatileRW<u32>,
+        arr: VolatileRW<usize>,
         /// Reserved Address offset: 0x30
-        resv1: VolatileRO<u32>,
+        resv1: VolatileRO<usize>,
         /// TIMER capture/compare register 0, Address offset: 0x34
-        ccr0: VolatileRW<u32>,
+        ccr0: VolatileRW<usize>,
         /// TIMER capture/compare register 1, Address offset: 0x38
-        ccr1: VolatileRW<u32>,
+        ccr1: VolatileRW<usize>,
         /// TIMER capture/compare register 2, Address offset: 0x3C
-        ccr2: VolatileRW<u32>,
+        ccr2: VolatileRW<usize>,
         /// TIMER capture/compare register 3, Address offset: 0x40
-        ccr3: VolatileRW<u32>,
+        ccr3: VolatileRW<usize>,
         /// Reserved, Address offset: 0x44
-        resv2: VolatileRO<u32>,
+        resv2: VolatileRO<usize>,
         /// TIMER DMA control register, Address offset: 0x48
-        dcr: VolatileRW<u32>,
+        dcr: VolatileRW<usize>,
         /// TIMER DMA address for full transfer register, Address offset: 0x4C
-        dmar: VolatileRW<u32>,
+        dmar: VolatileRW<usize>,
         /// TIMER option register, Address offset: 0x50
-        or: VolatileRW<u32>,
+        or: VolatileRW<usize>,
     }
 }
 
@@ -936,25 +936,25 @@ impl TimerGp {
     pub fn init(&self, config: TimerConfig) {
         let mut tmpcr1 = self.cr1.read();
 
-        tmpcr1 &= !(TimerCountMode::CenterAligned3 as u32);
+        tmpcr1 &= !(TimerCountMode::CenterAligned3 as usize);
         if matches!(
             config.counter_mode,
             TimerCountMode::Up | TimerCountMode::Down
         ) {
-            tmpcr1 &= !(TimerCr1::Dir as u32);
+            tmpcr1 &= !(TimerCr1::Dir as usize);
             if matches!(config.counter_mode, TimerCountMode::Down) {
-                tmpcr1 |= TimerCr1::Dir as u32;
+                tmpcr1 |= TimerCr1::Dir as usize;
             }
         } else {
-            tmpcr1 |= config.counter_mode as u32;
+            tmpcr1 |= config.counter_mode as usize;
         }
 
-        tmpcr1 &= !(TimerClockDivision::Reserved as u32);
-        tmpcr1 |= config.clock_division as u32;
+        tmpcr1 &= !(TimerClockDivision::Reserved as usize);
+        tmpcr1 |= config.clock_division as usize;
 
-        tmpcr1 &= !(TimerCr1::AutoreloadPreload as u32);
+        tmpcr1 &= !(TimerCr1::AutoreloadPreload as usize);
         if config.autoreload_preload {
-            tmpcr1 |= TimerCr1::AutoreloadPreload as u32;
+            tmpcr1 |= TimerCr1::AutoreloadPreload as usize;
         }
 
         self.cr1.write(tmpcr1);
@@ -963,7 +963,7 @@ impl TimerGp {
     }
 
     pub fn timer_deinit(&self) {
-        let periph = match self.ptr() as u32 {
+        let periph = match self.ptr() as usize {
             TIMER0_SFR_BASE => RCC_PERIPHERAL_TIMER0,
             TIMER1_SFR_BASE => RCC_PERIPHERAL_TIMER1,
             TIMER2_SFR_BASE => RCC_PERIPHERAL_TIMER2,
@@ -977,24 +977,24 @@ impl TimerGp {
     }
 
     pub fn timer_cmd(&self, state: bool) {
-        toggle_reg_bits!(self.cr1, TimerCr1::Cen as u32, state);
+        toggle_reg_bits!(self.cr1, TimerCr1::Cen as usize, state);
     }
 
     pub fn timer_disable_update(&self, state: bool) {
-        toggle_reg_bits!(self.cr1, TimerCr1::Udis as u32, state);
+        toggle_reg_bits!(self.cr1, TimerCr1::Udis as usize, state);
     }
     pub fn timer_config_update_source(&self, state: bool) {
-        toggle_reg_bits!(self.cr1, TimerCr1::Urs as u32, state);
+        toggle_reg_bits!(self.cr1, TimerCr1::Urs as usize, state);
     }
     pub fn timer_config_master_mode(&self, master_mode: TimerMasterMode) {
-        toggle_reg_bits!(self.cr2, TimerMasterMode::Oc3Ref as u32, false);
-        toggle_reg_bits!(self.cr2, master_mode as u32, true);
+        toggle_reg_bits!(self.cr2, TimerMasterMode::Oc3Ref as usize, false);
+        toggle_reg_bits!(self.cr2, master_mode as usize, true);
     }
     pub fn timer_enable_xor(&self, state: bool) {
-        toggle_reg_bits!(self.cr2, TimerCr2::TiosXor as u32, state);
+        toggle_reg_bits!(self.cr2, TimerCr2::TiosXor as usize, state);
     }
     pub fn timer_enable_ccds_upd(&self, state: bool) {
-        toggle_reg_bits!(self.cr2, TimerCr2::CcdsUpd as u32, state);
+        toggle_reg_bits!(self.cr2, TimerCr2::CcdsUpd as usize, state);
     }
     pub fn timer_config_etr(
         &self,
@@ -1004,67 +1004,67 @@ impl TimerGp {
     ) {
         let mut tmp_smcr = self.smcr.read();
 
-        tmp_smcr &= !(TimerEtf::Etf15 as u32
-            | TimerEtrPrescaler::Div8 as u32
-            | TimerSmcr::EceEnable as u32
-            | TimerSmcr::EtpInverted as u32);
+        tmp_smcr &= !(TimerEtf::Etf15 as usize
+            | TimerEtrPrescaler::Div8 as usize
+            | TimerSmcr::EceEnable as usize
+            | TimerSmcr::EtpInverted as usize);
 
-        tmp_smcr |= ext_trg_prescaler as u32 | ext_trg_filter as u32;
+        tmp_smcr |= ext_trg_prescaler as usize | ext_trg_filter as usize;
 
         if ext_trg_polarity {
-            tmp_smcr |= TimerSmcr::EtpInverted as u32;
+            tmp_smcr |= TimerSmcr::EtpInverted as usize;
         }
 
         self.smcr.write(tmp_smcr);
     }
     pub fn timer_config_external_clock2(&self, state: bool) {
-        toggle_reg_bits!(self.smcr, TimerSmcr::EceEnable as u32, state);
+        toggle_reg_bits!(self.smcr, TimerSmcr::EceEnable as usize, state);
     }
     pub fn timer_config_itrx(&self, input_trigger_source: TimerTs) {
         let mut tmp_smcr = self.smcr.read();
-        tmp_smcr &= !(TimerTs::Etrf as u32);
-        tmp_smcr |= input_trigger_source as u32;
+        tmp_smcr &= !(TimerTs::Etrf as usize);
+        tmp_smcr |= input_trigger_source as usize;
         self.smcr.write(tmp_smcr);
     }
     pub fn timer_config_slave_mode(&self, slave_mode: TimerSms) {
-        toggle_reg_bits!(self.smcr, TimerSms::External1 as u32, false);
-        toggle_reg_bits!(self.smcr, slave_mode as u32, true);
+        toggle_reg_bits!(self.smcr, TimerSms::External1 as usize, false);
+        toggle_reg_bits!(self.smcr, slave_mode as usize, true);
     }
     pub fn timer_config_ti(
         &self,
-        ic_polarity: u32,
-        ic_selection: u32,
-        ic_filter: u32,
+        ic_polarity: usize,
+        ic_selection: usize,
+        ic_filter: usize,
         channel: TimerChannel,
     ) {
         // Determine which CCMR register and which bit positions to use
         let (cc_e, cc_s_mask, ic_f_mask, cc_p_mask, use_ccmr1) = match channel {
             TimerChannel::Channel0 => (
-                TimerCcer::Cc0e as u32,
-                TimerCc0s::InputTrc as u32,
-                TimerIc0f::Ic0f15 as u32,
-                TimerCc0pInput::BothEdge as u32,
+                TimerCcer::Cc0e as usize,
+                TimerCc0s::InputTrc as usize,
+                TimerIc0f::Ic0f15 as usize,
+                TimerCc0pInput::BothEdge as usize,
                 true,
             ),
             TimerChannel::Channel1 => (
-                TimerCcer::Cc1e as u32,
-                TimerCc1s::InputTrc as u32,
-                TimerIc1f::Ic1f15 as u32,
-                TimerCc1pInput::BothEdge as u32,
+                TimerCcer::Cc1e as usize,
+                TimerCc1s::InputTrc as usize,
+                TimerIc1f::Ic1f15 as usize,
+                TimerCc1pInput::BothEdge as usize,
                 true,
             ),
             TimerChannel::Channel2 => (
-                TimerCcer::Cc2e as u32,
-                TimerCc0s::InputTrc as u32,
-                TimerIc0f::Ic0f15 as u32,
-                TimerCc2pInput::BothEdge as u32,
+                TimerCcer::Cc2e as usize,
+                TimerCc0s::InputTrc as usize,
+                TimerIc0f::Ic0f15 as usize,
+                TimerCc2pInput::BothEdge as usize,
                 false,
             ),
             TimerChannel::Channel3 => (
-                TimerCcer::Cc3e as u32,
-                TimerCc1s::InputTrc as u32,
-                TimerIc1f::Ic1f15 as u32,
-                TimerCc3pInput::BothEdge as u32,
+                TimerCcer::Cc3e as usize,
+                TimerCc1s::InputTrc as usize,
+                TimerIc1f::Ic1f15 as usize,
+                TimerCc3pInput::BothEdge as usize,
                 false,
             ),
         };
@@ -1093,33 +1093,38 @@ impl TimerGp {
         self.ccer.write(tmp_ccer);
     }
     /// Configure input polarity and filter for one TI channel.
-    pub fn timer_config_polarity_filter_ti(&self, ic_polarity: u32, ic_filter: u32, channel: u8) {
+    pub fn timer_config_polarity_filter_ti(
+        &self,
+        ic_polarity: usize,
+        ic_filter: usize,
+        channel: u8,
+    ) {
         let mut tmp_ccer = self.ccer.read();
 
         // Disable the selected channel before updating configuration bits.
         let (cc_enable, cc_polarity_mask, ic_filter_mask, ccmr_is_1) = match channel {
             0 => (
-                TimerCcer::Cc0e as u32,
-                TimerCc0pInput::BothEdge as u32,
-                TimerIc0f::Ic0f15 as u32,
+                TimerCcer::Cc0e as usize,
+                TimerCc0pInput::BothEdge as usize,
+                TimerIc0f::Ic0f15 as usize,
                 true,
             ),
             1 => (
-                TimerCcer::Cc1e as u32,
-                TimerCc1pInput::BothEdge as u32,
-                TimerIc1f::Ic1f15 as u32,
+                TimerCcer::Cc1e as usize,
+                TimerCc1pInput::BothEdge as usize,
+                TimerIc1f::Ic1f15 as usize,
                 true,
             ),
             2 => (
-                TimerCcer::Cc2e as u32,
-                TimerCc2pInput::BothEdge as u32,
-                TimerIc0f::Ic0f15 as u32,
+                TimerCcer::Cc2e as usize,
+                TimerCc2pInput::BothEdge as usize,
+                TimerIc0f::Ic0f15 as usize,
                 false,
             ),
             3 => (
-                TimerCcer::Cc3e as u32,
-                TimerCc3pInput::BothEdge as u32,
-                TimerIc1f::Ic1f15 as u32,
+                TimerCcer::Cc3e as usize,
+                TimerCc3pInput::BothEdge as usize,
+                TimerIc1f::Ic1f15 as usize,
                 false,
             ),
             _ => return,
@@ -1158,25 +1163,25 @@ impl TimerGp {
 
                 // Disable channel 0, then apply TI0 filter and re-enable it.
                 let mut tmp_ccer = self.ccer.read();
-                tmp_ccer &= !(TimerCcer::Cc0e as u32);
+                tmp_ccer &= !(TimerCcer::Cc0e as usize);
                 let mut tmp_ccmr1 = self.ccmr1.read();
-                tmp_ccmr1 &= !(TimerIc0f::Ic0f15 as u32);
-                tmp_ccmr1 |= unsafe { slave_config.ic_filter.ic0f_filter as u32 };
-                tmp_ccer |= TimerCcer::Cc0e as u32;
+                tmp_ccmr1 &= !(TimerIc0f::Ic0f15 as usize);
+                tmp_ccmr1 |= unsafe { slave_config.ic_filter.ic0f_filter as usize };
+                tmp_ccer |= TimerCcer::Cc0e as usize;
                 self.ccmr1.write(tmp_ccmr1);
                 self.ccer.write(tmp_ccer);
             }
             TimerTs::Ti0fp0 => {
                 self.timer_config_polarity_filter_ti(
-                    unsafe { slave_config.ic_polarity.cc0p_polarity as u32 },
-                    unsafe { slave_config.ic_filter.ic0f_filter as u32 },
+                    unsafe { slave_config.ic_polarity.cc0p_polarity as usize },
+                    unsafe { slave_config.ic_filter.ic0f_filter as usize },
                     0,
                 );
             }
             TimerTs::Ti1fp1 => {
                 self.timer_config_polarity_filter_ti(
-                    unsafe { slave_config.ic_polarity.cc1p_polarity as u32 },
-                    unsafe { slave_config.ic_filter.ic1f_filter as u32 },
+                    unsafe { slave_config.ic_polarity.cc1p_polarity as usize },
+                    unsafe { slave_config.ic_filter.ic1f_filter as usize },
                     1,
                 );
             }
@@ -1187,14 +1192,14 @@ impl TimerGp {
 
         // Program trigger selection bits.
         let mut tmp_smcr = self.smcr.read();
-        tmp_smcr &= !(TimerTs::Etrf as u32);
-        tmp_smcr |= slave_config.input_trigger as u32;
+        tmp_smcr &= !(TimerTs::Etrf as usize);
+        tmp_smcr |= slave_config.input_trigger as usize;
         self.smcr.write(tmp_smcr);
 
         // Program slave mode bits.
         tmp_smcr = self.smcr.read();
-        tmp_smcr &= !(TimerSms::External1 as u32);
-        tmp_smcr |= slave_config.slave_mode as u32;
+        tmp_smcr &= !(TimerSms::External1 as usize);
+        tmp_smcr |= slave_config.slave_mode as usize;
         self.smcr.write(tmp_smcr);
 
         TIMER_OK
@@ -1205,54 +1210,54 @@ impl TimerGp {
         match channel {
             0 => {
                 self.timer_config_ti(
-                    unsafe { ic_init.ic_polarity.cc0p_polarity as u32 },
-                    unsafe { ic_init.ic_selection.cc0s_selection as u32 },
-                    unsafe { ic_init.ic_filter.ic0f_filter as u32 },
+                    unsafe { ic_init.ic_polarity.cc0p_polarity as usize },
+                    unsafe { ic_init.ic_selection.cc0s_selection as usize },
+                    unsafe { ic_init.ic_filter.ic0f_filter as usize },
                     TimerChannel::Channel0,
                 );
 
                 let mut ccmr1 = self.ccmr1.read();
-                ccmr1 &= !(TimerIc0psc::Div8 as u32);
-                ccmr1 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as u32 };
+                ccmr1 &= !(TimerIc0psc::Div8 as usize);
+                ccmr1 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as usize };
                 self.ccmr1.write(ccmr1);
             }
             1 => {
                 self.timer_config_ti(
-                    unsafe { ic_init.ic_polarity.cc1p_polarity as u32 },
-                    unsafe { ic_init.ic_selection.cc1s_selection as u32 },
-                    unsafe { ic_init.ic_filter.ic1f_filter as u32 },
+                    unsafe { ic_init.ic_polarity.cc1p_polarity as usize },
+                    unsafe { ic_init.ic_selection.cc1s_selection as usize },
+                    unsafe { ic_init.ic_filter.ic1f_filter as usize },
                     TimerChannel::Channel1,
                 );
 
                 let mut ccmr1 = self.ccmr1.read();
-                ccmr1 &= !(TimerIc1psc::Div8 as u32);
-                ccmr1 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as u32 };
+                ccmr1 &= !(TimerIc1psc::Div8 as usize);
+                ccmr1 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as usize };
                 self.ccmr1.write(ccmr1);
             }
             2 => {
                 self.timer_config_ti(
-                    unsafe { ic_init.ic_polarity.cc2p_polarity as u32 },
-                    unsafe { ic_init.ic_selection.cc0s_selection as u32 },
-                    unsafe { ic_init.ic_filter.ic0f_filter as u32 },
+                    unsafe { ic_init.ic_polarity.cc2p_polarity as usize },
+                    unsafe { ic_init.ic_selection.cc0s_selection as usize },
+                    unsafe { ic_init.ic_filter.ic0f_filter as usize },
                     TimerChannel::Channel2,
                 );
 
                 let mut ccmr2 = self.ccmr2.read();
-                ccmr2 &= !(TimerIc0psc::Div8 as u32);
-                ccmr2 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as u32 };
+                ccmr2 &= !(TimerIc0psc::Div8 as usize);
+                ccmr2 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as usize };
                 self.ccmr2.write(ccmr2);
             }
             3 => {
                 self.timer_config_ti(
-                    unsafe { ic_init.ic_polarity.cc3p_polarity as u32 },
-                    unsafe { ic_init.ic_selection.cc1s_selection as u32 },
-                    unsafe { ic_init.ic_filter.ic1f_filter as u32 },
+                    unsafe { ic_init.ic_polarity.cc3p_polarity as usize },
+                    unsafe { ic_init.ic_selection.cc1s_selection as usize },
+                    unsafe { ic_init.ic_filter.ic1f_filter as usize },
                     TimerChannel::Channel3,
                 );
 
                 let mut ccmr2 = self.ccmr2.read();
-                ccmr2 &= !(TimerIc1psc::Div8 as u32);
-                ccmr2 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as u32 };
+                ccmr2 &= !(TimerIc1psc::Div8 as usize);
+                ccmr2 |= unsafe { ic_init.ic_prescaler.ic0psc_prescaler as usize };
                 self.ccmr2.write(ccmr2);
             }
             _ => {}
@@ -1266,72 +1271,72 @@ impl TimerGp {
 
         match channel {
             0 => {
-                tmp_ccer &= !(TimerCcer::Cc0e as u32);
+                tmp_ccer &= !(TimerCcer::Cc0e as usize);
 
                 let mut tmp_ccmr1 = self.ccmr1.read();
-                tmp_ccmr1 &= !(TimerOc0m::Pwm2 as u32);
-                tmp_ccmr1 &= !(TimerCc0s::InputTrc as u32);
-                tmp_ccmr1 |= unsafe { oc_init.oc_mode.oc0m_mode as u32 };
+                tmp_ccmr1 &= !(TimerOc0m::Pwm2 as usize);
+                tmp_ccmr1 &= !(TimerCc0s::InputTrc as usize);
+                tmp_ccmr1 |= unsafe { oc_init.oc_mode.oc0m_mode as usize };
 
-                tmp_ccer |= TimerCcer::Cc0e as u32;
-                tmp_ccer &= !(TimerCcer::Cc0np as u32);
-                tmp_ccer &= !(TimerCcer::Cc0p as u32);
+                tmp_ccer |= TimerCcer::Cc0e as usize;
+                tmp_ccer &= !(TimerCcer::Cc0np as usize);
+                tmp_ccer &= !(TimerCcer::Cc0p as usize);
                 if !oc_init.high_level {
-                    tmp_ccer |= TimerCcer::Cc0p as u32;
+                    tmp_ccer |= TimerCcer::Cc0p as usize;
                 }
 
                 self.ccr0.write(oc_init.pulse);
                 self.ccmr1.write(tmp_ccmr1);
             }
             1 => {
-                tmp_ccer &= !(TimerCcer::Cc1e as u32);
+                tmp_ccer &= !(TimerCcer::Cc1e as usize);
 
                 let mut tmp_ccmr1 = self.ccmr1.read();
-                tmp_ccmr1 &= !(TimerOc1m::Pwm2 as u32);
-                tmp_ccmr1 &= !(TimerCc1s::InputTrc as u32);
-                tmp_ccmr1 |= unsafe { oc_init.oc_mode.oc1m_mode as u32 };
+                tmp_ccmr1 &= !(TimerOc1m::Pwm2 as usize);
+                tmp_ccmr1 &= !(TimerCc1s::InputTrc as usize);
+                tmp_ccmr1 |= unsafe { oc_init.oc_mode.oc1m_mode as usize };
 
-                tmp_ccer |= TimerCcer::Cc1e as u32;
-                tmp_ccer &= !(TimerCcer::Cc1np as u32);
-                tmp_ccer &= !(TimerCcer::Cc1p as u32);
+                tmp_ccer |= TimerCcer::Cc1e as usize;
+                tmp_ccer &= !(TimerCcer::Cc1np as usize);
+                tmp_ccer &= !(TimerCcer::Cc1p as usize);
                 if !oc_init.high_level {
-                    tmp_ccer |= TimerCcer::Cc1p as u32;
+                    tmp_ccer |= TimerCcer::Cc1p as usize;
                 }
 
                 self.ccr1.write(oc_init.pulse);
                 self.ccmr1.write(tmp_ccmr1);
             }
             2 => {
-                tmp_ccer &= !(TimerCcer::Cc2e as u32);
+                tmp_ccer &= !(TimerCcer::Cc2e as usize);
 
                 let mut tmp_ccmr2 = self.ccmr2.read();
-                tmp_ccmr2 &= !(TimerOc0m::Pwm2 as u32);
-                tmp_ccmr2 &= !(TimerCc0s::InputTrc as u32);
-                tmp_ccmr2 |= unsafe { oc_init.oc_mode.oc0m_mode as u32 };
+                tmp_ccmr2 &= !(TimerOc0m::Pwm2 as usize);
+                tmp_ccmr2 &= !(TimerCc0s::InputTrc as usize);
+                tmp_ccmr2 |= unsafe { oc_init.oc_mode.oc0m_mode as usize };
 
-                tmp_ccer |= TimerCcer::Cc2e as u32;
-                tmp_ccer &= !(TimerCcer::Cc2np as u32);
-                tmp_ccer &= !(TimerCcer::Cc2p as u32);
+                tmp_ccer |= TimerCcer::Cc2e as usize;
+                tmp_ccer &= !(TimerCcer::Cc2np as usize);
+                tmp_ccer &= !(TimerCcer::Cc2p as usize);
                 if !oc_init.high_level {
-                    tmp_ccer |= TimerCcer::Cc2p as u32;
+                    tmp_ccer |= TimerCcer::Cc2p as usize;
                 }
 
                 self.ccr2.write(oc_init.pulse);
                 self.ccmr2.write(tmp_ccmr2);
             }
             3 => {
-                tmp_ccer &= !(TimerCcer::Cc3e as u32);
+                tmp_ccer &= !(TimerCcer::Cc3e as usize);
 
                 let mut tmp_ccmr2 = self.ccmr2.read();
-                tmp_ccmr2 &= !(TimerOc1m::Pwm2 as u32);
-                tmp_ccmr2 &= !(TimerCc1s::InputTrc as u32);
-                tmp_ccmr2 |= unsafe { oc_init.oc_mode.oc1m_mode as u32 };
+                tmp_ccmr2 &= !(TimerOc1m::Pwm2 as usize);
+                tmp_ccmr2 &= !(TimerCc1s::InputTrc as usize);
+                tmp_ccmr2 |= unsafe { oc_init.oc_mode.oc1m_mode as usize };
 
-                tmp_ccer |= TimerCcer::Cc3e as u32;
-                tmp_ccer &= !(TimerCcer::Cc3np as u32);
-                tmp_ccer &= !(TimerCcer::Cc3p as u32);
+                tmp_ccer |= TimerCcer::Cc3e as usize;
+                tmp_ccer &= !(TimerCcer::Cc3np as usize);
+                tmp_ccer &= !(TimerCcer::Cc3p as usize);
                 if !oc_init.high_level {
-                    tmp_ccer |= TimerCcer::Cc3p as u32;
+                    tmp_ccer |= TimerCcer::Cc3p as usize;
                 }
 
                 self.ccr3.write(oc_init.pulse);
@@ -1346,55 +1351,55 @@ impl TimerGp {
 
     /// Enable or disable one pulse mode.
     pub fn timer_config_one_pulse(&self, state: bool) {
-        toggle_reg_bits!(self.cr1, TimerCr1::Opm as u32, state);
+        toggle_reg_bits!(self.cr1, TimerCr1::Opm as usize, state);
     }
 
     /// Configure trigger source selection in SMCR.
     pub fn timer_config_ts(&self, ts: TimerTs) {
         let mut smcr = self.smcr.read();
-        smcr &= !(TimerTs::Etrf as u32);
-        smcr |= ts as u32;
+        smcr &= !(TimerTs::Etrf as usize);
+        smcr |= ts as usize;
         self.smcr.write(smcr);
     }
 
     /// Configure clear OCxREF behavior using ETR input.
     pub fn timer_clear_ocxref(&self, clear_ocxref: &TimerClearOcxref, channel: u8) -> i32 {
         if channel == 0 || channel == 2 {
-            let oc_mode = unsafe { clear_ocxref.oc_init.oc_mode.oc0m_mode as u32 };
-            if oc_mode != TimerOc0m::Pwm1 as u32 && oc_mode != TimerOc0m::Pwm2 as u32 {
+            let oc_mode = unsafe { clear_ocxref.oc_init.oc_mode.oc0m_mode as usize };
+            if oc_mode != TimerOc0m::Pwm1 as usize && oc_mode != TimerOc0m::Pwm2 as usize {
                 return TIMER_ERROR;
             }
 
             if channel == 0 {
                 self.ccmr1.write(
                     self.ccmr1.read()
-                        | TimerCcmrOutput::Oc0pe as u32
-                        | TimerCcmrOutput::Oc0ce as u32,
+                        | TimerCcmrOutput::Oc0pe as usize
+                        | TimerCcmrOutput::Oc0ce as usize,
                 );
             } else {
                 self.ccmr2.write(
                     self.ccmr2.read()
-                        | TimerCcmrOutput::Oc0pe as u32
-                        | TimerCcmrOutput::Oc0ce as u32,
+                        | TimerCcmrOutput::Oc0pe as usize
+                        | TimerCcmrOutput::Oc0ce as usize,
                 );
             }
         } else {
-            let oc_mode = unsafe { clear_ocxref.oc_init.oc_mode.oc1m_mode as u32 };
-            if oc_mode != TimerOc1m::Pwm1 as u32 && oc_mode != TimerOc1m::Pwm2 as u32 {
+            let oc_mode = unsafe { clear_ocxref.oc_init.oc_mode.oc1m_mode as usize };
+            if oc_mode != TimerOc1m::Pwm1 as usize && oc_mode != TimerOc1m::Pwm2 as usize {
                 return TIMER_ERROR;
             }
 
             if channel == 1 {
                 self.ccmr1.write(
                     self.ccmr1.read()
-                        | TimerCcmrOutput::Oc1pe as u32
-                        | TimerCcmrOutput::Oc1ce as u32,
+                        | TimerCcmrOutput::Oc1pe as usize
+                        | TimerCcmrOutput::Oc1ce as usize,
                 );
             } else {
                 self.ccmr2.write(
                     self.ccmr2.read()
-                        | TimerCcmrOutput::Oc1pe as u32
-                        | TimerCcmrOutput::Oc1ce as u32,
+                        | TimerCcmrOutput::Oc1pe as usize
+                        | TimerCcmrOutput::Oc1ce as usize,
                 );
             }
         }
@@ -1412,13 +1417,13 @@ impl TimerGp {
     /// Configure PWM output and base timer parameters.
     pub fn timer_config_pwm(&self, oc_init: &TimerOcInit, timerx_init: &TimerConfig, channel: u8) {
         if channel == 0 || channel == 2 {
-            let mode = unsafe { oc_init.oc_mode.oc0m_mode as u32 };
-            if mode != TimerOc0m::Pwm1 as u32 && mode != TimerOc0m::Pwm2 as u32 {
+            let mode = unsafe { oc_init.oc_mode.oc0m_mode as usize };
+            if mode != TimerOc0m::Pwm1 as usize && mode != TimerOc0m::Pwm2 as usize {
                 return;
             }
         } else {
-            let mode = unsafe { oc_init.oc_mode.oc1m_mode as u32 };
-            if mode != TimerOc1m::Pwm1 as u32 && mode != TimerOc1m::Pwm2 as u32 {
+            let mode = unsafe { oc_init.oc_mode.oc1m_mode as usize };
+            if mode != TimerOc1m::Pwm1 as usize && mode != TimerOc1m::Pwm2 as usize {
                 return;
             }
         }
@@ -1429,114 +1434,114 @@ impl TimerGp {
 
     /// Enable or disable event generation bits in EGR.
     pub fn timer_generate_event(&self, egr_event: TimerEgr, state: bool) {
-        toggle_reg_bits!(self.egr, egr_event as u32, state);
+        toggle_reg_bits!(self.egr, egr_event as usize, state);
     }
 
     /// Enable or disable timer interrupts.
     pub fn timer_config_interrupt(&self, interrupt: TimerInterrupt, state: bool) {
-        toggle_reg_bits!(self.dier, interrupt as u32, state);
+        toggle_reg_bits!(self.dier, interrupt as usize, state);
     }
 
     /// Read one timer status flag.
     pub fn timer_get_status(&self, status: TimerSr) -> bool {
-        (self.sr.read() & status as u32) == status as u32
+        (self.sr.read() & status as usize) == status as usize
     }
 
     /// Clear one timer status flag.
     pub fn timer_clear_status(&self, status: TimerSr) {
-        self.sr.write(self.sr.read() & !(status as u32));
+        self.sr.write(self.sr.read() & !(status as usize));
     }
 
     /// Enable or disable timer DMA requests.
     pub fn timer_config_dma(&self, dma: TimerDma, state: bool) {
-        toggle_reg_bits!(self.dier, dma as u32, state);
+        toggle_reg_bits!(self.dier, dma as usize, state);
     }
 
     /// Set DMA burst read/write length.
     pub fn timer_set_dma_rw_len(&self, dbl_len: TimerDbl) {
         let mut dcr = self.dcr.read();
-        dcr &= !(TimerDbl::DblResv as u32);
-        dcr |= dbl_len as u32;
+        dcr &= !(TimerDbl::DblResv as usize);
+        dcr |= dbl_len as usize;
         self.dcr.write(dcr);
     }
 
     /// Set DMA burst base address.
     pub fn timer_set_dma_base_addr(&self, dba_addr: TimerDba) {
         let mut dcr = self.dcr.read();
-        dcr &= !(TimerDba::Res2 as u32);
-        dcr |= dba_addr as u32;
+        dcr &= !(TimerDba::Res2 as usize);
+        dcr |= dba_addr as usize;
         self.dcr.write(dcr);
     }
 
     /// Configure TIM0 TI0 OR remap.
     pub fn timer_config_or_tim0_ti0(&self, tim0_ti0_or: TimerTim0Ti0Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim0Ti0Or::Resv as u32);
-        or |= tim0_ti0_or as u32;
+        or &= !(TimerTim0Ti0Or::Resv as usize);
+        or |= tim0_ti0_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM0 TI3 OR remap.
     pub fn timer_config_or_tim0_ti3(&self, tim0_ti3_or: TimerTim0Ti3Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim0Ti3Or::Resv as u32);
-        or |= tim0_ti3_or as u32;
+        or &= !(TimerTim0Ti3Or::Resv as usize);
+        or |= tim0_ti3_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM0 ETR OR remap.
     pub fn timer_config_or_tim0_etr(&self, tim0_etr_or: TimerTim0EtrOr) {
         let mut or = self.or.read();
-        or &= !(TimerTim0EtrOr::Resv as u32);
-        or |= tim0_etr_or as u32;
+        or &= !(TimerTim0EtrOr::Resv as usize);
+        or |= tim0_etr_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM1 TI2 OR remap.
     pub fn timer_config_or_tim1_ti2(&self, tim1_ti2_or: TimerTim1Ti2Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim1Ti2Or::Resv as u32);
-        or |= tim1_ti2_or as u32;
+        or &= !(TimerTim1Ti2Or::Resv as usize);
+        or |= tim1_ti2_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM2 TI0 OR remap.
     pub fn timer_config_or_tim2_ti0(&self, tim2_ti0_or: TimerTim2Ti0Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim2Ti0Or::Resv as u32);
-        or |= tim2_ti0_or as u32;
+        or &= !(TimerTim2Ti0Or::Resv as usize);
+        or |= tim2_ti0_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM2 TI1 OR remap.
     pub fn timer_config_or_tim2_ti1(&self, tim2_ti1_or: TimerTim2Ti1Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim2Ti1Or::Resv as u32);
-        or |= tim2_ti1_or as u32;
+        or &= !(TimerTim2Ti1Or::Resv as usize);
+        or |= tim2_ti1_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM2 ETR OR remap.
     pub fn timer_config_or_tim2_etr(&self, tim2_etr_or: TimerTim2EtrOr) {
         let mut or = self.or.read();
-        or &= !(TimerTim2EtrOr::Resv as u32);
-        or |= tim2_etr_or as u32;
+        or &= !(TimerTim2EtrOr::Resv as usize);
+        or |= tim2_etr_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM3 TI0 OR remap.
     pub fn timer_config_or_tim3_ti0(&self, tim3_ti0_or: TimerTim3Ti0Or) {
         let mut or = self.or.read();
-        or &= !(TimerTim3Ti0Or::Uart4 as u32);
-        or |= tim3_ti0_or as u32;
+        or &= !(TimerTim3Ti0Or::Uart4 as usize);
+        or |= tim3_ti0_or as usize;
         self.or.write(or);
     }
 
     /// Configure TIM3 ETR OR remap.
     pub fn timer_config_or_tim3_etr(&self, tim3_etr_or: TimerTim3EtrOr) {
         let mut or = self.or.read();
-        or &= !(TimerTim3EtrOr::Resv as u32);
-        or |= tim3_etr_or as u32;
+        or &= !(TimerTim3EtrOr::Resv as usize);
+        or |= tim3_etr_or as usize;
         self.or.write(or);
     }
 }

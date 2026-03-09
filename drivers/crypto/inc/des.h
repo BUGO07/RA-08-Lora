@@ -87,7 +87,7 @@ U8 des_init(U8* key,U8 mode ,U8* IVorNONCE);
  *            @arg 0: encryption
  *            @arg 1: decode
  * @param out output decryption
- * @retval DESNull input¡¢output or IV is NULL
+ * @retval DESNull inputï¿½ï¿½output or IV is NULL
  * @retval DESLengthZero length is zero
  * @retval DESLengthError length isn't integer tims of 8
  * @retval DESSuccess seccessfully
@@ -125,7 +125,7 @@ U8 tdes_init(U8* key, U8 KeyBytelen,U8 mode,U8* IVorNONCE);
  *            @arg 0: encryption
  *            @arg 1: decryption
  * @param out output buffer
- * @retval TDESNull input¡¢output or IV is NULL
+ * @retval TDESNull inputï¿½ï¿½output or IV is NULL
  * @retval TDESLengthZero length is zero
  * @retval TDESLengthError length isn't integer tims of 8
  * @retval TDESSuccess seccessfully
