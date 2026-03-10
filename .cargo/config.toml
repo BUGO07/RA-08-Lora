@@ -1,2 +1,12 @@
 [build]
 target = "thumbv7em-none-eabi"
+
+[target.thumbv7em-none-eabi]
+linker = "arm-none-eabi-gcc"
+rustflags = [
+    "-C", "link-arg=-mcpu=cortex-m4",
+    "-C", "link-arg=-mthumb",
+    "-C", "link-arg=-nostdlib",
+    "-C", "link-arg=-Tlinker.ld",
+    "-C", "link-arg=-Wl,--gc-sections",
+]

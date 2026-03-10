@@ -13,11 +13,9 @@ strip = "debuginfo"
 debug = false
 panic = "abort"
 
-[lib]
-crate-type = ["staticlib"]
-
 [build-dependencies]
 bindgen = "0.72.1"
+cc = "1.2.56"
 
 [dependencies]
 heapless = "0.9.2"

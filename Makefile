@@ -1,54 +1,38 @@
+PYTHON         := python3
+TREMO_LOADER   := flasher.py
+SERIAL_PORT    ?= /dev/ttyUSB0
+SERIAL_BAUDRATE?= 921600
+FLASH_ADDRESS  ?= 0x08000000
 
-PROJECT := $(notdir $(CURDIR))
-TREMO_SDK_PATH := $(abspath .)
+CARGO_TARGET_DIR := target/thumbv7em-none-eabi/release
+CARGO_ELF      := $(CARGO_TARGET_DIR)/ra08lora
+CARGO_BIN      := $(CARGO_TARGET_DIR)/ra08lora.bin
 
-$(PROJECT)_SOURCE := \
-    $(TREMO_SDK_PATH)/lora/driver/utilities.c \
-    $(TREMO_SDK_PATH)/lora/system/crypto/cmac.c \
-    $(TREMO_SDK_PATH)/lora/mac/LoRaMac.c \
-    $(TREMO_SDK_PATH)/lora/mac/LoRaMacClassB.c \
-    $(TREMO_SDK_PATH)/lora/mac/LoRaMacConfirmQueue.c \
-    $(TREMO_SDK_PATH)/lora/mac/LoRaMacCrypto.c \
-    $(TREMO_SDK_PATH)/lora/mac/region/Region.c \
-    $(TREMO_SDK_PATH)/lora/mac/region/RegionCommon.c \
-    $(TREMO_SDK_PATH)/lora/mac/region/RegionEU868.c
+OBJCOPY_FLAGS  := -O binary -R .eh_frame -R .init -R .fini -R .comment -R .ARM.attributes
 
-$(PROJECT)_INC_PATH := \
-    $(TREMO_SDK_PATH)/platform/CMSIS \
-    $(TREMO_SDK_PATH)/platform/common \
-    $(TREMO_SDK_PATH)/platform/system \
-    $(TREMO_SDK_PATH)/drivers/crypto/inc \
-    $(TREMO_SDK_PATH)/lora/driver/ \
-    $(TREMO_SDK_PATH)/lora/mac/ \
-    $(TREMO_SDK_PATH)/lora/mac/region \
-    $(TREMO_SDK_PATH)/lora/system/ \
-    $(TREMO_SDK_PATH)/lora/system/crypto/ \
-    $(TREMO_SDK_PATH)/lora/radio/
+ifneq ($(VERBOSE),1)
+V := @
+else
+V :=
+endif
 
-$(PROJECT)_CFLAGS  := -Wall -Os -ffunction-sections -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -fsingle-precision-constant -std=gnu99
-$(PROJECT)_DEFINES := -DCONFIG_DEBUG_UART=UART0 -DUSE_MODEM_LORA -DREGION_EU868
+.PHONY: all build flash clean clangdb
 
-$(PROJECT)_LDFLAGS := -Wl,--gc-sections
+all: build
 
-$(PROJECT)_LIBS := target/thumbv7em-none-eabi/release/libra08lora.a $(TREMO_SDK_PATH)/drivers/crypto/lib/libcrypto.a
+build:
+	$(V)cargo build --release
+	$(V)arm-none-eabi-objcopy $(OBJCOPY_FLAGS) $(CARGO_ELF) $(CARGO_BIN)
+	$(V)arm-none-eabi-size $(CARGO_ELF)
 
-$(PROJECT)_LINK_LD := cfg/gcc.ld
+flash: build
+	$(V)echo Start flashing...
+	$(V)sudo chmod a+rw $(SERIAL_PORT)
+	$(V)$(PYTHON) $(TREMO_LOADER) -p $(SERIAL_PORT) -b $(SERIAL_BAUDRATE) flash $(FLASH_ADDRESS) $(CARGO_BIN)
 
-# please change the settings to download the app
-#SERIAL_PORT        :=
-#SERIAL_BAUDRATE    :=
-#$(PROJECT)_ADDRESS :=
-
-##################################################################################################
-
-include $(TREMO_SDK_PATH)/build/make/common.mk
+clean:
+	$(V)cargo clean
 
 clangdb:
-	rm -rf out
-	bear -- make
-
-buildrs:
-	cargo build --release
-	rm -rf out/RA-08-Lora.*
-
-flashrs: buildrs flash
+	$(V)rm -rf $(OUT_DIR)
+	$(V)bear -- make build
