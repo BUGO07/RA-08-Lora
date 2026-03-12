@@ -203,12 +203,7 @@ impl App {
             return;
         }
 
-        println!(
-            "receive data: rssi = {}, snr = {}, datarate = {}",
-            mcps_indirection.Rssi as i32,
-            mcps_indirection.Snr as i32,
-            mcps_indirection.RxDatarate as i32,
-        );
+        println!("receive data: {mcps_indirection:?}",);
 
         // FramePending → schedule uplink ASAP
         if mcps_indirection.FramePending != 0 {

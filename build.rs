@@ -31,20 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     bindgen::Builder::default()
         .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .clang_args(&[
-            "-Idrivers/crypto/inc",
-            "-Iplatform/system",
-            "-Iplatform/CMSIS",
-            "-Ilora/driver",
-            "-Ilora/mac",
-            "-Ilora/mac/region",
-            "-Ilora/radio",
-            "-Ilora/system",
-            "-Ilora/system/cmac",
-            "-I/usr/arm-none-eabi/include",
-            "-mfpu=none",
-            "-mfloat-abi=softfp",
-        ])
+        .clang_args(INCLUDES.iter().map(|s| format!("-I{s}")))
         .prepend_enum_name(false)
         .merge_extern_blocks(true)
         .fit_macro_constants(true)
@@ -57,12 +44,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .generate()?
         .write_to_file(out_path.join("bindings.rs"))?;
 
-    let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-
     cc::Build::new()
         .compiler("arm-none-eabi-gcc")
-        .files(SOURCES.iter().map(|s| project_dir.join(s)))
-        .includes(INCLUDES.iter().map(|s| project_dir.join(s)))
+        .files(SOURCES)
+        .includes(INCLUDES)
         .define("CONFIG_DEBUG_UART", "UART0")
         .define("USE_MODEM_LORA", None)
         .define("REGION_EU868", None)

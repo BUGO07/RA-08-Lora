@@ -15,7 +15,7 @@
 
 #ifndef __SHA384_SHA512_H__
 #define __SHA384_SHA512_H__
-#include "TypeDefine.h"
+#include "type_define.h"
 
 /**
  * @brief SHA512 context
